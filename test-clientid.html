@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test ClientId Header</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #3b82f6;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test ClientId Header Functionality</h1>
+    
+    <div class="test-section">
+        <h2>Method 1: Browser Developer Tools</h2>
+        <p>Open your browser's developer tools and use the Network tab to add custom headers:</p>
+        <ol>
+            <li>Open Developer Tools (F12)</li>
+            <li>Go to Network tab</li>
+            <li>Right-click on any request and select "Copy as cURL"</li>
+            <li>Add the header: <code>-H "clientId: test"</code></li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 2: Using Fetch API</h2>
+        <p>Test the API endpoint directly:</p>
+        <button onclick="testWithClientId()">Test with clientId=test</button>
+        <button onclick="testWithoutClientId()">Test without clientId</button>
+        <div id="result" class="code"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 3: Using cURL</h2>
+        <p>Test from command line:</p>
+        <div class="code">
+            # With clientId=test (should return dark theme)<br>
+            curl -H "clientId: test" http://localhost:3001/api/check-client-id<br><br>
+            
+            # Without clientId (should return default theme)<br>
+            curl http://localhost:3001/api/check-client-id
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 4: Browser Extension</h2>
+        <p>Use a browser extension like "ModHeader" to add custom headers to all requests:</p>
+        <ol>
+            <li>Install ModHeader extension</li>
+            <li>Add header: <code>clientId: test</code></li>
+            <li>Refresh the page</li>
+        </ol>
+    </div>
+
+    <script>
+        async function testWithClientId() {
+            try {
+                const response = await fetch('/api/check-client-id', {
+                    headers: {
+                        'clientId': 'test'
+                    }
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `Response: ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `Error: ${error.message}`;
+            }
+        }
+
+        async function testWithoutClientId() {
+            try {
+                const response = await fetch('/api/check-client-id');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `Response: ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
