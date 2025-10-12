@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useBranding } from '@/contexts/BrandingContext'
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { theme } = useTheme()
+  const { branding } = useBranding()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,7 +19,14 @@ const Navigation = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Don't render navigation if custom branding is active
+  if (branding.hasCustomBranding) {
+    return null
+  }
+
   const menuItems = [
+    { name: 'Home', href: '/' },
+    { name: 'GraphQL Viewer', href: '/graphql-viewer' },
     { name: 'Buy', href: '#buy' },
     { name: 'Sell', href: '#sell' },
     { name: 'Resources', href: '#resources' },

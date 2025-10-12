@@ -2,11 +2,19 @@
 
 import { motion } from 'framer-motion'
 import { Mail, ArrowRight } from 'lucide-react'
+import { useBranding } from '@/contexts/BrandingContext'
 
 const Footer = () => {
+  const { branding } = useBranding()
+  
   const footerLinks = {
     about: ['About', 'Concept', 'Buy', 'Sell', 'Resources', 'Contact'],
     legal: ['Legal notices', 'Confidentiality', 'Credits']
+  }
+
+  // Don't render footer if custom branding is active
+  if (branding.hasCustomBranding) {
+    return null
   }
 
   return (

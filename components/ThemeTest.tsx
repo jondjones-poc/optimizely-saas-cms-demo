@@ -5,39 +5,52 @@ import { useTheme } from '@/contexts/ThemeContext'
 const ThemeTest = () => {
   const { theme, setTheme } = useTheme()
 
+  const cmsLinks = [
+    {
+      label: 'Website',
+      url: '/',
+      external: false
+    },
+    {
+      label: 'CMS',
+      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/cms#context=epi.cms.contentdata:///6',
+      external: true
+    },
+    {
+      label: 'GraphQL',
+      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/Optimizely.Graph.Cms/EditGraphiQL',
+      external: true
+    },
+    {
+      label: 'Content Types',
+      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/EPiServer.Cms.UI.Admin/default#/ContentTypes',
+      external: true
+    },
+    {
+      label: 'GraphQL Viewer',
+      url: '/graphql-viewer',
+      external: false
+    }
+  ]
+
   return (
-    <div className="fixed top-20 right-4 z-50 bg-white dark:bg-dark-primary p-4 rounded-lg shadow-lg border dark:border-dark-border">
+    <div className="fixed bottom-32 right-4 z-40 bg-white dark:bg-dark-primary p-4 rounded-lg shadow-lg border dark:border-dark-border">
       <h3 className="text-sm font-bold mb-2 text-phamily-darkGray dark:text-dark-text">
-        Theme Test
+        Optimizely SaaS CMS Demo
       </h3>
-      <p className="text-xs text-phamily-darkGray/80 dark:text-dark-textSecondary mb-2">
-        Current: {theme}
-      </p>
       <div className="space-y-2">
-        <button
-          onClick={() => setTheme('default')}
-          className={`w-full px-3 py-1 text-xs rounded ${
-            theme === 'default'
-              ? 'bg-phamily-blue text-white'
-              : 'bg-phamily-lightGray dark:bg-dark-secondary text-phamily-darkGray dark:text-dark-text'
-          }`}
-        >
-          Default Theme
-        </button>
-        <button
-          onClick={() => setTheme('dark')}
-          className={`w-full px-3 py-1 text-xs rounded ${
-            theme === 'dark'
-              ? 'bg-phamily-blue text-white'
-              : 'bg-phamily-lightGray dark:bg-dark-secondary text-phamily-darkGray dark:text-dark-text'
-          }`}
-        >
-          Dark Theme
-        </button>
+        {cmsLinks.map((link, index) => (
+          <a
+            key={index}
+            href={link.url}
+            target={link.external ? "_blank" : "_self"}
+            rel={link.external ? "noopener noreferrer" : undefined}
+            className="w-full px-3 py-1 text-xs rounded bg-phamily-blue text-white hover:bg-phamily-lightBlue transition-colors duration-200 block text-center"
+          >
+            {link.label}
+          </a>
+        ))}
       </div>
-      <p className="text-xs text-phamily-darkGray/60 dark:text-dark-textSecondary mt-2">
-        Add clientId=test header to auto-switch
-      </p>
     </div>
   )
 }

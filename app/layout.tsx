@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { BrandingProvider } from '@/contexts/BrandingContext'
 
 export const metadata: Metadata = {
   title: 'SaaSCMS - Your Business Solution',
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <BrandingProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </BrandingProvider>
       </body>
     </html>
   )
