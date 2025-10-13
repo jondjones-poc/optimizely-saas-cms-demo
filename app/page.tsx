@@ -11,6 +11,9 @@ import CommunitySection from '@/components/CommunitySection'
 import TeamSection from '@/components/TeamSection'
 import Footer from '@/components/Footer'
 import CustomFooter from '@/components/CustomFooter'
+import ThemeTest from '@/components/ThemeTest'
+import OptimizelyDataPopup from '@/components/OptimizelyDataPopup'
+import BrandingTest from '@/components/BrandingTest'
 
 export default function Home() {
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
@@ -66,6 +69,15 @@ export default function Home() {
       <div className="mb-16"></div>
       <Footer />
       <CustomFooter />
+      
+      {/* Sidebar Components */}
+      <BrandingTest />
+      <ThemeTest />
+      <OptimizelyDataPopup 
+        data={optimizelyData} 
+        isLoading={isLoading} 
+        error={error}
+      />
     </main>
   )
 }

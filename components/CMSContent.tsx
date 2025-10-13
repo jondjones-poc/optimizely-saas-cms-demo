@@ -82,7 +82,8 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                     ...element.component,
                     _isShared: element.component._metadata?.key !== null,
                     _elementKey: element.key,
-                    _elementDisplayName: element.displayName
+                    _elementDisplayName: element.displayName,
+                    _gridDisplayName: grid.displayName
                   })
                 } else if (element.element) {
                   // Shared block reference
