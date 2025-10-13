@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postbuild": "echo 'Build completed successfully'"
   },
   "dependencies": {
     "@remkoj/optimizely-cms-react": "^5.1.4",
