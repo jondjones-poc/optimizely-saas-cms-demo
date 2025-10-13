@@ -13,6 +13,9 @@ A modern, responsive website built with Next.js 14, TypeScript, and Tailwind CSS
 - 🖼️ **Dummy Images** from Unsplash
 - 🌙 **Dynamic Theme Switching** based on HTTP headers
 - 🎨 **Dark Theme Support** for clientId=test
+- 🏗️ **Optimizely CMS Integration** with GraphQL
+- 📊 **GraphQL Viewer** for content inspection
+- 🎯 **Dynamic Content Rendering** from CMS
 
 ## Getting Started
 
@@ -36,14 +39,24 @@ npm install
 yarn install
 ```
 
-3. Run the development server:
+3. Set up environment variables:
+```bash
+# Create .env.local file
+cp .env.example .env.local
+
+# Edit .env.local and add your Optimizely SDK key
+NEXT_PUBLIC_SDK_KEY=your_actual_sdk_key_here
+OPTIMIZELY_GRAPH_SINGLE_KEY=your_actual_sdk_key_here
+```
+
+4. Run the development server:
 ```bash
 npm run dev
 # or
 yarn dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Project Structure
 
@@ -195,6 +208,47 @@ The `/api/check-client-id` endpoint checks for the `clientId` header and returns
 }
 ```
 
+## Optimizely CMS Integration
+
+This website integrates with Optimizely SaaS CMS to fetch and display dynamic content.
+
+### Features
+
+- **Homepage Content**: Dynamically pulls content from Optimizely CMS
+- **GraphQL API**: Uses Optimizely Graph for content delivery
+- **Block Rendering**: Supports Hero and Text blocks from CMS
+- **Content Viewer**: Built-in GraphQL viewer at `/graphql-viewer`
+
+### Environment Variables
+
+Create a `.env.local` file with your Optimizely credentials:
+
+```bash
+# Required: Your Optimizely Graph SDK Key
+NEXT_PUBLIC_SDK_KEY=your_sdk_key_here
+OPTIMIZELY_GRAPH_SINGLE_KEY=your_sdk_key_here
+
+# Optional: Additional Optimizely settings
+OPTIMIZELY_GRAPH_GATEWAY=https://cg.optimizely.com
+OPTIMIZELY_DAM_ENABLED=true
+```
+
+### API Endpoints
+
+- `/api/optimizely/homepage` - Fetches homepage content
+- `/api/optimizely/block` - Fetches individual block content
+- `/api/optimizely/page-types` - Lists available page types
+- `/api/optimizely/blocks` - Lists available block types
+- `/api/optimizely/page-instances` - Lists actual page instances
+
+### GraphQL Viewer
+
+Visit `/graphql-viewer` to:
+- Inspect all page types and block types
+- View GraphQL queries for content types
+- Browse actual page instances with full content
+- Copy GraphQL queries for development
+
 ## Technologies Used
 
 - **Next.js 14** - React framework
@@ -203,6 +257,8 @@ The `/api/check-client-id` endpoint checks for the `clientId` header and returns
 - **Framer Motion** - Animation library
 - **Lucide React** - Icon library
 - **React Context** - Theme state management
+- **Optimizely Graph** - Headless CMS integration
+- **GraphQL** - Content query language
 
 ## License
 

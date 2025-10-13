@@ -1,6 +1,7 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
+import { useRef } from 'react'
 
 interface PageType {
   name: string
@@ -50,12 +51,18 @@ export default function PageTypesList({
   onSelectPage,
   onSelectPageInstance,
   onSelectBlock,
-  viewMode 
+  viewMode
 }: PageTypesListProps) {
   const { theme } = useTheme()
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      })
+    }
   }
 
   // Render page types
@@ -71,16 +78,16 @@ export default function PageTypesList({
     }
 
     return (
-      <div className="flex-1 overflow-y-auto">
-        {pageTypes.map((pageType, index) => (
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {pageTypes.map((type, index) => (
           <div
             key={index}
             onClick={() => {
-              onSelectPageType(pageType)
+              onSelectPageType(type)
               scrollToTop()
             }}
             className={`p-4 border-b dark:border-dark-border cursor-pointer transition-colors duration-200 ${
-              selectedPageType?.name === pageType.name
+              selectedPageType?.name === type.name
                 ? 'bg-phamily-lightBlue/10 dark:bg-phamily-blue/20 border-l-4 border-l-phamily-blue'
                 : 'hover:bg-phamily-lightGray/10 dark:hover:bg-dark-secondary/50'
             }`}
@@ -88,24 +95,24 @@ export default function PageTypesList({
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-semibold text-phamily-darkGray dark:text-dark-text mb-1">
-                  {pageType.name}
+                  {type.name}
                 </h3>
                 <p className="text-sm text-phamily-gray dark:text-dark-text-secondary">
-                  {pageType.fields.length} field{pageType.fields.length !== 1 ? 's' : ''}
+                  {type.fields.length} field{type.fields.length !== 1 ? 's' : ''}
                 </p>
               </div>
               <div className="ml-4">
-                {selectedPageType?.name === pageType.name && (
+                {selectedPageType?.name === type.name && (
                   <div className="w-2 h-2 bg-phamily-blue rounded-full"></div>
                 )}
               </div>
             </div>
             
             {/* Show first few fields as preview */}
-            {pageType.fields.length > 0 && (
+            {type.fields.length > 0 && (
               <div className="mt-2">
                 <div className="flex flex-wrap gap-1">
-                  {pageType.fields.slice(0, 3).map((field, fieldIndex) => (
+                  {type.fields.slice(0, 3).map((field, fieldIndex) => (
                     <span
                       key={fieldIndex}
                       className="text-xs px-2 py-1 rounded bg-phamily-lightGray dark:bg-dark-secondary text-phamily-darkGray dark:text-dark-text"
@@ -114,9 +121,9 @@ export default function PageTypesList({
                       {field.isRequired && <span className="text-red-500 ml-1">*</span>}
                     </span>
                   ))}
-                  {pageType.fields.length > 3 && (
+                  {type.fields.length > 3 && (
                     <span className="text-xs px-2 py-1 rounded bg-phamily-lightGray dark:bg-dark-secondary text-phamily-gray dark:text-dark-text-secondary">
-                      +{pageType.fields.length - 3} more
+                      +{type.fields.length - 3} more
                     </span>
                   )}
                 </div>
@@ -128,20 +135,20 @@ export default function PageTypesList({
     )
   }
 
-  // Render pages
+  // Render pages (page type definitions)
   if (viewMode === 'pages') {
     if (pages.length === 0) {
       return (
         <div className="p-6 text-center">
           <p className="text-phamily-gray dark:text-dark-text-secondary">
-            No pages found
+            No page type definitions found
           </p>
         </div>
       )
     }
 
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {pages.map((page, index) => (
           <div
             key={index}
@@ -211,7 +218,7 @@ export default function PageTypesList({
     }
 
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {pageInstances.map((instance, index) => {
           // Count blocks in composition
           let blockCount = 0
@@ -293,7 +300,7 @@ export default function PageTypesList({
     }
 
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {blocks.map((block, index) => (
           <div
             key={index}

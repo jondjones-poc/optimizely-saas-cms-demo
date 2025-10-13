@@ -3,7 +3,9 @@
 import { useTheme } from '@/contexts/ThemeContext'
 
 interface TextBlockProps {
-  MainBody?: string
+  MainBody?: {
+    html: string
+  }
   _metadata?: {
     key?: string
     displayName?: string
@@ -22,13 +24,13 @@ const TextBlock = ({ MainBody, _metadata }: TextBlockProps) => {
               {_metadata.displayName}
             </h2>
           )}
-          {MainBody && (
+          {MainBody?.html && (
             <div 
               className="text-lg text-phamily-gray dark:text-dark-text-secondary leading-relaxed prose dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: MainBody }}
+              dangerouslySetInnerHTML={{ __html: MainBody.html }}
             />
           )}
-          {!MainBody && (
+          {!MainBody?.html && (
             <p className="text-phamily-gray dark:text-dark-text-secondary">
               No content available
             </p>
