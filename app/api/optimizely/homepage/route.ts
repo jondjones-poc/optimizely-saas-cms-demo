@@ -69,19 +69,6 @@ export async function GET() {
                                 types
                                 displayName
                               }
-                              # Include actual content fields for inline components
-                              ... on Hero {
-                                Heading
-                                Subheading
-                                Image {
-                                  url
-                                }
-                              }
-                              ... on Text {
-                                MainBody {
-                                  html
-                                }
-                              }
                             }
                           }
                         }

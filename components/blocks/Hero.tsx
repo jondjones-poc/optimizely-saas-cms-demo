@@ -15,9 +15,11 @@ interface HeroProps {
   _metadata?: {
     key?: string
   }
+  isPreview?: boolean
+  contextMode?: string | null
 }
 
-const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: initialImageData, _metadata }: HeroProps) => {
+const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: initialImageData, _metadata, isPreview = false, contextMode = null }: HeroProps) => {
   const { theme } = useTheme()
   const [Heading, setHeading] = useState(initialHeading || 'Welcome to Our Platform')
   const [Subheading, setSubheading] = useState(initialSubheading || 'Building the future together')
@@ -102,6 +104,7 @@ const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: i
               className={`text-lg md:text-xl font-medium ${
                 theme === 'dark' ? 'text-dark-text/90' : 'text-white/90'
               }`}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'Subheading' })}
             >
               {Subheading}
             </motion.p>
@@ -116,6 +119,7 @@ const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: i
               className={`text-4xl md:text-6xl lg:text-7xl font-bold leading-tight ${
                 theme === 'dark' ? 'text-dark-text' : 'text-white'
               }`}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'Heading' })}
             >
               {Heading}
             </motion.h1>

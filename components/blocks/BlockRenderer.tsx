@@ -5,9 +5,11 @@ import TextBlock from './TextBlock'
 
 interface BlockRendererProps {
   component: any
+  isPreview?: boolean
+  contextMode?: string | null
 }
 
-const BlockRenderer = ({ component }: BlockRendererProps) => {
+const BlockRenderer = ({ component, isPreview = false, contextMode = null }: BlockRendererProps) => {
   if (!component || !component._metadata) {
     return null
   }
@@ -16,9 +18,23 @@ const BlockRenderer = ({ component }: BlockRendererProps) => {
 
   switch (blockType) {
     case 'Hero':
-      return <Hero {...component} _metadata={component._metadata} />
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'hero-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <Hero {...component} _metadata={component._metadata} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
     case 'Text':
-      return <TextBlock {...component} _metadata={component._metadata} />
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'text-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <TextBlock {...component} _metadata={component._metadata} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
     default:
       // Return null for unhandled block types
       console.warn('Unhandled block type:', blockType, component)

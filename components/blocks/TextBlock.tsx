@@ -10,9 +10,11 @@ interface TextBlockProps {
     key?: string
     displayName?: string
   }
+  isPreview?: boolean
+  contextMode?: string | null
 }
 
-const TextBlock = ({ MainBody, _metadata }: TextBlockProps) => {
+const TextBlock = ({ MainBody, _metadata, isPreview = false, contextMode = null }: TextBlockProps) => {
   const { theme } = useTheme()
   
   return (
@@ -20,7 +22,10 @@ const TextBlock = ({ MainBody, _metadata }: TextBlockProps) => {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {_metadata?.displayName && (
-            <h2 className="text-3xl md:text-4xl font-bold text-phamily-darkGray dark:text-dark-text mb-6">
+            <h2 
+              className="text-3xl md:text-4xl font-bold text-phamily-darkGray dark:text-dark-text mb-6"
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'displayName' })}
+            >
               {_metadata.displayName}
             </h2>
           )}
@@ -28,6 +33,7 @@ const TextBlock = ({ MainBody, _metadata }: TextBlockProps) => {
             <div 
               className="text-lg text-phamily-gray dark:text-dark-text-secondary leading-relaxed prose dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: MainBody.html }}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'MainBody' })}
             />
           )}
           {!MainBody?.html && (

@@ -6,9 +6,11 @@ interface CMSContentProps {
   data: any
   isLoading: boolean
   error: string | null
+  isPreview?: boolean
+  contextMode?: string | null
 }
 
-export default function CMSContent({ data, isLoading, error }: CMSContentProps) {
+export default function CMSContent({ data, isLoading, error, isPreview = false, contextMode = null }: CMSContentProps) {
   if (isLoading) {
     return (
       <section className="py-16 bg-white dark:bg-dark-primary">
@@ -92,7 +94,12 @@ export default function CMSContent({ data, isLoading, error }: CMSContentProps) 
       {/* Render CMS Blocks */}
       {blocks.length > 0 ? (
         blocks.map((block, index) => (
-          <BlockRenderer key={block._metadata?.key || index} component={block} />
+          <BlockRenderer 
+            key={block._metadata?.key || index} 
+            component={block} 
+            isPreview={isPreview}
+            contextMode={contextMode}
+          />
         ))
       ) : (
         <div className="py-16 bg-white dark:bg-dark-primary">
