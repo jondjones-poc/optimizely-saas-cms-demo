@@ -27,9 +27,11 @@ export default function Home() {
         const response = await fetch('/api/optimizely/homepage')
         const result = await response.json()
         
-        if (result.success) {
-          setOptimizelyData(result.data)
-          setError(null)
+      if (result.success) {
+        setOptimizelyData(result.data)
+        setError(null)
+      } else if (result.error === 'SDK Key not configured') {
+        setError('Environment variables not configured. Please set NEXT_PUBLIC_SDK_KEY in your deployment platform.')
           
           // Update page metadata from API
           const homepageData = result.data?.data?.BlankExperience?.items?.[0]
