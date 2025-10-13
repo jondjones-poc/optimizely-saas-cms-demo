@@ -48,9 +48,7 @@ const HOMEPAGE_QUERY = `
 // Fetch homepage content
 export async function getHomepageContent() {
   try {
-    const response = await client.request({
-      query: HOMEPAGE_QUERY,
-    })
+    const response = await client.request(HOMEPAGE_QUERY)
     
     return {
       success: true,

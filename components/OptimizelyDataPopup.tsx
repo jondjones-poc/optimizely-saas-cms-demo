@@ -54,7 +54,7 @@ const OptimizelyDataPopup = ({ data, isLoading, error }: OptimizelyDataPopupProp
       })
     }
 
-    return [...new Set(blocks)] // Remove duplicates
+    return Array.from(new Set(blocks)) // Remove duplicates
   }
 
   const blocks = extractBlocks()
