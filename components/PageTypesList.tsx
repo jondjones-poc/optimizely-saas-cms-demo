@@ -50,7 +50,7 @@ export default function PageTypesList({
   onSelectPage,
   onSelectPageInstance,
   onSelectBlock,
-  viewMode
+  viewMode 
 }: PageTypesListProps) {
   const { theme } = useTheme()
 
@@ -134,7 +134,7 @@ export default function PageTypesList({
       return (
         <div className="p-6 text-center">
           <p className="text-phamily-gray dark:text-dark-text-secondary">
-            No page types found
+            No pages found
           </p>
         </div>
       )
