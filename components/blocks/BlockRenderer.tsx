@@ -2,6 +2,7 @@
 
 import Hero from './Hero'
 import TextBlock from './TextBlock'
+import DemoBlock from './DemoBlock'
 
 interface BlockRendererProps {
   component: any
@@ -15,6 +16,7 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
   }
 
   const blockType = component._metadata.types?.[0]
+  console.log('BlockRenderer: Rendering block type:', blockType, component)
 
   switch (blockType) {
     case 'Hero':
@@ -33,6 +35,15 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           className={contextMode === 'edit' ? 'relative' : ''}
         >
           <TextBlock {...component} _metadata={component._metadata} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
+    case 'demo_block':
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'demo-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <DemoBlock {...component} _metadata={component._metadata} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     default:

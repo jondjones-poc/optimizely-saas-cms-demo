@@ -91,6 +91,9 @@ export async function POST(request: NextRequest) {
                                     html
                                   }
                                 }
+                                ... on DemoBlock {
+                                  ImageNumber
+                                }
                               }
                             }
                           }

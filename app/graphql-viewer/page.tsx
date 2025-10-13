@@ -53,6 +53,34 @@ export default function GraphQLViewer() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Function to fetch homepage data specifically
+  const fetchHomepageData = async () => {
+    try {
+      const response = await fetch('/api/optimizely/homepage')
+      const result = await response.json()
+
+      if (result.success && result.data?.BlankExperience?.items?.length > 0) {
+        const homepageItem = result.data.BlankExperience.items[0]
+        const homepageInstance = {
+          key: homepageItem._metadata.key,
+          displayName: homepageItem._metadata.displayName || 'Homepage',
+          url: homepageItem._metadata.url?.default || '/',
+          types: homepageItem._metadata.types || [],
+          status: homepageItem._metadata.status,
+          composition: homepageItem.composition,
+          fullData: homepageItem
+        }
+        
+        // Update the selected instance with fresh homepage data
+        setSelectedPageInstance(homepageInstance)
+        return homepageInstance
+      }
+    } catch (error) {
+      console.error('Error fetching homepage data:', error)
+    }
+    return null
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -163,6 +191,16 @@ export default function GraphQLViewer() {
 }`
   }
 
+  // Handle page instance selection
+  const handleSelectPageInstance = async (pageInstance: PageInstance) => {
+    setSelectedPageInstance(pageInstance)
+    
+    // If this is the homepage, fetch fresh data
+    if (pageInstance.url === '/' || pageInstance.displayName.toLowerCase().includes('home')) {
+      await fetchHomepageData()
+    }
+  }
+
   return (
     <main className="min-h-screen flex flex-col">
       <CustomHeader />
@@ -182,7 +220,9 @@ export default function GraphQLViewer() {
         {isLoading && (
           <div className="flex justify-center items-center py-12" style={{ minHeight: '600px' }}>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-phamily-blue"></div>
-            <span className="ml-4 text-phamily-darkGray dark:text-dark-text">Loading page types...</span>
+            <span className="ml-4 text-phamily-darkGray dark:text-dark-text">
+              Loading {viewMode === 'types' ? 'page types' : viewMode === 'pages' ? 'page definitions' : viewMode === 'instances' ? 'page instances' : 'block types'}...
+            </span>
           </div>
         )}
 
@@ -198,16 +238,27 @@ export default function GraphQLViewer() {
             {/* Left Side - Page Types/Pages List */}
             <div className="bg-white dark:bg-dark-primary rounded-lg border dark:border-dark-border shadow-sm flex flex-col h-full">
               <div className="p-6 border-b dark:border-dark-border flex-shrink-0">
-                <select
-                  value={viewMode}
-                  onChange={(e) => setViewMode(e.target.value as 'types' | 'pages' | 'instances' | 'blocks')}
-                  className="w-full px-4 py-2 text-base rounded border dark:border-dark-border bg-white dark:bg-dark-secondary text-phamily-darkGray dark:text-dark-text font-semibold"
-                >
-                  <option value="types">Page Types</option>
-                  <option value="pages">Page Type Definitions</option>
-                  <option value="instances">Pages</option>
-                  <option value="blocks">Blocks</option>
-                </select>
+                <div className="flex gap-4">
+                  <select
+                    value={viewMode}
+                    onChange={(e) => setViewMode(e.target.value as 'types' | 'pages' | 'instances' | 'blocks')}
+                    className="flex-1 px-4 py-2 text-base rounded border dark:border-dark-border bg-white dark:bg-dark-secondary text-phamily-darkGray dark:text-dark-text font-semibold"
+                  >
+                    <option value="types">Page Types</option>
+                    <option value="pages">Page Type Definitions</option>
+                    <option value="instances">Pages</option>
+                    <option value="blocks">Blocks</option>
+                  </select>
+                  {viewMode === 'instances' && selectedPageInstance && (
+                    <button
+                      onClick={fetchHomepageData}
+                      className="px-4 py-2 bg-phamily-blue text-white rounded-lg hover:bg-phamily-lightBlue transition-colors duration-200 text-sm whitespace-nowrap"
+                      title="Refresh homepage data"
+                    >
+                      🔄 Refresh
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex-1 overflow-hidden">
                 <PageTypesList
@@ -221,7 +272,7 @@ export default function GraphQLViewer() {
                   selectedBlock={selectedBlock}
                   onSelectPageType={setSelectedPageType}
                   onSelectPage={setSelectedPage}
-                  onSelectPageInstance={setSelectedPageInstance}
+                  onSelectPageInstance={handleSelectPageInstance}
                   onSelectBlock={setSelectedBlock}
                   viewMode={viewMode}
                 />

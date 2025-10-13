@@ -11,72 +11,47 @@ import CommunitySection from '@/components/CommunitySection'
 import TeamSection from '@/components/TeamSection'
 import Footer from '@/components/Footer'
 import CustomFooter from '@/components/CustomFooter'
-import ThemeTest from '@/components/ThemeTest'
-import OptimizelyDataPopup from '@/components/OptimizelyDataPopup'
 
 export default function Home() {
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    // Fetch Optimizely homepage data
-    const fetchOptimizelyData = async () => {
-      try {
-        setIsLoading(true)
-        const response = await fetch('/api/optimizely/homepage')
-        const result = await response.json()
-        
-      if (result.success) {
-        setOptimizelyData(result.data)
-        setError(null)
-      } else if (result.error === 'SDK Key not configured') {
-        setError('Environment variables not configured. Please set NEXT_PUBLIC_SDK_KEY in your deployment platform.')
-          
-          // Update page metadata from API
-          const homepageData = result.data?.data?.BlankExperience?.items?.[0]
-          if (homepageData) {
-            // Update document title using displayName from metadata
-            if (homepageData._metadata?.displayName) {
-              document.title = homepageData._metadata.displayName
-            }
+      useEffect(() => {
+        const fetchHomepageData = async () => {
+          try {
+            const response = await fetch('/api/optimizely/homepage')
+            const result = await response.json()
             
-            // Update meta description using displayName as fallback
-            const description = homepageData._metadata?.displayName || 'SaaSCMS - Your Business Solution'
-            let metaDescription = document.querySelector('meta[name="description"]')
-            if (metaDescription) {
-              metaDescription.setAttribute('content', description)
+            if (result.success) {
+              setOptimizelyData(result)
+              
+              // Update document title and meta description
+              if (result.data?.BlankExperience?.items?.[0]?._metadata?.displayName) {
+                document.title = `${result.data.BlankExperience.items[0]._metadata.displayName} - SaaSCMS`
+              }
+              
+              const metaDescription = document.querySelector('meta[name="description"]')
+              if (metaDescription) {
+                metaDescription.setAttribute('content', result.data?.BlankExperience?.items?.[0]?._metadata?.displayName || 'Transform your business with our comprehensive SaaS platform')
+              }
             } else {
-              // Create meta description if it doesn't exist
-              metaDescription = document.createElement('meta')
-              metaDescription.setAttribute('name', 'description')
-              metaDescription.setAttribute('content', description)
-              document.head.appendChild(metaDescription)
+              setError(result.error)
             }
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch homepage data')
+          } finally {
+            setIsLoading(false)
           }
-        } else {
-          setError(result.error || 'Failed to fetch data')
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setIsLoading(false)
-      }
-    }
 
-    fetchOptimizelyData()
-  }, [])
+        fetchHomepageData()
+      }, [])
 
   return (
     <main className="min-h-screen">
       <CustomHeader />
       <Navigation />
-      <ThemeTest />
-      <OptimizelyDataPopup 
-        data={optimizelyData} 
-        isLoading={isLoading} 
-        error={error}
-      />
       {/* CMS Content includes Hero and other blocks */}
       <CMSContent 
         data={optimizelyData} 

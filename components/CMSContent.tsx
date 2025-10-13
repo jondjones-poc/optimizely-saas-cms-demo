@@ -37,19 +37,31 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
     )
   }
 
-  if (!data || !data.data || !data.data.BlankExperience || !data.data.BlankExperience.items || data.data.BlankExperience.items.length === 0) {
+  // Fix: Use the correct data path - there's an extra .data level
+  if (!data || !data.data || !data.data.data || !data.data.data.BlankExperience || !data.data.data.BlankExperience.items || data.data.data.BlankExperience.items.length === 0) {
     return (
       <section className="py-16 bg-white dark:bg-dark-primary">
         <div className="container mx-auto px-4">
           <div className="text-center text-phamily-gray dark:text-dark-text-secondary">
             <p>No CMS content found</p>
+            <div className="mt-4 text-sm text-gray-500">
+              <p>Debug info:</p>
+              <p>Has data: {!!data ? 'Yes' : 'No'}</p>
+              <p>Has data.data: {!!(data && data.data) ? 'Yes' : 'No'}</p>
+              <p>Has data.data.data: {!!(data && data.data && data.data.data) ? 'Yes' : 'No'}</p>
+              <p>Has BlankExperience: {!!(data && data.data && data.data.data && data.data.data.BlankExperience) ? 'Yes' : 'No'}</p>
+              <p>Has items: {!!(data && data.data && data.data.data && data.data.data.BlankExperience && data.data.data.BlankExperience.items) ? 'Yes' : 'No'}</p>
+              {data && data.data && data.data.data && data.data.data.BlankExperience && data.data.data.BlankExperience.items && (
+                <p>Items length: {data.data.data.BlankExperience.items.length}</p>
+              )}
+            </div>
           </div>
         </div>
       </section>
     )
   }
 
-  const homepage = data.data.BlankExperience.items[0]
+  const homepage = data.data.data.BlankExperience.items[0]
   const composition = homepage.composition
 
   // Extract all blocks from composition to render them

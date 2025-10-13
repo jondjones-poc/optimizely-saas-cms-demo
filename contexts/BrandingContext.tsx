@@ -8,6 +8,7 @@ type BrandingConfig = {
   headerImage: string | null
   footerImage: string | null
   hasCustomBranding: boolean
+  cms_demo: string | null
 }
 
 interface BrandingContextType {
@@ -17,57 +18,45 @@ interface BrandingContextType {
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined)
 
-export function BrandingProvider({ children }: { children: ReactNode }) {
+export function BrandingProvider({ children, initialCmsDemo }: { children: ReactNode, initialCmsDemo?: string | null }) {
   const [branding, setBranding] = useState<BrandingConfig>({
     customer: null,
     favicon: null,
     headerImage: null,
     footerImage: null,
-    hasCustomBranding: false
+    hasCustomBranding: false,
+    cms_demo: initialCmsDemo || null
   })
 
   useEffect(() => {
-    // Check for cms_demo header
-    const checkCmsDemo = async () => {
-      try {
-        const response = await fetch('/api/check-cms-demo', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+    // Use the initialCmsDemo value passed from server-side
+    if (initialCmsDemo) {
+      const customer = initialCmsDemo.toLowerCase()
+      
+      // Check if assets exist for this customer
+      const checkAssets = async () => {
+        const faviconExists = await checkAssetExists(`/${customer}/favicon.ico`)
+        const headerExists = await checkAssetExists(`/${customer}/header.png`)
+        const footerExists = await checkAssetExists(`/${customer}/footer.png`)
         
-        if (response.ok) {
-          const data = await response.json()
-          if (data.cmsDemo) {
-            const customer = data.cmsDemo.toLowerCase()
-            
-            // Check if assets exist for this customer
-            const faviconExists = await checkAssetExists(`/${customer}/favicon.ico`)
-            const headerExists = await checkAssetExists(`/${customer}/header.png`)
-            const footerExists = await checkAssetExists(`/${customer}/footer.png`)
-            
-            setBranding({
-              customer,
-              favicon: faviconExists ? `/${customer}/favicon.ico` : null,
-              headerImage: headerExists ? `/${customer}/header.png` : null,
-              footerImage: footerExists ? `/${customer}/footer.png` : null,
-              hasCustomBranding: faviconExists || headerExists || footerExists
-            })
+        setBranding({
+          customer,
+          favicon: faviconExists ? `/${customer}/favicon.ico` : null,
+          headerImage: headerExists ? `/${customer}/header.png` : null,
+          footerImage: footerExists ? `/${customer}/footer.png` : null,
+          hasCustomBranding: faviconExists || headerExists || footerExists,
+          cms_demo: initialCmsDemo
+        })
 
-            // Update favicon if available
-            if (faviconExists) {
-              updateFavicon(`/${customer}/favicon.ico`)
-            }
-          }
+        // Update favicon if available
+        if (faviconExists) {
+          updateFavicon(`/${customer}/favicon.ico`)
         }
-      } catch (error) {
-        console.log('Could not fetch cms_demo from server')
       }
-    }
 
-    checkCmsDemo()
-  }, [])
+      checkAssets()
+    }
+  }, [initialCmsDemo])
 
   const checkAssetExists = async (path: string): Promise<boolean> => {
     try {

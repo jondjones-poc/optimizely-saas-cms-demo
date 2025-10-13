@@ -1,6 +1,5 @@
 'use client'
 
-import { useTheme } from '@/contexts/ThemeContext'
 import { useRef } from 'react'
 
 interface PageType {
@@ -10,6 +9,14 @@ interface PageType {
     type: string
     isRequired: boolean
   }>
+}
+
+interface Page {
+  key: string
+  displayName: string
+  url: string
+  types: string[]
+  status: string
 }
 
 interface PageInstance {
@@ -23,27 +30,27 @@ interface PageInstance {
 }
 
 interface PageTypesListProps {
-  pageTypes?: PageType[]
-  pages?: PageType[]
-  pageInstances?: PageInstance[]
-  blocks?: PageType[]
+  pageTypes: PageType[]
+  pages: Page[]
+  pageInstances: PageInstance[]
+  blocks: PageType[]
   selectedPageType: PageType | null
-  selectedPage?: PageType | null
-  selectedPageInstance?: PageInstance | null
-  selectedBlock?: PageType | null
+  selectedPage: PageType | null
+  selectedPageInstance: PageInstance | null
+  selectedBlock: PageType | null
   onSelectPageType: (pageType: PageType) => void
-  onSelectPage?: (page: PageType) => void
-  onSelectPageInstance?: (pageInstance: PageInstance) => void
-  onSelectBlock?: (block: PageType) => void
+  onSelectPage: (page: PageType) => void
+  onSelectPageInstance: (pageInstance: PageInstance) => void
+  onSelectBlock: (block: PageType) => void
   viewMode: 'types' | 'pages' | 'instances' | 'blocks'
 }
 
-export default function PageTypesList({ 
-  pageTypes = [], 
-  pages = [],
-  pageInstances = [],
-  blocks = [],
-  selectedPageType, 
+const PageTypesList = ({
+  pageTypes,
+  pages,
+  pageInstances,
+  blocks,
+  selectedPageType,
   selectedPage,
   selectedPageInstance,
   selectedBlock,
@@ -52,16 +59,12 @@ export default function PageTypesList({
   onSelectPageInstance,
   onSelectBlock,
   viewMode
-}: PageTypesListProps) {
-  const { theme } = useTheme()
+}: PageTypesListProps) => {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const scrollToTop = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      })
+      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -79,15 +82,15 @@ export default function PageTypesList({
 
     return (
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        {pageTypes.map((type, index) => (
+        {pageTypes.map((pageType, index) => (
           <div
             key={index}
             onClick={() => {
-              onSelectPageType(type)
+              onSelectPageType(pageType)
               scrollToTop()
             }}
             className={`p-4 border-b dark:border-dark-border cursor-pointer transition-colors duration-200 ${
-              selectedPageType?.name === type.name
+              selectedPageType?.name === pageType.name
                 ? 'bg-phamily-lightBlue/10 dark:bg-phamily-blue/20 border-l-4 border-l-phamily-blue'
                 : 'hover:bg-phamily-lightGray/10 dark:hover:bg-dark-secondary/50'
             }`}
@@ -95,24 +98,24 @@ export default function PageTypesList({
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-semibold text-phamily-darkGray dark:text-dark-text mb-1">
-                  {type.name}
+                  {pageType.name}
                 </h3>
                 <p className="text-sm text-phamily-gray dark:text-dark-text-secondary">
-                  {type.fields.length} field{type.fields.length !== 1 ? 's' : ''}
+                  {pageType.fields.length} field{pageType.fields.length !== 1 ? 's' : ''}
                 </p>
               </div>
               <div className="ml-4">
-                {selectedPageType?.name === type.name && (
+                {selectedPageType?.name === pageType.name && (
                   <div className="w-2 h-2 bg-phamily-blue rounded-full"></div>
                 )}
               </div>
             </div>
             
             {/* Show first few fields as preview */}
-            {type.fields.length > 0 && (
+            {pageType.fields.length > 0 && (
               <div className="mt-2">
                 <div className="flex flex-wrap gap-1">
-                  {type.fields.slice(0, 3).map((field, fieldIndex) => (
+                  {pageType.fields.slice(0, 3).map((field, fieldIndex) => (
                     <span
                       key={fieldIndex}
                       className="text-xs px-2 py-1 rounded bg-phamily-lightGray dark:bg-dark-secondary text-phamily-darkGray dark:text-dark-text"
@@ -121,9 +124,9 @@ export default function PageTypesList({
                       {field.isRequired && <span className="text-red-500 ml-1">*</span>}
                     </span>
                   ))}
-                  {type.fields.length > 3 && (
+                  {pageType.fields.length > 3 && (
                     <span className="text-xs px-2 py-1 rounded bg-phamily-lightGray dark:bg-dark-secondary text-phamily-gray dark:text-dark-text-secondary">
-                      +{type.fields.length - 3} more
+                      +{pageType.fields.length - 3} more
                     </span>
                   )}
                 </div>
@@ -135,13 +138,13 @@ export default function PageTypesList({
     )
   }
 
-  // Render pages (page type definitions)
+  // Render pages
   if (viewMode === 'pages') {
     if (pages.length === 0) {
       return (
         <div className="p-6 text-center">
           <p className="text-phamily-gray dark:text-dark-text-secondary">
-            No page type definitions found
+            No pages found
           </p>
         </div>
       )
@@ -153,11 +156,11 @@ export default function PageTypesList({
           <div
             key={index}
             onClick={() => {
-              onSelectPage && onSelectPage(page)
+              onSelectPage(page)
               scrollToTop()
             }}
             className={`p-4 border-b dark:border-dark-border cursor-pointer transition-colors duration-200 ${
-              selectedPage?.name === page.name
+              selectedPage?.displayName === page.displayName
                 ? 'bg-phamily-lightBlue/10 dark:bg-phamily-blue/20 border-l-4 border-l-phamily-blue'
                 : 'hover:bg-phamily-lightGray/10 dark:hover:bg-dark-secondary/50'
             }`}
@@ -165,35 +168,34 @@ export default function PageTypesList({
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="font-semibold text-phamily-darkGray dark:text-dark-text mb-1">
-                  {page.name}
+                  {page.displayName}
                 </h3>
                 <p className="text-sm text-phamily-gray dark:text-dark-text-secondary">
-                  {page.fields.length} field{page.fields.length !== 1 ? 's' : ''}
+                  {page.types.length} type{page.types.length !== 1 ? 's' : ''}
                 </p>
               </div>
               <div className="ml-4">
-                {selectedPage?.name === page.name && (
+                {selectedPage?.displayName === page.displayName && (
                   <div className="w-2 h-2 bg-phamily-blue rounded-full"></div>
                 )}
               </div>
             </div>
             
-            {/* Show first few fields as preview */}
-            {page.fields.length > 0 && (
+            {/* Show types as preview */}
+            {page.types.length > 0 && (
               <div className="mt-2">
                 <div className="flex flex-wrap gap-1">
-                  {page.fields.slice(0, 3).map((field, fieldIndex) => (
+                  {page.types.slice(0, 3).map((type, typeIndex) => (
                     <span
-                      key={fieldIndex}
+                      key={typeIndex}
                       className="text-xs px-2 py-1 rounded bg-phamily-lightGray dark:bg-dark-secondary text-phamily-darkGray dark:text-dark-text"
                     >
-                      {field.name}
-                      {field.isRequired && <span className="text-red-500 ml-1">*</span>}
+                      {type}
                     </span>
                   ))}
-                  {page.fields.length > 3 && (
+                  {page.types.length > 3 && (
                     <span className="text-xs px-2 py-1 rounded bg-phamily-lightGray dark:bg-dark-secondary text-phamily-gray dark:text-dark-text-secondary">
-                      +{page.fields.length - 3} more
+                      +{page.types.length - 3} more
                     </span>
                   )}
                 </div>
@@ -242,7 +244,7 @@ export default function PageTypesList({
             <div
               key={instance.key}
               onClick={() => {
-                onSelectPageInstance && onSelectPageInstance(instance)
+                onSelectPageInstance(instance)
                 scrollToTop()
               }}
               className={`p-4 border-b dark:border-dark-border cursor-pointer transition-colors duration-200 ${
@@ -257,10 +259,10 @@ export default function PageTypesList({
                     {instance.displayName}
                   </h3>
                   <p className="text-xs text-phamily-gray dark:text-dark-text-secondary mb-1">
-                    {instance.url}
+                    URL: {instance.url}
                   </p>
                   <p className="text-xs text-phamily-gray dark:text-dark-text-secondary">
-                    {blockCount} block{blockCount !== 1 ? 's' : ''}
+                    {blockCount} block{blockCount !== 1 ? 's' : ''} • {instance.status}
                   </p>
                 </div>
                 <div className="ml-4">
@@ -268,17 +270,6 @@ export default function PageTypesList({
                     <div className="w-2 h-2 bg-phamily-blue rounded-full"></div>
                   )}
                 </div>
-              </div>
-              
-              {/* Show status badge */}
-              <div className="mt-2">
-                <span className={`text-xs px-2 py-1 rounded ${
-                  instance.status === 'Published'
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
-                }`}>
-                  {instance.status}
-                </span>
               </div>
             </div>
           )
@@ -305,7 +296,7 @@ export default function PageTypesList({
           <div
             key={index}
             onClick={() => {
-              onSelectBlock && onSelectBlock(block)
+              onSelectBlock(block)
               scrollToTop()
             }}
             className={`p-4 border-b dark:border-dark-border cursor-pointer transition-colors duration-200 ${
@@ -359,3 +350,5 @@ export default function PageTypesList({
 
   return null // Should not happen
 }
+
+export default PageTypesList

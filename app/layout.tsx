@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { BrandingProvider } from '@/contexts/BrandingContext'
@@ -13,10 +14,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const headersList = headers()
+  const cmsDemo = headersList.get('cms_demo') || headersList.get('cms-demo')
+
   return (
     <html lang="en">
       <body className="antialiased">
-        <BrandingProvider>
+        <BrandingProvider initialCmsDemo={cmsDemo}>
           <ThemeProvider>
             {children}
           </ThemeProvider>
