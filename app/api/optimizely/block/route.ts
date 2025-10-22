@@ -1,11 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const key = searchParams.get('key')
+
+  if (!key) {
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Key parameter is required'
+      },
+      { status: 400 }
+    )
+  }
+
   const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY || process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
-  const searchParams = request.nextUrl.searchParams
-  const contentKey = searchParams.get('key')
 
   if (!sdkKey) {
     return NextResponse.json(
@@ -17,19 +28,9 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  if (!contentKey) {
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Content key not provided'
-      },
-      { status: 400 }
-    )
-  }
-
   const query = `
     query GetBlock($key: String!) {
-      _Content(
+      Card(
         where: {
           _metadata: {
             key: {
@@ -43,14 +44,31 @@ export async function GET(request: NextRequest) {
         items {
           _metadata {
             key
-            types
             displayName
+            types
           }
-          ... on Hero {
-            Heading
-            Subheading
-            Image {
-              url
+          Heading
+          SubHeading
+          Body
+          Image {
+            key
+            url {
+              base
+              default
+              graph
+              hierarchical
+            }
+          }
+          Links {
+            target
+            text
+            title
+            url {
+              base
+              default
+              hierarchical
+              internal
+              graph
             }
           }
         }
@@ -66,7 +84,7 @@ export async function GET(request: NextRequest) {
       },
       body: JSON.stringify({ 
         query,
-        variables: { key: contentKey }
+        variables: { key }
       }),
       cache: 'no-store'
     })
@@ -85,13 +103,25 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
+    const blockData = data.data?.Card?.items?.[0]
+
+    if (!blockData) {
+      return NextResponse.json({ success: false, error: 'Block not found' }, { status: 404 })
+    }
+
     return NextResponse.json({
       success: true,
-      data,
+      data: blockData,
       timestamp: new Date().toISOString()
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
   } catch (error) {
-    console.error('Error fetching Optimizely block data:', error)
+    console.error('Error fetching block data:', error)
     return NextResponse.json(
       {
         success: false,
@@ -101,4 +131,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-

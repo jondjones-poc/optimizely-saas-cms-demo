@@ -12,14 +12,11 @@ const CustomFooter = () => {
 
   return (
     <div className="relative w-full">
-      <Image
+      <img
         src={branding.footerImage}
         alt={`${branding.customer} Footer`}
-        width={1920}
-        height={300}
         className="w-full h-auto"
-        priority
-        style={{ width: '100%', height: 'auto' }}
+        style={{ width: '100%', height: 'auto', display: 'block' }}
       />
     </div>
   )

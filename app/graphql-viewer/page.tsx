@@ -10,6 +10,7 @@ import Footer from '@/components/Footer'
 import ThemeTest from '@/components/ThemeTest'
 import PageTypesList from '@/components/PageTypesList'
 import GraphQLQueryViewer from '@/components/GraphQLQueryViewer'
+import { fetchHomepageData } from '@/services/homepage'
 
 interface PageType {
   name: string
@@ -54,13 +55,12 @@ export default function GraphQLViewer() {
   const [error, setError] = useState<string | null>(null)
 
   // Function to fetch homepage data specifically
-  const fetchHomepageData = async () => {
+  const fetchHomepageDataInstance = async () => {
     try {
-      const response = await fetch('/api/optimizely/homepage')
-      const result = await response.json()
+      const result = await fetchHomepageData()
 
-      if (result.success && result.data?.BlankExperience?.items?.length > 0) {
-        const homepageItem = result.data.BlankExperience.items[0]
+      if (result.success && result.data?.data?.BlankExperience?.items?.length > 0) {
+        const homepageItem = result.data.data.BlankExperience.items[0]
         const homepageInstance = {
           key: homepageItem._metadata.key,
           displayName: homepageItem._metadata.displayName || 'Homepage',
@@ -197,7 +197,7 @@ export default function GraphQLViewer() {
     
     // If this is the homepage, fetch fresh data
     if (pageInstance.url === '/' || pageInstance.displayName.toLowerCase().includes('home')) {
-      await fetchHomepageData()
+      await fetchHomepageDataInstance()
     }
   }
 
@@ -251,7 +251,7 @@ export default function GraphQLViewer() {
                   </select>
                   {viewMode === 'instances' && selectedPageInstance && (
                     <button
-                      onClick={fetchHomepageData}
+                      onClick={fetchHomepageDataInstance}
                       className="px-4 py-2 bg-phamily-blue text-white rounded-lg hover:bg-phamily-lightBlue transition-colors duration-200 text-sm whitespace-nowrap"
                       title="Refresh homepage data"
                     >

@@ -3,6 +3,7 @@
 import Hero from './Hero'
 import TextBlock from './TextBlock'
 import DemoBlock from './DemoBlock'
+import FeatureCard from './FeatureCard'
 
 interface BlockRendererProps {
   component: any
@@ -25,7 +26,7 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           data-epi-block-id={component._metadata.key || 'hero-block'}
           className={contextMode === 'edit' ? 'relative' : ''}
         >
-          <Hero {...component} _metadata={component._metadata} isPreview={isPreview} contextMode={contextMode} />
+          <Hero {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     case 'Text':
@@ -34,7 +35,7 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           data-epi-block-id={component._metadata.key || 'text-block'}
           className={contextMode === 'edit' ? 'relative' : ''}
         >
-          <TextBlock {...component} _metadata={component._metadata} isPreview={isPreview} contextMode={contextMode} />
+          <TextBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     case 'demo_block':
@@ -43,7 +44,17 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           data-epi-block-id={component._metadata.key || 'demo-block'}
           className={contextMode === 'edit' ? 'relative' : ''}
         >
-          <DemoBlock {...component} _metadata={component._metadata} isPreview={isPreview} contextMode={contextMode} />
+          <DemoBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
+    case 'FeatureCards':
+      console.log('BlockRenderer FeatureCards component:', component)
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'feature-cards-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <FeatureCard {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     default:

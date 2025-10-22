@@ -6,6 +6,7 @@ import { useBranding } from '@/contexts/BrandingContext'
 
 interface DemoBlockProps {
   ImageNumber?: number
+  MarginTopAndBottom?: string
   _metadata?: {
     key?: string
     displayName?: string
@@ -14,13 +15,14 @@ interface DemoBlockProps {
   contextMode?: string | null
 }
 
-const DemoBlock = ({ ImageNumber, _metadata, isPreview = false, contextMode = null }: DemoBlockProps) => {
+const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, isPreview = false, contextMode = null }: DemoBlockProps) => {
   const { theme } = useTheme()
   const { branding } = useBranding()
   
   // Debug: Log the branding context values
   console.log('DemoBlock branding context:', branding)
   console.log('DemoBlock cms_demo value:', branding.cms_demo)
+  console.log('DemoBlock MarginTopAndBottom:', MarginTopAndBottom)
   
   // Default to image 1 if no ImageNumber is provided
   const imageNumber = ImageNumber || 1
@@ -31,16 +33,22 @@ const DemoBlock = ({ ImageNumber, _metadata, isPreview = false, contextMode = nu
   
   console.log('DemoBlock imagePath:', imagePath)
 
+  // Parse MarginTopAndBottom value and convert to pixels
+  const marginValue = MarginTopAndBottom ? parseInt(MarginTopAndBottom) : 0
+  const marginStyle = marginValue > 0 ? { marginTop: `${marginValue}px`, marginBottom: `${marginValue}px` } : {}
+  
+  console.log('DemoBlock marginValue:', marginValue)
+  console.log('DemoBlock marginStyle:', marginStyle)
+
   return (
-    <section className="w-full">
+    <section className="w-full" style={marginStyle}>
       {/* Full-width banner image */}
-      <div className="relative w-screen h-[400px] md:h-[600px] left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-        <Image
+      <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+        <img
           src={imagePath}
           alt={`Demo Image ${imageNumber}`}
-          fill
-          className="object-cover"
-          priority
+          className="w-full h-auto"
+          style={{ width: '100%', height: 'auto', display: 'block' }}
           onError={(e) => {
             // Fallback to a placeholder if the specified image doesn't exist
             console.warn(`Image ${imagePath} not found, using placeholder`)

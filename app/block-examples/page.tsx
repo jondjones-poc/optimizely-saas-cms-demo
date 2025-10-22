@@ -13,41 +13,41 @@ import Footer from '@/components/Footer'
 import CustomFooter from '@/components/CustomFooter'
 import ThemeTest from '@/components/ThemeTest'
 
-export default function Home() {
+export default function BlockExamples() {
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-      useEffect(() => {
-        const fetchHomepageData = async () => {
-          try {
-            const response = await fetch('/api/optimizely/homepage')
-            const result = await response.json()
-            
-            if (result.success) {
-              setOptimizelyData(result)
-              
-              // Update document title and meta description
-              if (result.data?.BlankExperience?.items?.[0]?._metadata?.displayName) {
-                document.title = `${result.data.BlankExperience.items[0]._metadata.displayName} - SaaSCMS`
-              }
-              
-              const metaDescription = document.querySelector('meta[name="description"]')
-              if (metaDescription) {
-                metaDescription.setAttribute('content', result.data?.BlankExperience?.items?.[0]?._metadata?.displayName || 'Transform your business with our comprehensive SaaS platform')
-              }
-            } else {
-              setError(result.error)
-            }
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to fetch homepage data')
-          } finally {
-            setIsLoading(false)
+  useEffect(() => {
+    const fetchHomepageData = async () => {
+      try {
+        const response = await fetch('/api/optimizely/homepage')
+        const result = await response.json()
+        
+        if (result.success) {
+          setOptimizelyData(result)
+          
+          // Update document title and meta description
+          if (result.data?.BlankExperience?.items?.[0]?._metadata?.displayName) {
+            document.title = `Block Examples - ${result.data.BlankExperience.items[0]._metadata.displayName} - SaaSCMS`
           }
+          
+          const metaDescription = document.querySelector('meta[name="description"]')
+          if (metaDescription) {
+            metaDescription.setAttribute('content', 'Block Examples - ' + (result.data?.BlankExperience?.items?.[0]?._metadata?.displayName || 'Transform your business with our comprehensive SaaS platform'))
+          }
+        } else {
+          setError(result.error)
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch homepage data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-        fetchHomepageData()
-      }, [])
+    fetchHomepageData()
+  }, [])
 
   return (
     <main className="min-h-screen">
@@ -77,3 +77,4 @@ export default function Home() {
     </main>
   )
 }
+

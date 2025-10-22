@@ -121,45 +121,6 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
           </div>
         </div>
       )}
-
-      {/* CMS Content Section - Show structure for debugging */}
-      <section className="py-16 bg-phamily-lightGray dark:bg-dark-secondary">
-        <div className="container mx-auto px-4" style={{ width: '90%' }}>
-          <div className="mx-auto">
-            {/* Display grids */}
-            {composition && composition.grids && composition.grids.map((grid: any, gridIndex: number) => (
-              <div key={grid.key || gridIndex} className="bg-white dark:bg-dark-primary rounded-lg p-8 mb-6 shadow-md">
-                <h3 className="text-2xl font-bold text-phamily-blue dark:text-phamily-lightBlue mb-4">
-                  {grid.displayName}
-                </h3>
-                
-                {/* Display rows and columns */}
-                {grid.rows && grid.rows.map((row: any, rowIndex: number) => (
-                  <div key={row.key || rowIndex} className="mb-4">
-                    {row.columns && row.columns.map((column: any, colIndex: number) => (
-                      <div key={column.key || colIndex} className="mb-4">
-                        {column.elements && column.elements.map((element: any, elemIndex: number) => (
-                          <div key={element.key || elemIndex} className="p-4 bg-phamily-lightGray/30 dark:bg-dark-secondary/30 rounded">
-                            <p className="text-phamily-darkGray dark:text-dark-text">
-                              <span className="font-semibold">{element.displayName}</span>
-                              {element.component && element.component._metadata && (
-                                <span className="text-sm text-phamily-gray dark:text-dark-text-secondary ml-2">
-                                  ({element.component._metadata.types?.[0] || 'Component'})
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
     </>
   )
 }

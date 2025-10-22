@@ -8,22 +8,45 @@ import Image from 'next/image'
 
 interface HeroProps {
   Heading?: string
-  Subheading?: string
-  Image?: {
-    url?: string
+  SubHeading?: string
+  Body?: {
+    html?: string
+    json?: any
   }
+  Image?: {
+    key?: string
+    url?: {
+      base?: string
+    }
+  }
+  Links?: Array<{
+    target?: string
+    text?: string
+    title?: string
+    url?: {
+      type?: string
+      default?: string
+      hierarchical?: string
+      internal?: string
+      graph?: string
+      base?: string
+    }
+  }>
   _metadata?: {
     key?: string
   }
+  _gridDisplayName?: string
   isPreview?: boolean
   contextMode?: string | null
 }
 
-const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: initialImageData, _metadata, isPreview = false, contextMode = null }: HeroProps) => {
+const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: initialBody, Image: initialImageData, Links: initialLinks, _metadata, _gridDisplayName, isPreview = false, contextMode = null }: HeroProps) => {
   const { theme } = useTheme()
-  const [Heading, setHeading] = useState(initialHeading || 'Welcome to Our Platform')
-  const [Subheading, setSubheading] = useState(initialSubheading || 'Building the future together')
+  const [Heading, setHeading] = useState(initialHeading || _gridDisplayName || 'Welcome to Our Platform')
+  const [Subheading, setSubheading] = useState(initialSubHeading || 'Building the future together')
+  const [Body, setBody] = useState(initialBody)
   const [imageData, setImageData] = useState(initialImageData)
+  const [links, setLinks] = useState(initialLinks)
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -53,39 +76,22 @@ const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: i
     }
   }, [_metadata?.key])
   
-  return (
-    <section className={`relative min-h-screen flex items-center justify-center overflow-hidden ${
-      theme === 'dark' 
-        ? 'bg-gradient-to-br from-dark-primary via-dark-secondary to-dark-accent'
-        : 'bg-gradient-to-br from-phamily-blue via-phamily-lightBlue to-phamily-orange'
-    }`}>
-      {/* Background Image if provided */}
-      {imageData?.url && (
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={imageData.url}
-            alt={Heading || 'Hero background'}
-            fill
-            className="object-cover opacity-20"
-            priority
-          />
-        </div>
-      )}
+  // Don't render if no background image (mandatory field)
+  if (!imageData?.url?.default) {
+    return null
+  }
 
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10 z-0">
-        <div className={`absolute top-20 left-20 w-32 h-32 rounded-full animate-float ${
-          theme === 'dark' ? 'bg-dark-text' : 'bg-white'
-        }`}></div>
-        <div className={`absolute top-40 right-32 w-24 h-24 rounded-full animate-float ${
-          theme === 'dark' ? 'bg-dark-text' : 'bg-white'
-        }`} style={{ animationDelay: '1s' }}></div>
-        <div className={`absolute bottom-32 left-40 w-20 h-20 rounded-full animate-float ${
-          theme === 'dark' ? 'bg-dark-text' : 'bg-white'
-        }`} style={{ animationDelay: '2s' }}></div>
-        <div className={`absolute bottom-20 right-20 w-28 h-28 rounded-full animate-float ${
-          theme === 'dark' ? 'bg-dark-text' : 'bg-white'
-        }`} style={{ animationDelay: '0.5s' }}></div>
+  return (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background Image - mandatory */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={imageData.url.default}
+          alt={Heading || 'Hero background'}
+          fill
+          className="object-cover"
+          priority
+        />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -125,6 +131,20 @@ const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: i
             </motion.h1>
           )}
 
+          {/* Body Content */}
+          {Body?.html && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className={`text-lg md:text-xl leading-relaxed max-w-4xl mx-auto ${
+                theme === 'dark' ? 'text-dark-text/90' : 'text-white/90'
+              }`}
+              dangerouslySetInnerHTML={{ __html: Body.html }}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'Body' })}
+            />
+          )}
+
           {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -132,22 +152,46 @@ const Hero = ({ Heading: initialHeading, Subheading: initialSubheading, Image: i
             transition={{ duration: 0.6, delay: 0.8 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
           >
-            <button className={`px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 btn-hover flex items-center gap-2 ${
-              theme === 'dark'
-                ? 'bg-dark-text text-dark-primary hover:bg-dark-textSecondary'
-                : 'bg-white text-phamily-blue hover:bg-phamily-lightGray'
-            }`}>
-              I am a buyer
-              <ArrowRight size={20} />
-            </button>
-            <button className={`border-2 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 btn-hover flex items-center gap-2 ${
-              theme === 'dark'
-                ? 'border-dark-text text-dark-text hover:bg-dark-text hover:text-dark-primary'
-                : 'border-white text-white hover:bg-white hover:text-phamily-blue'
-            }`}>
-              I am a seller
-              <Play size={20} />
-            </button>
+            {links && links.length > 0 ? (
+              links.map((link, index) => (
+                <a
+                  key={index}
+                  href={link.url?.default || link.url?.hierarchical || '#'}
+                  target={link.target || '_self'}
+                  className={`px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 btn-hover flex items-center gap-2 ${
+                    index === 0
+                      ? theme === 'dark'
+                        ? 'bg-dark-text text-dark-primary hover:bg-dark-textSecondary'
+                        : 'bg-white text-phamily-blue hover:bg-phamily-lightGray'
+                      : theme === 'dark'
+                        ? 'border-dark-text text-dark-text hover:bg-dark-text hover:text-dark-primary border-2'
+                        : 'border-white text-white hover:bg-white hover:text-phamily-blue border-2'
+                  }`}
+                >
+                  {link.text || `Button ${index + 1}`}
+                  {index === 0 ? <ArrowRight size={20} /> : <Play size={20} />}
+                </a>
+              ))
+            ) : (
+              <>
+                <button className={`px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 btn-hover flex items-center gap-2 ${
+                  theme === 'dark'
+                    ? 'bg-dark-text text-dark-primary hover:bg-dark-textSecondary'
+                    : 'bg-white text-phamily-blue hover:bg-phamily-lightGray'
+                }`}>
+                  I am a buyer
+                  <ArrowRight size={20} />
+                </button>
+                <button className={`border-2 px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 btn-hover flex items-center gap-2 ${
+                  theme === 'dark'
+                    ? 'border-dark-text text-dark-text hover:bg-dark-text hover:text-dark-primary'
+                    : 'border-white text-white hover:bg-white hover:text-phamily-blue'
+                }`}>
+                  I am a seller
+                  <Play size={20} />
+                </button>
+              </>
+            )}
           </motion.div>
         </motion.div>
       </div>

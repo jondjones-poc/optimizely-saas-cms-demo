@@ -12,14 +12,11 @@ const CustomHeader = () => {
 
   return (
     <div className="relative w-full">
-      <Image
+      <img
         src={branding.headerImage}
         alt={`${branding.customer} Header`}
-        width={1920}
-        height={200}
-        className="w-full h-auto object-cover max-h-64"
-        priority
-        style={{ width: '100%', height: 'auto' }}
+        className="w-full h-auto"
+        style={{ width: '100%', height: 'auto', display: 'block' }}
       />
     </div>
   )

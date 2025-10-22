@@ -19,7 +19,8 @@ export async function GET() {
     )
   }
 
-  const query = `
+  // First, get the homepage structure
+  const homepageQuery = `
     query GetHomepage {
       BlankExperience(
         where: {
@@ -69,53 +70,6 @@ export async function GET() {
                                 types
                                 displayName
                               }
-                              ... on demo_block {
-                                ImageNumber
-                                MarginTopAndBottom
-                              }
-                              ... on Hero {
-                                Heading
-                                SubHeading
-                                Body {
-                                  html
-                                  json
-                                }
-                                Image {
-                                  key
-                                  url {
-                                    base
-                                    default
-                                  }
-                                }
-                                Links {
-                                  target
-                                  text
-                                  title
-                                  url {
-                                    type
-                                    default
-                                    hierarchical
-                                    internal
-                                    graph
-                                    base
-                                  }
-                                }
-                              }
-                              ... on FeatureCards {
-                                Heading
-                                SubHeading
-                                Cards {
-                                  key
-                                  url {
-                                    base
-                                    default
-                                    graph
-                                    hierarchical
-                                    internal
-                                    type
-                                  }
-                                }
-                              }
                             }
                           }
                         }
@@ -132,32 +86,81 @@ export async function GET() {
   `
 
   try {
-    const response = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+    // Get homepage structure
+    const homepageResponse = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query: homepageQuery }),
       cache: 'no-store'
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+    if (!homepageResponse.ok) {
+      throw new Error(`HTTP error! status: ${homepageResponse.status}`)
     }
 
-    const data = await response.json()
+    const homepageData = await homepageResponse.json()
     
-    if (data.errors) {
+    if (homepageData.errors) {
       return NextResponse.json({
         success: false,
         error: 'GraphQL errors',
-        details: data.errors
+        details: homepageData.errors
       }, { status: 400 })
+    }
+
+    // Now fetch all content types that have actual content (key != null)
+    const contentTypes = ['Hero', 'Text', 'Card', 'demo_block']
+    const contentData: any = {}
+
+    for (const contentType of contentTypes) {
+      try {
+        const contentQuery = `
+          query Get${contentType} {
+            ${contentType} {
+              items {
+                _metadata {
+                  key
+                  types
+                  displayName
+                }
+                ... on ${contentType} {
+                  # Include all possible fields for this content type
+                  __typename
+                }
+              }
+            }
+          }
+        `
+
+        const contentResponse = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query: contentQuery }),
+          cache: 'no-store'
+        })
+
+        if (contentResponse.ok) {
+          const contentResult = await contentResponse.json()
+          if (contentResult.data && contentResult.data[contentType]) {
+            contentData[contentType] = contentResult.data[contentType]
+          }
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch ${contentType}:`, error)
+        // Continue with other content types
+      }
     }
 
     return NextResponse.json({
       success: true,
-      data,
+      data: {
+        homepage: homepageData.data,
+        content: contentData
+      },
       timestamp: new Date().toISOString()
     }, {
       headers: {
@@ -177,3 +180,5 @@ export async function GET() {
     )
   }
 }
+
+
