@@ -4,6 +4,8 @@ import Hero from './Hero'
 import TextBlock from './TextBlock'
 import DemoBlock from './DemoBlock'
 import FeatureCard from './FeatureCard'
+import CallToAction from './CallToAction'
+import Carousel from './Carousel'
 
 interface BlockRendererProps {
   component: any
@@ -55,6 +57,25 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           className={contextMode === 'edit' ? 'relative' : ''}
         >
           <FeatureCard {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
+    case 'CallToAction':
+    case 'CallToActionOutput':
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'call-to-action-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <CallToAction {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
+    case 'Carousel':
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'carousel-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <Carousel {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     default:

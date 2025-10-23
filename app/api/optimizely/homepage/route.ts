@@ -116,6 +116,18 @@ export async function GET() {
                                   }
                                 }
                               }
+                              ... on CallToActionOutput {
+                                Header
+                                Links {
+                                  target
+                                  text
+                                  title
+                                  url {
+                                    base
+                                    default
+                                  }
+                                }
+                              }
                             }
                           }
                         }

@@ -80,7 +80,7 @@ const FeatureCard = ({
   // Debug: Log the props to see what data is being passed
   console.log('FeatureCard props:', { Heading, SubHeading, Body, Asset, Cards, _metadata, _gridDisplayName })
 
-  // Fetch card data using the GraphQL query you provided
+  // Fetch card data using the graph URL directly with Optimizely GraphQL endpoint
   useEffect(() => {
     const fetchCardData = async () => {
       console.log('FeatureCard Cards prop:', Cards)
@@ -93,62 +93,67 @@ const FeatureCard = ({
       console.log('Fetching card data for', Cards.length, 'cards')
       setIsLoading(true)
       try {
-        // Use the GraphQL query you provided to get card data
-        const query = `
-          query GetCards {
-            Card {
-              items {
-                _metadata {
-                  key
-                  displayName
-                  types
-                }
-                Heading
-                SubHeading
-                Body
-                Image {
-                  base
-                  default
-                  graph
-                  hierarchical
-                }
-                Links {
-                  target
-                  text
-                  title
-                  url {
-                    base
-                    default
-                    graph
-                    hierarchical
-                    internal
-                    type
+        // Use the graph URL directly with the Optimizely GraphQL endpoint
+        const cardPromises = Cards.map(async (card) => {
+          console.log('Fetching card with graph URL:', card.url.graph)
+          try {
+            // Convert graph URL to GraphQL query
+            // graph://cms/Card/8152ba50a8924c418817ad7f01e4e43a -> Card query with key
+            const query = `
+              query GetCard {
+                Card(
+                  where: {
+                    _metadata: {
+                      key: {
+                        eq: "${card.key}"
+                      }
+                    }
+                  }
+                  limit: 1
+                ) {
+                  items {
+                    _metadata {
+                      key
+                      displayName
+                      types
+                    }
+                    Heading
+                    Body
+                    Image {
+                      base
+                      default
+                      graph
+                      hierarchical
+                    }
                   }
                 }
               }
-            }
-          }
-        `
+            `
 
-        const response = await fetch('/api/optimizely/cards', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query })
+            const response = await fetch('https://cg.optimizely.com/content/v2?auth=' + process.env.NEXT_PUBLIC_SDK_KEY, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ query })
+            })
+
+            const result = await response.json()
+            console.log('Card fetch result:', result)
+            
+            if (result.data?.Card?.items?.[0]) {
+              return result.data.Card.items[0]
+            }
+            return null
+          } catch (error) {
+            console.error('Error fetching card:', error)
+            return null
+          }
         })
 
-        const result = await response.json()
-        console.log('Cards fetch result:', result)
-        
-        if (result.success && result.data?.Card?.items) {
-          // Filter cards to only include the ones referenced in Cards prop
-          const referencedKeys = Cards.map(card => card.key)
-          const filteredCards = result.data.Card.items.filter((card: any) => 
-            referencedKeys.includes(card._metadata.key)
-          )
-          setCardData(filteredCards)
-        }
+        const cards = await Promise.all(cardPromises)
+        console.log('All cards fetched:', cards)
+        setCardData(cards.filter(card => card)) // Filter out any failed requests
       } catch (error) {
         console.error('Error fetching card data:', error)
       } finally {

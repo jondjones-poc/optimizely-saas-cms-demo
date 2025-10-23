@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Database, X, CheckCircle, XCircle, Code, Layers } from 'lucide-react'
+import { Database, X, CheckCircle, XCircle, Code, Layers, Copy, Check } from 'lucide-react'
 import { fetchHomepageData } from '@/services/homepage'
 
 const ThemeTest = () => {
@@ -13,6 +13,7 @@ const ThemeTest = () => {
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   // Fetch CMS data
   const fetchCmsData = async () => {
@@ -76,9 +77,22 @@ const ThemeTest = () => {
 
   const blocks = extractBlocks()
 
+  // Copy JSON to clipboard
+  const copyToClipboard = async () => {
+    if (!optimizelyData) return
+    
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(optimizelyData, null, 2))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err)
+    }
+  }
+
   const cmsLinks = [
     {
-      label: 'Website',
+      label: 'Homepage',
       url: '/',
       external: false
     },
@@ -433,13 +447,42 @@ const ThemeTest = () => {
                     )}
                   </div>
                 ) : activeTab === 'raw' && optimizelyData ? (
-                  <pre className={`p-4 rounded-lg overflow-x-auto text-xs font-mono ${
-                    theme === 'dark'
-                      ? 'bg-dark-primary text-dark-text'
-                      : 'bg-white text-phamily-darkGray'
-                  }`}>
-                    {JSON.stringify(optimizelyData, null, 2)}
-                  </pre>
+                  <div className="space-y-4">
+                    {/* Copy Button */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={copyToClipboard}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          copied
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                            : theme === 'dark'
+                              ? 'bg-dark-secondary text-dark-text hover:bg-dark-border'
+                              : 'bg-phamily-lightGray text-phamily-darkGray hover:bg-gray-200'
+                        }`}
+                      >
+                        {copied ? (
+                          <>
+                            <Check size={16} />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={16} />
+                            Copy JSON
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    
+                    {/* JSON Content */}
+                    <pre className={`p-4 rounded-lg overflow-x-auto text-xs font-mono ${
+                      theme === 'dark'
+                        ? 'bg-dark-primary text-dark-text'
+                        : 'bg-white text-phamily-darkGray'
+                    }`}>
+                      {JSON.stringify(optimizelyData, null, 2)}
+                    </pre>
+                  </div>
                 ) : activeTab === 'blocks' && optimizelyData ? (
                   <div className="space-y-4">
                     <div className={`p-4 rounded-lg ${

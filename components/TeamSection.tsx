@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
-import { Phone, ArrowRight } from 'lucide-react'
+import { Phone } from 'lucide-react'
 
 const TeamSection = () => {
   const ref = useRef(null)
@@ -120,27 +120,6 @@ const TeamSection = () => {
           ))}
         </div>
 
-        {/* CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="text-center bg-phamily-lightGray rounded-2xl p-12"
-        >
-          <h4 className="text-3xl font-bold text-phamily-darkGray mb-6">
-            So this project, shall we talk about it?
-          </h4>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-phamily-blue text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-phamily-lightBlue transition-all duration-300 btn-hover flex items-center justify-center gap-2">
-              I want to buy a business
-              <ArrowRight size={20} />
-            </button>
-            <button className="border-2 border-phamily-blue text-phamily-blue px-8 py-4 rounded-full font-semibold text-lg hover:bg-phamily-blue hover:text-white transition-all duration-300 btn-hover flex items-center justify-center gap-2">
-              I want to sell my business
-              <ArrowRight size={20} />
-            </button>
-          </div>
-        </motion.div>
       </div>
     </section>
   )

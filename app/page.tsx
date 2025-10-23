@@ -3,13 +3,7 @@
 import { useState, useEffect } from 'react'
 import Navigation from '@/components/Navigation'
 import CustomHeader from '@/components/CustomHeader'
-import Carousel from '@/components/Carousel'
 import CMSContent from '@/components/CMSContent'
-import MissionSection from '@/components/MissionSection'
-import SolutionSection from '@/components/SolutionSection'
-import CommunitySection from '@/components/CommunitySection'
-import TeamSection from '@/components/TeamSection'
-import Footer from '@/components/Footer'
 import CustomFooter from '@/components/CustomFooter'
 import ThemeTest from '@/components/ThemeTest'
 
@@ -63,13 +57,6 @@ export default function Home() {
         isLoading={isLoading} 
         error={error}
       />
-      <Carousel />
-      <MissionSection />
-      <SolutionSection />
-      <CommunitySection />
-      <TeamSection />
-      <div className="mb-16"></div>
-      <Footer />
       <CustomFooter />
       
       {/* Sidebar Components */}
