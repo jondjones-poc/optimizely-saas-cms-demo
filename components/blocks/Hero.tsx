@@ -17,6 +17,7 @@ interface HeroProps {
     key?: string
     url?: {
       base?: string
+      default?: string
     }
   }
   Links?: Array<{

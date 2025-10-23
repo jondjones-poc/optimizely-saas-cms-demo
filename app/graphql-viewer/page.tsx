@@ -44,11 +44,11 @@ export default function GraphQLViewer() {
   const { branding } = useBranding()
   const [viewMode, setViewMode] = useState<'types' | 'pages' | 'instances' | 'blocks'>('instances')
   const [pageTypes, setPageTypes] = useState<PageType[]>([])
-  const [pages, setPages] = useState<PageType[]>([])
+  const [pages, setPages] = useState<Page[]>([])
   const [pageInstances, setPageInstances] = useState<PageInstance[]>([])
   const [blocks, setBlocks] = useState<PageType[]>([])
   const [selectedPageType, setSelectedPageType] = useState<PageType | null>(null)
-  const [selectedPage, setSelectedPage] = useState<PageType | null>(null)
+  const [selectedPage, setSelectedPage] = useState<Page | null>(null)
   const [selectedPageInstance, setSelectedPageInstance] = useState<PageInstance | null>(null)
   const [selectedBlock, setSelectedBlock] = useState<PageType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -302,7 +302,7 @@ export default function GraphQLViewer() {
                   viewMode === 'types' 
                     ? (selectedPageType ? generateGraphQLQuery(selectedPageType) : '')
                     : viewMode === 'pages'
-                    ? (selectedPage ? generateGraphQLQuery(selectedPage) : '')
+                    ? (selectedPage ? generateGraphQLQuery(selectedPage as any) : '')
                     : viewMode === 'instances'
                     ? (selectedPageInstance ? JSON.stringify(selectedPageInstance.fullData, null, 2) : '')
                     : (selectedBlock ? generateGraphQLQuery(selectedBlock) : '')
@@ -311,7 +311,7 @@ export default function GraphQLViewer() {
                   viewMode === 'types' 
                     ? selectedPageType?.name 
                     : viewMode === 'pages'
-                    ? selectedPage?.name
+                    ? selectedPage?.displayName
                     : viewMode === 'instances'
                     ? selectedPageInstance?.displayName
                     : selectedBlock?.name
