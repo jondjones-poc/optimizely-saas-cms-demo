@@ -79,7 +79,11 @@ export default function DynamicPage() {
             <p className="text-phamily-darkGray">Loading page...</p>
           </div>
         </div>
-        <CustomFooter />
+        <CustomFooter 
+          optimizelyData={pageData} 
+          isLoading={isLoading} 
+          error={error}
+        />
         <ThemeTest />
       </main>
     )
@@ -101,7 +105,11 @@ export default function DynamicPage() {
             <p className="text-sm text-phamily-darkGray/60">Path: {fullPath}</p>
           </div>
         </div>
-        <CustomFooter />
+        <CustomFooter 
+          optimizelyData={pageData} 
+          isLoading={isLoading} 
+          error={error}
+        />
         <ThemeTest />
       </main>
     )
@@ -122,7 +130,11 @@ export default function DynamicPage() {
             <p className="text-phamily-darkGray">No page data available</p>
           </div>
         </div>
-        <CustomFooter />
+        <CustomFooter 
+          optimizelyData={pageData} 
+          isLoading={isLoading} 
+          error={error}
+        />
         <ThemeTest />
       </main>
     )

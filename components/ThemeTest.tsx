@@ -129,25 +129,6 @@ const ThemeTest = () => {
             </a>
           ))}
           
-          {/* CMS Data Button */}
-          <button
-            onClick={() => {
-              setShowCmsData(true)
-              if (!optimizelyData) {
-                fetchCmsData()
-              }
-            }}
-            className="w-full px-3 py-1 text-xs rounded bg-phamily-orange text-white hover:bg-orange-600 transition-colors duration-200 flex items-center justify-center gap-1"
-          >
-            <Database size={12} />
-            Data Explorer
-            {isLoading && (
-              <span className="flex h-1 w-1">
-                <span className="animate-ping absolute inline-flex h-1 w-1 rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1 w-1 bg-white"></span>
-              </span>
-            )}
-          </button>
         </div>
       </div>
 

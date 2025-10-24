@@ -188,7 +188,11 @@ export default function PreviewPage() {
       <TeamSection />
       <div className="mb-16"></div>
       <Footer />
-      <CustomFooter />
+      <CustomFooter 
+        optimizelyData={optimizelyData} 
+        isLoading={isLoading} 
+        error={error}
+      />
     </main>
   )
 }

@@ -57,7 +57,11 @@ export default function Home() {
         isLoading={isLoading} 
         error={error}
       />
-      <CustomFooter />
+      <CustomFooter 
+        optimizelyData={optimizelyData} 
+        isLoading={isLoading} 
+        error={error}
+      />
       
       {/* Sidebar Components */}
       <ThemeTest />
