@@ -162,7 +162,7 @@ export default function DynamicPage() {
       )}
       
       <CustomFooter />
-      <ThemeTest />
+      <ThemeTest pageData={pageData} />
     </main>
   )
 }
@@ -193,101 +193,317 @@ function ArticlePage({ data }: { data: PageData }) {
   )
 }
 
-// Landing Page Component
+// Landing Page Component - Wireframe Style
 function LandingPage({ data }: { data: PageData }) {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center bg-gradient-to-br from-phamily-blue to-phamily-lightBlue text-white">
-        <div className="text-center max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            {data._metadata.displayName}
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-            Transform your business with our comprehensive platform designed to streamline your operations and accelerate growth.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-white text-phamily-blue rounded-full font-semibold text-lg hover:bg-gray-100 transition-colors duration-300">
-              Get Started
-            </button>
-            <button className="px-8 py-4 border-2 border-white text-white rounded-full font-semibold text-lg hover:bg-white hover:text-phamily-blue transition-colors duration-300">
-              Learn More
-            </button>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-phamily-darkGray mb-6">
-              Why Choose Our Platform?
+        {/* TopContentArea - Hero Component Wireframe */}
+        {data.TopContentArea && data.TopContentArea.length > 0 && (
+          <div className="border-2 border-dashed border-blue-400 rounded-lg p-6 bg-blue-50/30">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-blue-700">
+                TopContentArea
+              </h2>
+              <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                {data.TopContentArea[0]._metadata?.displayName || 'Hero Component'}
+              </span>
+            </div>
+            
+            {/* Hero Component Wireframe */}
+            <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-white/50">
+              <div className="flex gap-6">
+                {/* Left area - Mock example (75%) */}
+                <div className="w-3/4">
+                  <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
+                    <div className="space-y-4">
+                      {/* Display the BlockName property */}
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "{data.TopContentArea[0]._metadata?.displayName}"</p>
+                      </div>
+                      
+                      {/* Mock hero content - wider layout with image, chart, and CTA */}
+                      <div className="w-full">
+                        <div className="flex gap-4 items-start">
+                          {/* Left side - Hero Image */}
+                          <div className="w-48 h-32 bg-gray-200 flex items-center justify-center">
+                            <div className="text-gray-500 text-xs">Hero Image</div>
+                          </div>
+                          
+                          {/* Right side - Text lines */}
+                          <div className="flex-1">
+                            <div className="h-20 p-2">
+                              <div className="space-y-2">
+                                {/* Text lines */}
+                                <div className="h-3 bg-gray-200 rounded w-full"></div>
+                                <div className="h-3 bg-gray-200 rounded w-4/5"></div>
+                                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                                <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                              </div>
+                            </div>
+                            
+                            {/* CTA Button underneath */}
+                            <div className="mt-3 flex justify-center">
+                              <div className="h-8 bg-gray-200 rounded w-32 flex items-center justify-center">
+                                <div className="text-gray-500 text-xs">CTA Button</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Right sidebar - Attributes (25%) */}
+                <div className="w-1/4">
+                  <h4 className="text-sm font-semibold text-blue-700 mb-3">Hero Block Properties</h4>
+                  <div className="space-y-2">
+                    <div className="text-xs">
+                      <span className="font-bold text-gray-700">BlockName:</span>
+                      <p className="text-gray-600 mt-1">"{data.TopContentArea[0]._metadata?.displayName}"</p>
+                    </div>
+                    {data.TopContentArea[0].Heading && (
+                      <div className="text-xs">
+                        <span className="font-bold text-gray-700">Heading:</span>
+                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Heading}"</p>
+                      </div>
+                    )}
+                    {data.TopContentArea[0].SubHeading && (
+                      <div className="text-xs">
+                        <span className="font-bold text-gray-700">SubHeading:</span>
+                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].SubHeading}"</p>
+                      </div>
+                    )}
+                    {data.TopContentArea[0].Body?.html && (
+                      <div className="text-xs">
+                        <span className="font-bold text-gray-700">Body:</span>
+                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Body.html.substring(0, 50)}..."</p>
+                      </div>
+                    )}
+                    {data.TopContentArea[0].Image?.url?.default && (
+                      <div className="text-xs">
+                        <span className="font-bold text-gray-700">Image:</span>
+                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Image.url.default}"</p>
+                      </div>
+                    )}
+                    {data.TopContentArea[0].Links && data.TopContentArea[0].Links.length > 0 && (
+                      <div className="text-xs">
+                        <span className="font-bold text-gray-700">Links:</span>
+                        <p className="text-gray-600 mt-1">{data.TopContentArea[0].Links.length} items</p>
+                      </div>
+                    )}
+                    {data.TopContentArea[0].Video?.url?.default && (
+                      <div className="text-xs">
+                        <span className="font-bold text-gray-700">Video:</span>
+                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Video.url.default.substring(0, 30)}..."</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MainContentArea - Multiple Components */}
+        {data.MainContentArea && data.MainContentArea.length > 0 && (
+          <div className="border-2 border-dashed border-green-400 rounded-lg p-6 bg-green-50/30">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-green-700">
+                MainContentArea
+              </h2>
+              <span className="text-sm text-green-600 bg-green-100 px-3 py-1 rounded-full">
+                {data.MainContentArea.length} components
+              </span>
+            </div>
+            
+            {/* Render each component in MainContentArea */}
+            <div className="space-y-6">
+              {data.MainContentArea.map((component: any, index: number) => {
+                const componentType = component._metadata?.types?.[0]
+                
+                if (componentType === 'Text') {
+                  return (
+                    <div key={index} className="border-2 border-dashed border-green-300 rounded-lg p-8 bg-white/50">
+                      <div className="flex gap-6">
+                        {/* Left area - Mock example (75%) */}
+                        <div className="w-3/4">
+                          <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
+                            <div className="space-y-3">
+                              {/* Display the BlockName property */}
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "{component._metadata?.displayName}"</p>
+                              </div>
+                              
+                              {/* Mock text content */}
+                              <div className="space-y-2">
+                                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                                <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+                                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Right sidebar - Attributes (25%) */}
+                        <div className="w-1/4">
+                          <h4 className="text-sm font-semibold text-green-700 mb-3">Text Block Properties</h4>
+                          <div className="space-y-2">
+                            <div className="text-xs">
+                              <span className="font-bold text-gray-700">BlockName:</span>
+                              <p className="text-gray-600 mt-1">"{component._metadata?.displayName}"</p>
+                            </div>
+                            {component.Content && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Content:</span>
+                                <p className="text-gray-600 mt-1">"{component.Content}"</p>
+                              </div>
+                            )}
+                            {component.Position && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Position:</span>
+                                <p className="text-gray-600 mt-1">"{component.Position}"</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+                
+                if (componentType === 'Image') {
+                  return (
+                    <div key={index} className="border-2 border-dashed border-purple-300 rounded-lg p-8 bg-white/50">
+                      <div className="flex gap-6">
+                        {/* Left area - Mock example (75%) */}
+                        <div className="w-3/4">
+                          <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
+                            <div className="space-y-3">
+                              {/* Display the BlockName property */}
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "{component._metadata?.displayName}"</p>
+                              </div>
+                              
+                              {/* Mock image content - single wide image */}
+                              <div className="flex justify-center">
+                                <div className="h-24 w-4/5 bg-gray-200 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                  <div className="text-gray-400 text-sm">Image Placeholder</div>
+                                </div>
+                              </div>
+                              
+                              {/* Mock caption */}
+                              <div className="text-center">
+                                <div className="h-3 bg-gray-200 rounded w-1/3 mx-auto"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Right sidebar - Attributes (25%) */}
+                        <div className="w-1/4">
+                          <h4 className="text-sm font-semibold text-purple-700 mb-3">Image Block Properties</h4>
+                          <div className="space-y-2">
+                            <div className="text-xs">
+                              <span className="font-bold text-gray-700">BlockName:</span>
+                              <p className="text-gray-600 mt-1">"{component._metadata?.displayName}"</p>
+                            </div>
+                            <div className="text-xs">
+                              <span className="font-bold text-gray-700">Image:</span>
+                              <p className="text-gray-600 mt-1">(not loaded)</p>
+                            </div>
+                            <div className="text-xs">
+                              <span className="font-bold text-gray-700">Caption:</span>
+                              <p className="text-gray-600 mt-1">(not loaded)</p>
+                            </div>
+                            <div className="text-xs">
+                              <span className="font-bold text-gray-700">Alignment:</span>
+                              <p className="text-gray-600 mt-1">(not loaded)</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+                
+                return null
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* SEO Settings Display */}
+        {data.SeoSettings && (
+          <div className="border-2 border-dashed border-purple-400 rounded-lg p-6 bg-purple-50/30">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-purple-700">
+                SeoSettings
+              </h2>
+              <span className="text-sm text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                SEO Configuration
+              </span>
+            </div>
+            
+            <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-white/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Meta Title:</p>
+                  <div className="h-6 bg-gray-200 rounded w-full"></div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Meta Description:</p>
+                  <div className="h-6 bg-gray-200 rounded w-full"></div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Graph Type:</p>
+                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Indexing:</p>
+                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Page Metadata Display */}
+        <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/30">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-700">
+              Page Metadata
             </h2>
-            <p className="text-lg text-phamily-darkGray/80 max-w-3xl mx-auto">
-              Experience the future of business solutions with our comprehensive platform.
-            </p>
+            <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+              System Info
+            </span>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-phamily-blue rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-white text-2xl font-bold">1</span>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-white/50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="font-medium text-gray-700">Page Types:</p>
+                <p className="text-gray-600">{data._metadata.types?.join(', ')}</p>
               </div>
-              <h3 className="text-2xl font-bold text-phamily-darkGray mb-4">
-                Easy to Use
-              </h3>
-              <p className="text-phamily-darkGray/80">
-                Intuitive interface designed for maximum productivity and ease of use.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-phamily-blue rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-white text-2xl font-bold">2</span>
+              <div>
+                <p className="font-medium text-gray-700">URL:</p>
+                <p className="text-gray-600">{data._metadata.url?.default}</p>
               </div>
-              <h3 className="text-2xl font-bold text-phamily-darkGray mb-4">
-                Scalable Solutions
-              </h3>
-              <p className="text-phamily-darkGray/80">
-                Grow with confidence knowing our platform scales with your business needs.
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-phamily-blue rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-white text-2xl font-bold">3</span>
+              <div>
+                <p className="font-medium text-gray-700">Status:</p>
+                <p className="text-gray-600">{data._metadata.status}</p>
               </div>
-              <h3 className="text-2xl font-bold text-phamily-darkGray mb-4">
-                24/7 Support
-              </h3>
-              <p className="text-phamily-darkGray/80">
-                Round-the-clock support to help you succeed every step of the way.
-              </p>
+              <div>
+                <p className="font-medium text-gray-700">Published:</p>
+                <p className="text-gray-600">{new Date(data._metadata.published).toLocaleDateString()}</p>
+              </div>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-phamily-lightGray">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-phamily-darkGray mb-6">
-            Ready to Get Started?
-          </h2>
-          <p className="text-lg text-phamily-darkGray/80 mb-8">
-            Join thousands of businesses already using our platform to grow and succeed.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 bg-phamily-blue text-white rounded-full font-semibold text-lg hover:bg-phamily-lightBlue transition-colors duration-300">
-              Start Free Trial
-            </button>
-            <button className="px-8 py-4 border-2 border-phamily-blue text-phamily-blue rounded-full font-semibold text-lg hover:bg-phamily-blue hover:text-white transition-colors duration-300">
-              Contact Sales
-            </button>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
   )
 }

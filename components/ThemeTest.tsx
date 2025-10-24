@@ -7,7 +7,7 @@ import { Database, X, CheckCircle, XCircle, Code, Layers, Copy, Check } from 'lu
 import { fetchHomepageData } from '@/services/homepage'
 import { usePathname } from 'next/navigation'
 
-const ThemeTest = () => {
+const ThemeTest = ({ pageData }: { pageData?: any }) => {
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const [showCmsData, setShowCmsData] = useState(false)
@@ -23,6 +23,22 @@ const ThemeTest = () => {
     setError(null)
     try {
       let result
+      
+      // If pageData is provided, use it directly
+      if (pageData) {
+        setOptimizelyData({
+          success: true,
+          data: {
+            data: {
+              _Content: {
+                items: [pageData]
+              }
+            }
+          }
+        })
+        setIsLoading(false)
+        return
+      }
       
       if (pathname === '/') {
         // Homepage - use homepage API

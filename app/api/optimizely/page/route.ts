@@ -12,9 +12,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: 'SDK Key not configured' }, { status: 500 })
   }
 
-  // For now, let's use a simple approach and just get basic page data
+  // Query for LandingPage using composition structure like homepage
   const query = `
-    query {
+    query GetPage {
       _Content(
         where: {
           _metadata: {
@@ -54,12 +54,46 @@ export async function GET(request: Request) {
                 displayName
                 types
               }
+              ... on Hero {
+                Heading
+                SubHeading
+                Body {
+                  html
+                }
+                Image {
+                  key
+                  url {
+                    base
+                    default
+                  }
+                }
+                Links {
+                  target
+                  text
+                  title
+                  url {
+                    base
+                    default
+                  }
+                }
+                Video {
+                  key
+                  url {
+                    base
+                    default
+                  }
+                }
+              }
             }
             MainContentArea {
               _metadata {
                 key
                 displayName
                 types
+              }
+              ... on Text {
+                Content
+                Position
               }
             }
             SeoSettings {
