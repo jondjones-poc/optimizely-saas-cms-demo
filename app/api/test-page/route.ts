@@ -14,12 +14,14 @@ export async function GET() {
       _Content(
         where: {
           _metadata: {
-            types: {
-              in: ["_Page"]
+            url: {
+              default: {
+                eq: "/news/"
+              }
             }
           }
         }
-        limit: 50
+        limit: 1
       ) {
         items {
           _metadata {
@@ -28,6 +30,12 @@ export async function GET() {
             types
             url {
               default
+            }
+          }
+          ... on ArticlePage {
+            Heading
+            Body {
+              html
             }
           }
         }
@@ -53,12 +61,12 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'GraphQL errors', details: data.errors }, { status: 400 })
     }
 
-    const pages = data.data?._Content?.items || []
+    const items = data.data?._Content?.items || []
     
     return NextResponse.json({
       success: true,
-      data: pages,
-      count: pages.length
+      data: items[0] || null,
+      count: items.length
     })
   } catch (error) {
     return NextResponse.json({

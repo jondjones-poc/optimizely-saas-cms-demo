@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const path = searchParams.get('path') || '/'
+
   const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY || process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
 
   if (!sdkKey) {
@@ -14,12 +17,14 @@ export async function GET() {
       _Content(
         where: {
           _metadata: {
-            types: {
-              in: ["_Page"]
+            url: {
+              default: {
+                eq: "${path}"
+              }
             }
           }
         }
-        limit: 50
+        limit: 1
       ) {
         items {
           _metadata {
@@ -28,6 +33,28 @@ export async function GET() {
             types
             url {
               default
+            }
+          }
+          ... on ArticlePage {
+            Heading
+            Body {
+              html
+            }
+          }
+          ... on LandingPage {
+            TopContentArea {
+              _metadata {
+                key
+                displayName
+                types
+              }
+            }
+            MainContentArea {
+              _metadata {
+                key
+                displayName
+                types
+              }
             }
           }
         }
@@ -53,12 +80,13 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'GraphQL errors', details: data.errors }, { status: 400 })
     }
 
-    const pages = data.data?._Content?.items || []
+    const items = data.data?._Content?.items || []
     
     return NextResponse.json({
       success: true,
-      data: pages,
-      count: pages.length
+      data: items[0] || null,
+      path: path,
+      count: items.length
     })
   } catch (error) {
     return NextResponse.json({
