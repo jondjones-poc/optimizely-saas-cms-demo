@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: 'SDK Key not configured' }, { status: 500 })
   }
 
+  // For now, let's use a simple approach and just get basic page data
   const query = `
     query {
       _Content(
@@ -34,9 +35,14 @@ export async function GET(request: Request) {
             url {
               default
             }
+            published
+            status
           }
           ... on ArticlePage {
             Heading
+            SubHeading
+            Author
+            AuthorEmail
             Body {
               html
             }
@@ -55,6 +61,13 @@ export async function GET(request: Request) {
                 displayName
                 types
               }
+            }
+            SeoSettings {
+              DisplayInMenu
+              GraphType
+              Indexing
+              MetaDescription
+              MetaTitle
             }
           }
         }
@@ -82,6 +95,7 @@ export async function GET(request: Request) {
 
     const items = data.data?._Content?.items || []
     
+    // Return data in the format expected by the page component
     return NextResponse.json({
       success: true,
       data: items[0] || null,

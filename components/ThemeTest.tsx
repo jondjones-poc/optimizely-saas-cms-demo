@@ -5,9 +5,11 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Database, X, CheckCircle, XCircle, Code, Layers, Copy, Check } from 'lucide-react'
 import { fetchHomepageData } from '@/services/homepage'
+import { usePathname } from 'next/navigation'
 
 const ThemeTest = () => {
   const { theme, setTheme } = useTheme()
+  const pathname = usePathname()
   const [showCmsData, setShowCmsData] = useState(false)
   const [activeTab, setActiveTab] = useState<'pretty' | 'raw' | 'blocks'>('pretty')
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
@@ -20,10 +22,34 @@ const ThemeTest = () => {
     setIsLoading(true)
     setError(null)
     try {
-      const result = await fetchHomepageData()
+      let result
+      
+      if (pathname === '/') {
+        // Homepage - use homepage API
+        result = await fetchHomepageData()
+      } else {
+        // Other pages - use page API
+        const response = await fetch(`/api/optimizely/page?path=${encodeURIComponent(pathname)}`)
+        result = await response.json()
+      }
       
       if (result.success) {
-        setOptimizelyData(result)
+        // For non-homepage pages, wrap the data in the expected format
+        if (pathname !== '/') {
+          // result.data is the page data directly, wrap it properly
+          setOptimizelyData({
+            success: true,
+            data: {
+              data: {
+                _Content: {
+                  items: result.data ? [result.data] : []
+                }
+              }
+            }
+          })
+        } else {
+          setOptimizelyData(result)
+        }
       } else {
         setError(result.error || 'Failed to fetch data')
       }
@@ -36,38 +62,60 @@ const ThemeTest = () => {
 
   // Extract blocks from the data
   const extractBlocks = () => {
-    if (!optimizelyData?.data?.data?.BlankExperience?.items?.[0]?.composition) return []
-    
-    const composition = optimizelyData.data.data.BlankExperience.items[0].composition
     const blocks: string[] = []
-
-    if (composition.grids) {
-      composition.grids.forEach((grid: any) => {
-        if (grid.displayName) {
-          blocks.push(grid.displayName)
-        }
-        if (grid.rows) {
-          grid.rows.forEach((row: any) => {
-            if (row.displayName) {
-              blocks.push(row.displayName)
-            }
-            if (row.columns) {
-              row.columns.forEach((column: any) => {
-                if (column.displayName) {
-                  blocks.push(column.displayName)
-                }
-                if (column.elements) {
-                  column.elements.forEach((element: any) => {
-                    if (element.component && element.component._metadata) {
-                      const types = element.component._metadata.types || []
-                      const blockType = types[0] || 'Unknown'
-                      blocks.push(`${blockType} (${element.displayName})`)
-                    }
-                  })
-                }
-              })
-            }
-          })
+    
+    // Handle homepage data (BlankExperience with composition)
+    if (optimizelyData?.data?.data?.BlankExperience?.items?.[0]?.composition) {
+      const composition = optimizelyData.data.data.BlankExperience.items[0].composition
+      
+      if (composition.grids) {
+        composition.grids.forEach((grid: any) => {
+          if (grid.displayName) {
+            blocks.push(grid.displayName)
+          }
+          if (grid.rows) {
+            grid.rows.forEach((row: any) => {
+              if (row.displayName) {
+                blocks.push(row.displayName)
+              }
+              if (row.columns) {
+                row.columns.forEach((column: any) => {
+                  if (column.displayName) {
+                    blocks.push(column.displayName)
+                  }
+                  if (column.elements) {
+                    column.elements.forEach((element: any) => {
+                      if (element.component && element.component._metadata) {
+                        const types = element.component._metadata.types || []
+                        const blockType = types[0] || 'Unknown'
+                        blocks.push(`${blockType} (${element.displayName})`)
+                      }
+                    })
+                  }
+                })
+              }
+            })
+          }
+        })
+      }
+    }
+    // Handle other page data (_Content)
+    else if (optimizelyData?.data?.data?._Content?.items) {
+      const items = optimizelyData.data.data._Content.items
+      
+      items.forEach((item: any) => {
+        if (item) {
+          // Add page type
+          blocks.push(item._metadata?.displayName || 'Page')
+          
+          // Add specific fields based on content type
+          if (item.Heading) blocks.push('Heading')
+          if (item.SubHeading) blocks.push('SubHeading')
+          if (item.Author) blocks.push('Author')
+          if (item.AuthorEmail) blocks.push('AuthorEmail')
+          if (item.TopContentArea) blocks.push('TopContentArea')
+          if (item.MainContentArea) blocks.push('MainContentArea')
+          if (item.SeoSettings) blocks.push('SeoSettings')
         }
       })
     }
@@ -142,20 +190,22 @@ const ThemeTest = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCmsData(false)}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/20 backdrop-blur-md z-40"
             />
 
             {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[90vw] max-w-4xl max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden ${
-                theme === 'dark' ? 'bg-dark-primary border border-dark-border' : 'bg-white'
-              }`}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="fixed inset-0 flex items-center justify-center z-50 p-4"
             >
-              {/* Header */}
-              <div className={`px-6 py-4 border-b flex items-center justify-between ${
+              <div className={`w-[80vw] h-[70vh] max-w-4xl rounded-2xl shadow-2xl overflow-hidden backdrop-blur-lg bg-white/90 dark:bg-dark-primary/90 border border-white/20 dark:border-dark-border/50 ${
+                theme === 'dark' ? 'shadow-2xl' : 'shadow-2xl'
+              }`}>
+                {/* Header */}
+                <div className={`px-6 py-4 border-b flex items-center justify-between ${
                 theme === 'dark' ? 'border-dark-border' : 'border-gray-200'
               }`}>
                 <div className="flex items-center gap-3">
@@ -253,7 +303,7 @@ const ThemeTest = () => {
               </div>
 
               {/* Content */}
-              <div className={`p-6 overflow-y-auto max-h-[50vh] ${
+              <div className={`p-6 overflow-y-auto h-[calc(70vh-120px)] ${
                 theme === 'dark' ? 'bg-dark-secondary' : 'bg-gray-50'
               }`}>
                 {isLoading ? (
@@ -286,12 +336,14 @@ const ThemeTest = () => {
                           <span className={`font-medium ${
                             theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
                           }`}>
-                            {optimizelyData?.data?.data?.BlankExperience?.total || 0}
+                            {optimizelyData?.data?.data?.BlankExperience?.total || 
+                             optimizelyData?.data?.data?._Content?.items?.length || 0}
                           </span>
                         </div>
                       </div>
                     </div>
 
+                    {/* Homepage data */}
                     {optimizelyData?.data?.data?.BlankExperience?.items?.map((item: any, index: number) => (
                       <div key={index} className={`p-4 rounded-lg ${
                         theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
@@ -349,6 +401,221 @@ const ThemeTest = () => {
                         </div>
                       </div>
                     ))}
+                    
+                    {/* _Content data (for non-homepage pages) */}
+                    {optimizelyData?.data?.data?._Content?.items?.map((item: any, index: number) => {
+                      if (!item) return null
+                      
+                      return (
+                        <div key={index} className={`p-4 rounded-lg ${
+                          theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
+                        }`}>
+                          <h4 className={`font-semibold mb-3 ${
+                            theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                          }`}>
+                            {item._metadata?.displayName || 'Page Content'}
+                          </h4>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                              Key:
+                            </span>
+                            <span className={`ml-2 font-mono ${
+                              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                            }`}>
+                              {item._metadata?.key}
+                            </span>
+                          </div>
+                          <div>
+                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                              Type:
+                            </span>
+                            <span className={`ml-2 ${
+                              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                            }`}>
+                              {item._metadata?.types?.[0] || 'Unknown'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                              Status:
+                            </span>
+                            <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                              item._metadata?.status === 'Published'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
+                            }`}>
+                              {item._metadata?.status}
+                            </span>
+                          </div>
+                          {item._metadata?.url?.default && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                URL:
+                              </span>
+                              <span className={`ml-2 font-mono ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {item._metadata.url.default}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* ArticlePage specific fields */}
+                          {item.Heading && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                Heading:
+                              </span>
+                              <span className={`ml-2 ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {item.Heading}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {item.SubHeading && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                SubHeading:
+                              </span>
+                              <span className={`ml-2 ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {item.SubHeading}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {item.Author && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                Author:
+                              </span>
+                              <span className={`ml-2 ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {item.Author}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {item.AuthorEmail && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                Author Email:
+                              </span>
+                              <span className={`ml-2 ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {item.AuthorEmail}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* LandingPage specific fields */}
+                          {item.TopContentArea && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                Top Content Area:
+                              </span>
+                              <span className={`ml-2 ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {Array.isArray(item.TopContentArea) ? `${item.TopContentArea.length} items` : 'Present'}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {item.MainContentArea && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                Main Content Area:
+                              </span>
+                              <span className={`ml-2 ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {Array.isArray(item.MainContentArea) ? `${item.MainContentArea.length} items` : 'Present'}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {item.SeoSettings && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                SEO Settings:
+                              </span>
+                              <span className={`ml-2 ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {item.SeoSettings.MetaTitle || 'Configured'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      )
+                    })}
+                    
+                    {/* Page data (for non-homepage pages) */}
+                    {optimizelyData?.data?._metadata && (
+                      <div className={`p-4 rounded-lg ${
+                        theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
+                      }`}>
+                        <h4 className={`font-semibold mb-3 ${
+                          theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                        }`}>
+                          {optimizelyData.data._metadata.displayName || 'Page Content'}
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                              Key:
+                            </span>
+                            <span className={`ml-2 font-mono ${
+                              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                            }`}>
+                              {optimizelyData.data._metadata.key}
+                            </span>
+                          </div>
+                          <div>
+                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                              Type:
+                            </span>
+                            <span className={`ml-2 ${
+                              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                            }`}>
+                              {optimizelyData.data._metadata.types?.[0] || 'Unknown'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                              Status:
+                            </span>
+                            <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                              optimizelyData.data._metadata.status === 'Published'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
+                            }`}>
+                              {optimizelyData.data._metadata.status}
+                            </span>
+                          </div>
+                          {optimizelyData.data._metadata.url?.default && (
+                            <div>
+                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
+                                URL:
+                              </span>
+                              <span className={`ml-2 font-mono ${
+                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+                              }`}>
+                                {optimizelyData.data._metadata.url.default}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Composition Data */}
                     {optimizelyData?.data?.data?.BlankExperience?.items?.[0]?.composition && (
@@ -456,13 +723,17 @@ const ThemeTest = () => {
                     </div>
                     
                     {/* JSON Content */}
-                    <pre className={`p-4 rounded-lg overflow-x-auto text-xs font-mono ${
-                      theme === 'dark'
-                        ? 'bg-dark-primary text-dark-text'
-                        : 'bg-white text-phamily-darkGray'
+                    <div className={`rounded-lg border overflow-hidden ${
+                      theme === 'dark' ? 'border-dark-border' : 'border-gray-200'
                     }`}>
-                      {JSON.stringify(optimizelyData, null, 2)}
-                    </pre>
+                      <pre className={`p-6 overflow-auto text-sm font-mono leading-relaxed ${
+                        theme === 'dark'
+                          ? 'bg-dark-primary text-dark-text'
+                          : 'bg-white text-phamily-darkGray'
+                      }`}>
+                        {JSON.stringify(optimizelyData, null, 2)}
+                      </pre>
+                    </div>
                   </div>
                 ) : activeTab === 'blocks' && optimizelyData ? (
                   <div className="space-y-4">
@@ -474,7 +745,7 @@ const ThemeTest = () => {
                       }`}>
                         CMS Blocks Used on This Page
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                         {blocks.map((block, index) => (
                           <div
                             key={index}
@@ -508,6 +779,7 @@ const ThemeTest = () => {
                     No data available
                   </div>
                 )}
+              </div>
               </div>
             </motion.div>
           </>
