@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       headers['Authorization'] = authorization
     }
 
-    const response = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+    const response = await fetch(`https://cg.optimizely.com/content/v2`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ 

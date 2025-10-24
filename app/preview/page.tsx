@@ -31,10 +31,25 @@ export default function PreviewPage() {
   useEffect(() => {
     // Load communication script for live preview
     const loadCommunicationScript = () => {
+      // Get the Optimizely instance ID from environment or use a placeholder
+      const instanceId = 'epsajjcmson91rm1p001'
+      const scriptUrl = `https://app-${instanceId}.cms.optimizely.com/util/javascript/communicationinjector.js`
+      
+      // Check if script is already loaded
+      if (document.querySelector(`script[src="${scriptUrl}"]`)) {
+        return
+      }
+      
       const script = document.createElement('script')
-      // Use a generic script URL - this should be replaced with the actual Optimizely script URL
-      // For now, we'll skip loading the script to avoid errors
-      console.log('Communication script would be loaded here')
+      script.src = scriptUrl
+      script.async = true
+      script.onload = () => {
+        console.log('Optimizely communication script loaded successfully')
+      }
+      script.onerror = () => {
+        console.error('Failed to load Optimizely communication script')
+      }
+      document.head.appendChild(script)
     }
 
     // Fetch content with preview token
@@ -109,8 +124,26 @@ export default function PreviewPage() {
     // Listen for content saved events
     const handleContentSaved = (event: CustomEvent) => {
       console.log('Content saved:', event.detail)
-      // Refetch content with new preview token
-      fetchPreviewContent()
+      
+      // Extract new preview token from the event
+      const message = event.detail
+      if (message && message.previewUrl) {
+        const urlParams = new URLSearchParams(message.previewUrl)
+        const newPreviewToken = urlParams.get('preview_token')
+        
+        if (newPreviewToken) {
+          // Update the preview token and refetch content
+          const newUrl = new URL(window.location.href)
+          newUrl.searchParams.set('preview_token', newPreviewToken)
+          window.history.replaceState({}, '', newUrl.toString())
+          
+          // Refetch content with new token
+          fetchPreviewContent()
+        }
+      } else {
+        // Fallback: just refetch content
+        fetchPreviewContent()
+      }
     }
 
     window.addEventListener('optimizely:cms:contentSaved', handleContentSaved as EventListener)
