@@ -64,7 +64,7 @@ const OptimizelyDataPopup = ({ data, isLoading, error }: OptimizelyDataPopupProp
       {/* Floating Button */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 ${
+        className={`fixed bottom-0 right-4 z-40 p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 ${
           theme === 'dark'
             ? 'bg-dark-text text-dark-primary'
             : 'bg-phamily-blue text-white'

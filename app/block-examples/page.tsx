@@ -11,7 +11,7 @@ import CommunitySection from '@/components/CommunitySection'
 import TeamSection from '@/components/TeamSection'
 import Footer from '@/components/Footer'
 import CustomFooter from '@/components/CustomFooter'
-import ThemeTest from '@/components/ThemeTest'
+import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 
 export default function BlockExamples() {
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
@@ -70,10 +70,14 @@ export default function BlockExamples() {
       <TeamSection />
       <div className="mb-16"></div>
       <Footer />
-      <CustomFooter />
+      <CustomFooter 
+        optimizelyData={null} 
+        isLoading={false} 
+        error={null} 
+      />
       
       {/* Sidebar Components */}
-      <ThemeTest />
+      <RightFloatingMenuComponent />
     </main>
   )
 }

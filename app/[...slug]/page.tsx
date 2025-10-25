@@ -5,9 +5,9 @@ import { useParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import CustomHeader from '@/components/CustomHeader'
 import CustomFooter from '@/components/CustomFooter'
-import ThemeTest from '@/components/ThemeTest'
+import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 import SEOButton from '@/components/SEOButton'
-import { transformPageData } from '@/utils/seoDataTransformers'
+import { transformPageData, transformLandingPageData } from '@/utils/seoDataTransformers'
 
 interface PageData {
   _metadata: {
@@ -86,7 +86,7 @@ export default function DynamicPage() {
           isLoading={isLoading} 
           error={error}
         />
-        <ThemeTest />
+        <RightFloatingMenuComponent />
       </main>
     )
   }
@@ -112,7 +112,7 @@ export default function DynamicPage() {
           isLoading={isLoading} 
           error={error}
         />
-        <ThemeTest />
+        <RightFloatingMenuComponent />
       </main>
     )
   }
@@ -137,7 +137,7 @@ export default function DynamicPage() {
           isLoading={isLoading} 
           error={error}
         />
-        <ThemeTest />
+        <RightFloatingMenuComponent />
       </main>
     )
   }
@@ -163,9 +163,16 @@ export default function DynamicPage() {
         <GenericPage data={pageData} />
       )}
       
-      <CustomFooter />
-      <ThemeTest pageData={pageData} />
-      <SEOButton {...transformPageData(pageData)} />
+      <CustomFooter 
+        optimizelyData={pageData} 
+        isLoading={false} 
+        error={null} 
+      />
+      <RightFloatingMenuComponent pageData={pageData} />
+      {/* Only show SEOButton for non-LandingPage types, LandingPage has its own */}
+      {pageType !== 'LandingPage' && (
+        <SEOButton {...transformPageData(pageData)} />
+      )}
     </main>
   )
 }
@@ -198,6 +205,9 @@ function ArticlePage({ data }: { data: PageData }) {
 
 // Landing Page Component - Wireframe Style
 function LandingPage({ data }: { data: PageData }) {
+  // Use the working transformLandingPageData function
+  const transformedData = transformLandingPageData(data)
+  
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -497,16 +507,23 @@ function LandingPage({ data }: { data: PageData }) {
               </div>
               <div>
                 <p className="font-medium text-gray-700">Status:</p>
-                <p className="text-gray-600">{data._metadata.status}</p>
+                <p className="text-gray-600">{(data._metadata as any).status || 'Unknown'}</p>
               </div>
               <div>
                 <p className="font-medium text-gray-700">Published:</p>
-                <p className="text-gray-600">{new Date(data._metadata.published).toLocaleDateString()}</p>
+                <p className="text-gray-600">{new Date((data._metadata as any).published).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* SEO Button for Landing Page - use same data as DataExplorer */}
+      <SEOButton 
+        seoData={transformedData.seoData}
+        pageMetadata={transformedData.pageMetadata}
+        cmsBlocks={transformedData.cmsBlocks}
+      />
     </div>
   )
 }

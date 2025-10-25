@@ -7,7 +7,7 @@ import { Database, X, CheckCircle, XCircle, Code, Layers, Copy, Check } from 'lu
 import { fetchHomepageData } from '@/services/homepage'
 import { usePathname } from 'next/navigation'
 
-const ThemeTest = ({ pageData }: { pageData?: any }) => {
+const RightFloatingMenuComponent = ({ pageData }: { pageData?: any }) => {
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const [showCmsData, setShowCmsData] = useState(false)
@@ -141,6 +141,13 @@ const ThemeTest = ({ pageData }: { pageData?: any }) => {
 
   const blocks = extractBlocks()
 
+  // Fetch data when modal opens
+  useEffect(() => {
+    if (showCmsData) {
+      fetchCmsData()
+    }
+  }, [showCmsData])
+
   // Copy JSON to clipboard
   const copyToClipboard = async () => {
     if (!optimizelyData) return
@@ -174,23 +181,40 @@ const ThemeTest = ({ pageData }: { pageData?: any }) => {
       label: 'Graph Explorer',
       url: '/graphql-viewer',
       external: false
+    },
+    {
+      label: 'Data Explorer',
+      url: '#',
+      external: false,
+      onClick: () => setShowCmsData(true)
     }
   ]
 
   return (
     <>
-      <div className="fixed bottom-32 right-4 z-40 bg-white dark:bg-dark-primary p-4 rounded-lg shadow-lg border dark:border-dark-border">
+      <div className="fixed bottom-4 right-4 z-40 bg-white dark:bg-dark-primary p-4 rounded-lg shadow-lg border dark:border-dark-border">
         <div className="space-y-2">
           {cmsLinks.map((link, index) => (
-            <a
-              key={index}
-              href={link.url}
-              target={link.external ? "_blank" : "_self"}
-              rel={link.external ? "noopener noreferrer" : undefined}
-              className="w-full px-3 py-1 text-xs rounded bg-phamily-blue text-white hover:bg-phamily-lightBlue transition-colors duration-200 block text-center"
-            >
-              {link.label}
-            </a>
+            link.onClick ? (
+              <button
+                key={index}
+                onClick={link.onClick}
+                className="w-full px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600 transition-colors duration-200 block text-center flex items-center justify-center gap-2"
+              >
+                <Database className="w-4 h-4" />
+                {link.label}
+              </button>
+            ) : (
+              <a
+                key={index}
+                href={link.url}
+                target={link.external ? "_blank" : "_self"}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                className="w-full px-3 py-1 text-xs rounded bg-phamily-blue text-white hover:bg-phamily-lightBlue transition-colors duration-200 block text-center"
+              >
+                {link.label}
+              </a>
+            )
           ))}
           
         </div>
@@ -805,4 +829,4 @@ const ThemeTest = ({ pageData }: { pageData?: any }) => {
   )
 }
 
-export default ThemeTest
+export default RightFloatingMenuComponent

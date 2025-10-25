@@ -5,14 +5,15 @@ import Navigation from '@/components/Navigation'
 import CustomHeader from '@/components/CustomHeader'
 import CMSContent from '@/components/CMSContent'
 import CustomFooter from '@/components/CustomFooter'
-import ThemeTest from '@/components/ThemeTest'
+import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 import SEOButton from '@/components/SEOButton'
-import { transformHomepageData } from '@/utils/seoDataTransformers'
+import { extractAllSEOData } from '@/utils/seoDataExtractor'
 
 export default function Home() {
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [seoData, setSeoData] = useState<any>(null)
 
       useEffect(() => {
         const fetchHomepageData = async () => {
@@ -22,6 +23,10 @@ export default function Home() {
             
             if (result.success) {
               setOptimizelyData(result)
+              
+              // Extract SEO data for SEOButton
+              const extractedSeoData = extractAllSEOData(result)
+              setSeoData(extractedSeoData)
               
               // Update document title and meta description
               if (result.data?.BlankExperience?.items?.[0]?._metadata?.displayName) {
@@ -66,8 +71,13 @@ export default function Home() {
       />
       
       {/* Sidebar Components */}
-      <ThemeTest />
-      <SEOButton {...transformHomepageData(optimizelyData?.data?.BlankExperience?.items?.[0])} />
+      <RightFloatingMenuComponent />
+      <SEOButton 
+        seoData={seoData?.seoData}
+        pageMetadata={seoData?.pageMetadata}
+        cmsBlocks={seoData?.cmsBlocks}
+        loading={isLoading}
+      />
     </main>
   )
 }

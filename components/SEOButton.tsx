@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Code, Layers } from 'lucide-react'
 
@@ -20,21 +20,24 @@ interface PageMetadata {
 }
 
 interface SEOButtonProps {
-  seoData: SEOSettings | null
-  pageMetadata: PageMetadata | null
-  cmsBlocks: string[]
+  seoData?: SEOSettings | null
+  pageMetadata?: PageMetadata | null
+  cmsBlocks?: string[]
+  loading?: boolean
 }
 
-export default function SEOButton({ seoData, pageMetadata, cmsBlocks }: SEOButtonProps) {
+export default function SEOButton({ seoData, pageMetadata, cmsBlocks = [], loading = false }: SEOButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'seo' | 'formatted' | 'blocks'>('seo')
 
+
+
   return (
     <>
-      {/* Floating Button */}
+      {/* SEO Button - Left Aligned */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors"
+        className="fixed bottom-6 left-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, scale: 0 }}
@@ -49,11 +52,11 @@ export default function SEOButton({ seoData, pageMetadata, cmsBlocks }: SEOButto
         </motion.div>
       </motion.button>
 
-      {/* Inline Panel */}
+      {/* Page Data Modal */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-6 right-6 z-40 bg-white rounded-lg shadow-xl border border-gray-200 w-80 max-h-96 overflow-hidden"
+            className="fixed bottom-20 left-6 z-40 bg-white rounded-lg shadow-xl border border-gray-200 w-80 max-h-96 overflow-hidden"
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -108,7 +111,11 @@ export default function SEOButton({ seoData, pageMetadata, cmsBlocks }: SEOButto
 
             {/* Content */}
             <div className="p-4 max-h-64 overflow-y-auto">
-              {activeTab === 'seo' ? (
+              {loading ? (
+                <div className="text-center py-6">
+                  <p className="text-gray-600 text-sm">Loading...</p>
+                </div>
+              ) : activeTab === 'seo' ? (
                 seoData ? (
                   <div className="space-y-3">
                     <div className="flex justify-between">

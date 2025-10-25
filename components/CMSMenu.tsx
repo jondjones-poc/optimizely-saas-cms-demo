@@ -110,7 +110,7 @@ const CMSMenu = ({ currentPath = '/', isVisible, onClose }: CMSMenuProps) => {
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="absolute top-full left-0 right-0 z-50 backdrop-blur-md bg-white/10 dark:bg-black/10 border-t border-white/20 dark:border-white/10 shadow-lg"
+          className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/10 dark:bg-black/10 border-t border-white/20 dark:border-white/10 shadow-lg"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
 

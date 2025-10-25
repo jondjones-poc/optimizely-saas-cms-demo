@@ -12,7 +12,7 @@ import CommunitySection from '@/components/CommunitySection'
 import TeamSection from '@/components/TeamSection'
 import Footer from '@/components/Footer'
 import CustomFooter from '@/components/CustomFooter'
-import ThemeTest from '@/components/ThemeTest'
+import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 import OptimizelyDataPopup from '@/components/OptimizelyDataPopup'
 
 export default function PreviewPage() {
@@ -157,7 +157,7 @@ export default function PreviewPage() {
     <main className="min-h-screen">
       <CustomHeader />
       <Navigation />
-      <ThemeTest />
+      <RightFloatingMenuComponent />
       
       {/* Preview Mode Indicator */}
       {ctx === 'edit' && (

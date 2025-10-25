@@ -7,7 +7,7 @@ import CustomHeader from '@/components/CustomHeader'
 import Navigation from '@/components/Navigation'
 import CustomFooter from '@/components/CustomFooter'
 import Footer from '@/components/Footer'
-import ThemeTest from '@/components/ThemeTest'
+import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 import PageTypesList from '@/components/PageTypesList'
 import GraphQLQueryViewer from '@/components/GraphQLQueryViewer'
 import { fetchHomepageData } from '@/services/homepage'
@@ -205,7 +205,7 @@ export default function GraphQLViewer() {
     <main className="min-h-screen flex flex-col">
       <CustomHeader />
       <Navigation />
-      <ThemeTest />
+      <RightFloatingMenuComponent />
       
       <div className="container mx-auto px-4 py-8 flex-1 pt-24">
         <div className="mb-8">
@@ -326,7 +326,11 @@ export default function GraphQLViewer() {
       </div>
 
       <Footer />
-      <CustomFooter />
+      <CustomFooter 
+        optimizelyData={null} 
+        isLoading={false} 
+        error={null} 
+      />
     </main>
   )
 }
