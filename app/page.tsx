@@ -6,6 +6,8 @@ import CustomHeader from '@/components/CustomHeader'
 import CMSContent from '@/components/CMSContent'
 import CustomFooter from '@/components/CustomFooter'
 import ThemeTest from '@/components/ThemeTest'
+import SEOButton from '@/components/SEOButton'
+import { transformHomepageData } from '@/utils/seoDataTransformers'
 
 export default function Home() {
   const [optimizelyData, setOptimizelyData] = useState<any>(null)
@@ -65,6 +67,7 @@ export default function Home() {
       
       {/* Sidebar Components */}
       <ThemeTest />
+      <SEOButton {...transformHomepageData(optimizelyData?.data?.BlankExperience?.items?.[0])} />
     </main>
   )
 }

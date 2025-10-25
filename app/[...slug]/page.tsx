@@ -6,6 +6,8 @@ import Navigation from '@/components/Navigation'
 import CustomHeader from '@/components/CustomHeader'
 import CustomFooter from '@/components/CustomFooter'
 import ThemeTest from '@/components/ThemeTest'
+import SEOButton from '@/components/SEOButton'
+import { transformPageData } from '@/utils/seoDataTransformers'
 
 interface PageData {
   _metadata: {
@@ -163,6 +165,7 @@ export default function DynamicPage() {
       
       <CustomFooter />
       <ThemeTest pageData={pageData} />
+      <SEOButton {...transformPageData(pageData)} />
     </main>
   )
 }
