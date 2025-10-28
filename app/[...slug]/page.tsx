@@ -7,6 +7,7 @@ import CustomHeader from '@/components/CustomHeader'
 import CustomFooter from '@/components/CustomFooter'
 import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 import SEOButton from '@/components/SEOButton'
+import LandingPageDisplay from '@/components/LandingPageDisplay'
 import { transformPageData, transformLandingPageData } from '@/utils/seoDataTransformers'
 
 interface PageData {
@@ -158,7 +159,7 @@ export default function DynamicPage() {
       {pageType === 'ArticlePage' ? (
         <ArticlePage data={pageData} />
       ) : pageType === 'LandingPage' ? (
-        <LandingPage data={pageData} />
+        <LandingPageDisplay data={pageData} />
       ) : (
         <GenericPage data={pageData} />
       )}
@@ -212,7 +213,7 @@ function LandingPage({ data }: { data: PageData }) {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto space-y-8">
 
-        {/* TopContentArea - Hero Component Wireframe */}
+        {/* TopContentArea - Render all blocks */}
         {data.TopContentArea && data.TopContentArea.length > 0 && (
           <div className="border-2 border-dashed border-blue-400 rounded-lg p-6 bg-blue-50/30">
             <div className="flex items-center justify-between mb-4">
@@ -220,102 +221,158 @@ function LandingPage({ data }: { data: PageData }) {
                 TopContentArea
               </h2>
               <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
-                {data.TopContentArea[0]._metadata?.displayName || 'Hero Component'}
+                {data.TopContentArea.length} blocks
               </span>
             </div>
             
-            {/* Hero Component Wireframe */}
-            <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-white/50">
-              <div className="flex gap-6">
-                {/* Left area - Mock example (75%) */}
-                <div className="w-3/4">
-                  <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
-                    <div className="space-y-4">
-                      {/* Display the BlockName property */}
-                      <div className="text-center">
-                        <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "{data.TopContentArea[0]._metadata?.displayName}"</p>
-                      </div>
-                      
-                      {/* Mock hero content - wider layout with image, chart, and CTA */}
-                      <div className="w-full">
-                        <div className="flex gap-4 items-start">
-                          {/* Left side - Hero Image */}
-                          <div className="w-48 h-32 bg-gray-200 flex items-center justify-center">
-                            <div className="text-gray-500 text-xs">Hero Image</div>
-                          </div>
-                          
-                          {/* Right side - Text lines */}
-                          <div className="flex-1">
-                            <div className="h-20 p-2">
-                              <div className="space-y-2">
-                                {/* Text lines */}
-                                <div className="h-3 bg-gray-200 rounded w-full"></div>
-                                <div className="h-3 bg-gray-200 rounded w-4/5"></div>
-                                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                                <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+            {/* Render each block in TopContentArea */}
+            <div className="space-y-6">
+              {data.TopContentArea.map((component: any, index: number) => {
+                const componentType = component._metadata?.types?.[0]
+                
+                if (componentType === 'Hero') {
+                  return (
+                    <div key={index} className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-white/50">
+                      <div className="flex gap-6">
+                        {/* Left area - Mock example (75%) */}
+                        <div className="w-3/4">
+                          <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
+                            <div className="space-y-4">
+                              {/* Display the BlockName property */}
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "{component._metadata?.displayName}"</p>
                               </div>
-                            </div>
-                            
-                            {/* CTA Button underneath */}
-                            <div className="mt-3 flex justify-center">
-                              <div className="h-8 bg-gray-200 rounded w-32 flex items-center justify-center">
-                                <div className="text-gray-500 text-xs">CTA Button</div>
+                              
+                              {/* Mock hero content - wider layout with image, chart, and CTA */}
+                              <div className="w-full">
+                                <div className="flex gap-4 items-start">
+                                  {/* Left side - Hero Image */}
+                                  <div className="w-48 h-32 bg-gray-200 flex items-center justify-center">
+                                    <div className="text-gray-500 text-xs">Hero Image</div>
+                                  </div>
+                                  
+                                  {/* Right side - Text lines */}
+                                  <div className="flex-1">
+                                    <div className="h-20 p-2">
+                                      <div className="space-y-2">
+                                        {/* Text lines */}
+                                        <div className="h-3 bg-gray-200 rounded w-full"></div>
+                                        <div className="h-3 bg-gray-200 rounded w-4/5"></div>
+                                        <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                                        <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* CTA Button underneath */}
+                                    <div className="mt-3 flex justify-center">
+                                      <div className="h-8 bg-gray-200 rounded w-32 flex items-center justify-center">
+                                        <div className="text-gray-500 text-xs">CTA Button</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Right sidebar - Attributes (25%) */}
+                        <div className="w-1/4">
+                          <h4 className="text-sm font-semibold text-blue-700 mb-3">Hero Block Properties</h4>
+                          <div className="space-y-2">
+                            <div className="text-xs">
+                              <span className="font-bold text-gray-700">BlockName:</span>
+                              <p className="text-gray-600 mt-1">"{component._metadata?.displayName}"</p>
+                            </div>
+                            {component.Heading && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Heading:</span>
+                                <p className="text-gray-600 mt-1">"{component.Heading}"</p>
+                              </div>
+                            )}
+                            {component.SubHeading && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">SubHeading:</span>
+                                <p className="text-gray-600 mt-1">"{component.SubHeading}"</p>
+                              </div>
+                            )}
+                            {component.Body?.html && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Body:</span>
+                                <p className="text-gray-600 mt-1">"{component.Body.html.substring(0, 50)}..."</p>
+                              </div>
+                            )}
+                            {component.Image?.url?.default && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Image:</span>
+                                <p className="text-gray-600 mt-1">"{component.Image.url.default}"</p>
+                              </div>
+                            )}
+                            {component.Links && component.Links.length > 0 && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Links:</span>
+                                <p className="text-gray-600 mt-1">{component.Links.length} items</p>
+                              </div>
+                            )}
+                            {component.Video?.url?.default && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Video:</span>
+                                <p className="text-gray-600 mt-1">"{component.Video.url.default.substring(0, 30)}..."</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  )
+                }
                 
-                {/* Right sidebar - Attributes (25%) */}
-                <div className="w-1/4">
-                  <h4 className="text-sm font-semibold text-blue-700 mb-3">Hero Block Properties</h4>
-                  <div className="space-y-2">
-                    <div className="text-xs">
-                      <span className="font-bold text-gray-700">BlockName:</span>
-                      <p className="text-gray-600 mt-1">"{data.TopContentArea[0]._metadata?.displayName}"</p>
+                if (componentType === 'Carousel') {
+                  return (
+                    <div key={index} className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-white/50">
+                      <div className="flex gap-6">
+                        {/* Left area - Mock example (75%) */}
+                        <div className="w-3/4">
+                          <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[400px]">
+                            <div className="space-y-4">
+                              {/* Display the BlockName property */}
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "{component._metadata?.displayName}"</p>
+                              </div>
+                              
+                              {/* Mock carousel content */}
+                              <div className="w-full h-full">
+                                <div className="bg-gray-200 rounded h-64 flex items-center justify-center">
+                                  <div className="text-gray-500 text-xs">Carousel Slides</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Right sidebar - Attributes (25%) */}
+                        <div className="w-1/4">
+                          <h4 className="text-sm font-semibold text-blue-700 mb-3">Carousel Block Properties</h4>
+                          <div className="space-y-2">
+                            <div className="text-xs">
+                              <span className="font-bold text-gray-700">BlockName:</span>
+                              <p className="text-gray-600 mt-1">"{component._metadata?.displayName}"</p>
+                            </div>
+                            {component.Cards && component.Cards.length > 0 && (
+                              <div className="text-xs">
+                                <span className="font-bold text-gray-700">Cards:</span>
+                                <p className="text-gray-600 mt-1">{component.Cards.length} items</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    {data.TopContentArea[0].Heading && (
-                      <div className="text-xs">
-                        <span className="font-bold text-gray-700">Heading:</span>
-                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Heading}"</p>
-                      </div>
-                    )}
-                    {data.TopContentArea[0].SubHeading && (
-                      <div className="text-xs">
-                        <span className="font-bold text-gray-700">SubHeading:</span>
-                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].SubHeading}"</p>
-                      </div>
-                    )}
-                    {data.TopContentArea[0].Body?.html && (
-                      <div className="text-xs">
-                        <span className="font-bold text-gray-700">Body:</span>
-                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Body.html.substring(0, 50)}..."</p>
-                      </div>
-                    )}
-                    {data.TopContentArea[0].Image?.url?.default && (
-                      <div className="text-xs">
-                        <span className="font-bold text-gray-700">Image:</span>
-                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Image.url.default}"</p>
-                      </div>
-                    )}
-                    {data.TopContentArea[0].Links && data.TopContentArea[0].Links.length > 0 && (
-                      <div className="text-xs">
-                        <span className="font-bold text-gray-700">Links:</span>
-                        <p className="text-gray-600 mt-1">{data.TopContentArea[0].Links.length} items</p>
-                      </div>
-                    )}
-                    {data.TopContentArea[0].Video?.url?.default && (
-                      <div className="text-xs">
-                        <span className="font-bold text-gray-700">Video:</span>
-                        <p className="text-gray-600 mt-1">"{data.TopContentArea[0].Video.url.default.substring(0, 30)}..."</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+                  )
+                }
+                
+                return null
+              })}
             </div>
           </div>
         )}

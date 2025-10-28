@@ -3,9 +3,11 @@
 import Hero from './Hero'
 import TextBlock from './TextBlock'
 import DemoBlock from './DemoBlock'
-import FeatureCard from './FeatureCard'
+import FeatureGrid from './FeatureGrid'
 import CallToAction from './CallToAction'
 import Carousel from './Carousel'
+import PromoBlock from './PromoBlock'
+import ImageBlock from './Image'
 
 interface BlockRendererProps {
   component: any
@@ -49,14 +51,14 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           <DemoBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
-    case 'FeatureCards':
-      console.log('BlockRenderer FeatureCards component:', component)
+    case 'FeatureGrid':
+      console.log('BlockRenderer FeatureGrid component:', component)
       return (
         <div 
-          data-epi-block-id={component._metadata.key || 'feature-cards-block'}
+          data-epi-block-id={component._metadata.key || 'feature-grid-block'}
           className={contextMode === 'edit' ? 'relative' : ''}
         >
-          <FeatureCard {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+          <FeatureGrid {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     case 'CallToAction':
@@ -76,6 +78,24 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           className={contextMode === 'edit' ? 'relative' : ''}
         >
           <Carousel {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
+    case 'PromoBlock':
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'promo-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <PromoBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
+    case 'Image':
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'image-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <ImageBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     default:

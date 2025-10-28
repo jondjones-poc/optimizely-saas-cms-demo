@@ -8,10 +8,7 @@ export async function GET(request: Request) {
 
   if (!key) {
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Key parameter is required'
-      },
+      { success: false, error: 'Card key is required' },
       { status: 400 }
     )
   }
@@ -20,27 +17,23 @@ export async function GET(request: Request) {
 
   if (!sdkKey) {
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'SDK Key not configured'
-      },
+      { success: false, error: 'SDK Key not configured' },
       { status: 500 }
     )
   }
 
   const query = `
-    query GetBlock($key: String!) {
+    query GetFeatureCard {
       FeatureCard(
         where: {
           _metadata: {
             key: {
-              eq: $key
+              eq: "${key}"
             }
           }
         }
         limit: 1
       ) {
-        total
         items {
           _metadata {
             key
@@ -48,28 +41,10 @@ export async function GET(request: Request) {
             types
           }
           Heading
-          SubHeading
           Body
           Image {
-            key
-            url {
-              base
-              default
-              graph
-              hierarchical
-            }
-          }
-          Links {
-            target
-            text
-            title
-            url {
-              base
-              default
-              hierarchical
-              internal
-              graph
-            }
+            base
+            default
           }
         }
       }
@@ -82,10 +57,7 @@ export async function GET(request: Request) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        query,
-        variables: { key }
-      }),
+      body: JSON.stringify({ query }),
       cache: 'no-store'
     })
 
@@ -93,41 +65,32 @@ export async function GET(request: Request) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const data = await response.json()
+    const result = await response.json()
     
-    if (data.errors) {
+    if (result.errors) {
+      console.error('GraphQL errors:', result.errors)
       return NextResponse.json({
         success: false,
         error: 'GraphQL errors',
-        details: data.errors
+        details: result.errors
       }, { status: 400 })
     }
 
-    const blockData = data.data?.Card?.items?.[0]
-
-    if (!blockData) {
-      return NextResponse.json({ success: false, error: 'Block not found' }, { status: 404 })
-    }
+    const card = result.data?.FeatureCard?.items?.[0]
 
     return NextResponse.json({
       success: true,
-      data: blockData,
-      timestamp: new Date().toISOString()
-    }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
+      data: card
     })
   } catch (error) {
-    console.error('Error fetching block data:', error)
+    console.error('Error fetching FeatureCard:', error)
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to fetch card data'
       },
       { status: 500 }
     )
   }
 }
+

@@ -27,6 +27,15 @@ interface CarouselProps {
       type: string | null
     }
   }>
+  Cards?: Array<{
+    key: string
+    url: {
+      base: string | null
+      default: string | null
+      hierarchical: string | null
+      internal: string | null
+    }
+  }>
   _metadata?: {
     key?: string
     displayName?: string
@@ -36,7 +45,7 @@ interface CarouselProps {
   contextMode?: string | null
 }
 
-const Carousel = ({ Slides, _metadata, _gridDisplayName, isPreview = false, contextMode = null }: CarouselProps) => {
+const Carousel = ({ Slides, Cards, _metadata, _gridDisplayName, isPreview = false, contextMode = null }: CarouselProps) => {
   console.log('Carousel component called with props:', { Slides, _metadata, _gridDisplayName })
   const [currentSlide, setCurrentSlide] = useState(0)
   const [slides, setSlides] = useState<SlideData[]>([])

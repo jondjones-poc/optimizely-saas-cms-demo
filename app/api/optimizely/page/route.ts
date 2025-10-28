@@ -42,7 +42,6 @@ export async function GET(request: Request) {
             Heading
             SubHeading
             Author
-            AuthorEmail
             Body {
               html
             }
@@ -84,6 +83,17 @@ export async function GET(request: Request) {
                   }
                 }
               }
+              ... on Carousel {
+                Cards {
+                  key
+                  url {
+                    base
+                    default
+                    hierarchical
+                    internal
+                  }
+                }
+              }
             }
             MainContentArea {
               _metadata {
@@ -117,13 +127,15 @@ export async function GET(request: Request) {
       cache: 'no-store'
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
     const data = await response.json()
     
+    if (!response.ok) {
+      console.error('Optimizely API error:', data)
+      return NextResponse.json({ success: false, error: `HTTP error! status: ${response.status}`, details: data }, { status: 500 })
+    }
+    
     if (data.errors) {
+      console.error('GraphQL errors:', data.errors)
       return NextResponse.json({ success: false, error: 'GraphQL errors', details: data.errors }, { status: 400 })
     }
 

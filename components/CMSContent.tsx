@@ -83,7 +83,12 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                     _isShared: element.component._metadata?.key !== null,
                     _elementKey: element.key,
                     _elementDisplayName: element.displayName,
-                    _gridDisplayName: grid.displayName
+                    _gridDisplayName: grid.displayName,
+                    _columnData: {
+                      gridKey: grid.key,
+                      rowKey: row.key,
+                      columnKey: column.key
+                    }
                   })
                 } else if (element.element) {
                   // Shared block reference
@@ -102,11 +107,40 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
     })
   }
 
+  // Group blocks by grid for special handling
+  const blocksByGrid: Record<string, any[]> = {}
+  blocks.forEach(block => {
+    const gridName = block._gridDisplayName || 'default'
+    if (!blocksByGrid[gridName]) {
+      blocksByGrid[gridName] = []
+    }
+    blocksByGrid[gridName].push(block)
+  })
+
   return (
     <>
       {/* Render CMS Blocks */}
-      {blocks.length > 0 ? (
-        blocks.map((block, index) => (
+      {Object.entries(blocksByGrid).map(([gridName, gridBlocks]) => {
+        // Special handling for Content Section with two columns
+        if (gridName === 'Content Section' && gridBlocks.length === 2) {
+          return (
+            <section key={gridName} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {gridBlocks.map((block, index) => (
+                  <BlockRenderer 
+                    key={block._metadata?.key || index} 
+                    component={block} 
+                    isPreview={isPreview}
+                    contextMode={contextMode}
+                  />
+                ))}
+              </div>
+            </section>
+          )
+        }
+        
+        // Default rendering for other grids
+        return gridBlocks.map((block, index) => (
           <BlockRenderer 
             key={block._metadata?.key || index} 
             component={block} 
@@ -114,13 +148,7 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
             contextMode={contextMode}
           />
         ))
-      ) : (
-        <div className="py-16 bg-white dark:bg-dark-primary">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-phamily-gray dark:text-dark-text-secondary">No blocks found in composition</p>
-          </div>
-        </div>
-      )}
+      })}
     </>
   )
 }

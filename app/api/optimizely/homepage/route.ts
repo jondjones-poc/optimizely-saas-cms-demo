@@ -101,7 +101,7 @@ export async function GET() {
                                   }
                                 }
                               }
-                              ... on FeatureCards {
+                              ... on FeatureGrid {
                                 Heading
                                 SubHeading
                                 Cards {
@@ -128,6 +128,34 @@ export async function GET() {
                                   }
                                 }
                               }
+                              ... on PromoBlock {
+                                BackgroundStyle
+                                CTA {
+                                  base
+                                  default
+                                }
+                                CTAColour
+                                Description {
+                                  html
+                                }
+                                Image {
+                                  base
+                                  default
+                                }
+                                Title
+                              }
+                              ... on Image {
+                                Image {
+                                  url {
+                                    base
+                                    default
+                                  }
+                                }
+                              }
+                              ... on Text {
+                                Content
+                                Position
+                              }
                             }
                           }
                         }
@@ -153,13 +181,15 @@ export async function GET() {
       cache: 'no-store'
     })
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
     const data = await response.json()
     
+    if (!response.ok) {
+      console.error('Optimizely API error:', data)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
     if (data.errors) {
+      console.error('GraphQL errors:', data.errors)
       return NextResponse.json({
         success: false,
         error: 'GraphQL errors',

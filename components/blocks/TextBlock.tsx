@@ -3,9 +3,8 @@
 import { useTheme } from '@/contexts/ThemeContext'
 
 interface TextBlockProps {
-  MainBody?: {
-    html: string
-  }
+  Content?: string
+  Position?: 'left' | 'center' | 'right'
   _metadata?: {
     key?: string
     displayName?: string
@@ -15,29 +14,31 @@ interface TextBlockProps {
   contextMode?: string | null
 }
 
-const TextBlock = ({ MainBody, _metadata, _gridDisplayName, isPreview = false, contextMode = null }: TextBlockProps) => {
+const TextBlock = ({ Content, Position = 'left', _metadata, _gridDisplayName, isPreview = false, contextMode = null }: TextBlockProps) => {
   const { theme } = useTheme()
 
-  // For inline components (key: null), we don't fetch additional content
-  // They should only display the grid displayName as the heading
+  // Map position to text alignment
+  const getTextAlignment = () => {
+    switch (Position) {
+      case 'right':
+        return 'text-right'
+      case 'center':
+        return 'text-center'
+      case 'left':
+      default:
+        return 'text-left'
+    }
+  }
   
   return (
     <section className="py-16 bg-white dark:bg-dark-primary">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          {_gridDisplayName && (
-            <h2 
-              className="text-3xl md:text-4xl font-bold text-phamily-darkGray dark:text-dark-text mb-6"
-              {...(contextMode === 'edit' && { 'data-epi-edit': 'displayName' })}
-            >
-              {_gridDisplayName}
-            </h2>
-          )}
-          {MainBody?.html && (
+        <div className={`max-w-4xl mx-auto ${getTextAlignment()}`}>
+          {Content && (
             <div 
-              className="text-lg text-phamily-gray dark:text-dark-text-secondary leading-relaxed prose dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: MainBody.html }}
-              {...(contextMode === 'edit' && { 'data-epi-edit': 'MainBody' })}
+              className="text-4xl md:text-5xl font-bold text-phamily-gray dark:text-dark-text-secondary leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: Content }}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'Content' })}
             />
           )}
         </div>
