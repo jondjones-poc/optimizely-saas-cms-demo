@@ -55,11 +55,21 @@ const CMSMenu = ({ currentPath = '/', isVisible, onClose }: CMSMenuProps) => {
     }
   }, [isVisible])
 
-  // Filter out the current page and homepage
-  const filteredPages = pages.filter(page => {
-    const pageUrl = page._metadata.url?.default
-    return pageUrl && pageUrl !== currentPath && pageUrl !== '/'
-  })
+  // Filter to show only top-level children (direct children of homepage)
+  const filteredPages = pages
+    .filter(page => {
+      const pageUrl = page._metadata.url?.default
+      // Must have a URL, not homepage, not current page
+      if (!pageUrl || pageUrl === '/' || pageUrl === currentPath) return false
+      // Normalize and count path segments after the leading '/'
+      const path = pageUrl.replace(/^\/+|\/+$/g, '') // trim leading/trailing slashes
+      const segments = path ? path.split('/') : []
+      // Keep only direct children of root: exactly 1 segment
+      return segments.length === 1
+    })
+    // Ensure uniqueness by URL and sort by display name
+    .filter((page, index, self) => index === self.findIndex(p => p._metadata.url?.default === page._metadata.url?.default))
+    .sort((a, b) => (a._metadata.displayName || '').localeCompare(b._metadata.displayName || ''))
 
   const menuVariants = {
     hidden: {

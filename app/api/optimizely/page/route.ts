@@ -4,7 +4,16 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const path = searchParams.get('path') || '/'
+  let path = searchParams.get('path') || '/'
+  
+  // Normalize path - ensure it starts with / and handle trailing slashes
+  if (!path.startsWith('/')) {
+    path = '/' + path
+  }
+  // For root, keep as is, otherwise ensure trailing slash for consistency
+  if (path !== '/' && !path.endsWith('/')) {
+    path = path + '/'
+  }
 
   const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY || process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
 
@@ -105,6 +114,16 @@ export async function GET(request: Request) {
                 Content
                 Position
               }
+              ... on Image {
+                AltText
+                Image {
+                  url {
+                    base
+                    default
+                    graph
+                  }
+                }
+              }
             }
             SeoSettings {
               DisplayInMenu
@@ -113,6 +132,9 @@ export async function GET(request: Request) {
               MetaDescription
               MetaTitle
             }
+          }
+          ... on NewsLandingPage {
+            Title
           }
         }
       }

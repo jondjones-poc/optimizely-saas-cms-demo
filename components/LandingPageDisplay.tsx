@@ -110,9 +110,10 @@ function renderWireframeHero(data: any) {
       {/* Render all blocks in TopContentArea */}
       <div className="space-y-6">
         {data.TopContentArea.map((component: any, index: number) => {
-          const componentType = component._metadata?.types?.[0]
-          
-          if (componentType === 'Hero') {
+          try {
+            const componentType = component._metadata?.types?.[0]
+            
+            if (componentType === 'Hero') {
             return (
               <div key={index} className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-white/50">
                 <div className="flex gap-6">
@@ -174,9 +175,9 @@ function renderWireframeHero(data: any) {
                 </div>
               </div>
             )
-          }
-          
-          if (componentType === 'Carousel') {
+            }
+            
+            if (componentType === 'Carousel') {
             return (
               <div key={index} className="border-2 border-dashed border-blue-300 rounded-lg p-8 bg-white/50">
                 <div className="flex gap-6">
@@ -215,9 +216,21 @@ function renderWireframeHero(data: any) {
                 </div>
               </div>
             )
+            }
+            
+            return (
+              <div key={index} className="border border-red-200 bg-red-50 text-red-700 rounded p-4">
+                <p className="text-sm">Unsupported block type in TopContentArea</p>
+              </div>
+            )
+          } catch (err) {
+            console.error('Error rendering TopContentArea block', err)
+            return (
+              <div key={index} className="border border-red-200 bg-red-50 text-red-700 rounded p-4">
+                <p className="text-sm">Error rendering block</p>
+              </div>
+            )
           }
-          
-          return null
         })}
       </div>
     </div>
@@ -230,13 +243,14 @@ function renderHTMLHero(data: any) {
   return (
     <div className="space-y-6">
       {data.TopContentArea.map((component: any, index: number) => {
-        const componentType = component._metadata?.types?.[0]
-        
-        if (componentType === 'Carousel') {
-          return <HTMLCarousel key={index} component={component} theme={theme} />
-        }
-        
-        if (componentType === 'Hero') {
+        try {
+          const componentType = component._metadata?.types?.[0]
+          
+          if (componentType === 'Carousel') {
+            return <HTMLCarousel key={index} component={component} theme={theme} />
+          }
+          
+          if (componentType === 'Hero') {
           return (
             <section key={index} className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-20 rounded-lg overflow-hidden">
               <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -283,9 +297,17 @@ function renderHTMLHero(data: any) {
               )}
             </section>
           )
+          }
+          
+          return null
+        } catch (err) {
+          console.error('Error rendering TopContentArea HTML block', err)
+          return (
+            <div key={index} className="border border-red-200 bg-red-50 text-red-700 rounded p-4">
+              <p className="text-sm">Error rendering block</p>
+            </div>
+          )
         }
-        
-        return null
       })}
     </div>
   )
@@ -305,9 +327,10 @@ function renderWireframeMain(data: any) {
       
       <div className="space-y-6">
         {data.MainContentArea.map((component: any, index: number) => {
-          const componentType = component._metadata?.types?.[0]
-          
-          if (componentType === 'Text') {
+          try {
+            const componentType = component._metadata?.types?.[0]
+            
+            if (componentType === 'Text') {
             return (
               <div key={index} className="border-2 border-dashed border-green-300 rounded-lg p-8 bg-white/50">
                 <div className="flex gap-6">
@@ -351,9 +374,9 @@ function renderWireframeMain(data: any) {
                 </div>
               </div>
             )
-          }
-          
-          if (componentType === 'Image') {
+            }
+            
+            if (componentType === 'Image') {
             return (
               <div key={index} className="border-2 border-dashed border-purple-300 rounded-lg p-8 bg-white/50">
                 <div className="flex gap-6">
@@ -383,25 +406,33 @@ function renderWireframeMain(data: any) {
                         <p className="text-gray-600 mt-1">"{component._metadata?.displayName}"</p>
                       </div>
                       <div className="text-xs">
-                        <span className="font-bold text-gray-700">Image:</span>
-                        <p className="text-gray-600 mt-1">(not loaded)</p>
+                        <span className="font-bold text-gray-700">Image URL:</span>
+                        <p className="text-gray-600 mt-1">"{component.Image?.url?.default || 'Not set'}"</p>
                       </div>
                       <div className="text-xs">
-                        <span className="font-bold text-gray-700">Caption:</span>
-                        <p className="text-gray-600 mt-1">(not loaded)</p>
-                      </div>
-                      <div className="text-xs">
-                        <span className="font-bold text-gray-700">Alignment:</span>
-                        <p className="text-gray-600 mt-1">(not loaded)</p>
+                        <span className="font-bold text-gray-700">Alt Text:</span>
+                        <p className="text-gray-600 mt-1">"{component.AltText || 'Not set'}"</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             )
+            }
+            
+            return (
+              <div key={index} className="border border-red-200 bg-red-50 text-red-700 rounded p-4">
+                <p className="text-sm">Unsupported block type in MainContentArea</p>
+              </div>
+            )
+          } catch (err) {
+            console.error('Error rendering MainContentArea block', err)
+            return (
+              <div key={index} className="border border-red-200 bg-red-50 text-red-700 rounded p-4">
+                <p className="text-sm">Error rendering block</p>
+              </div>
+            )
           }
-          
-          return null
         })}
       </div>
     </div>
@@ -412,8 +443,9 @@ function renderHTMLMain(data: any) {
   return (
     <div className="space-y-8">
       {data.MainContentArea.map((component: any, index: number) => {
-        const componentType = component._metadata?.types?.[0]
-        
+        try {
+          const componentType = component._metadata?.types?.[0]
+          
         if (componentType === 'Text') {
           return (
             <section key={index} className="py-12 px-4">
@@ -422,21 +454,22 @@ function renderHTMLMain(data: any) {
                   component.Position === 'center' ? 'text-center' : ''
                 }`}>
                   {component.Content && (
-                    <div className="text-lg text-gray-700 leading-relaxed">
+                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
                       {component.Content}
-                    </div>
+                    </h1>
                   )}
                 </div>
               </div>
             </section>
           )
         }
-        
-        if (componentType === 'Image') {
-          // Check if image data exists
-          const hasImageUrl = component.Image?.url?.default
           
-          if (!hasImageUrl) {
+          if (componentType === 'Image') {
+          // Check if image data exists using API structure
+          const imageUrl = component.Image?.url?.default
+          const altText = component.AltText
+          
+          if (!imageUrl) {
             // Display a placeholder if no image
             return (
               <section key={index} className="py-8 px-4">
@@ -453,26 +486,29 @@ function renderHTMLMain(data: any) {
           
           return (
             <section key={index} className="py-8 px-4">
-              <div className="max-w-6xl mx-auto">
+              <div className="w-full">
                 <div className="flex justify-center">
                   <img 
-                    src={component.Image.url.default} 
-                    alt={component.Image.alt || 'Image'} 
-                    className="rounded-lg shadow-lg max-w-full h-auto"
+                    src={imageUrl} 
+                    alt={altText || ''} 
+                    className="w-full h-auto max-w-none"
                   />
                 </div>
-                {component.Image.alt && (
-                  <p className="text-center text-gray-600 text-sm mt-4">
-                    {component.Image.alt}
-                  </p>
-                )}
               </div>
             </section>
           )
+          }
+          
+          // Fallback
+          return null
+        } catch (err) {
+          console.error('Error rendering MainContentArea HTML block', err)
+          return (
+            <div key={index} className="border border-red-200 bg-red-50 text-red-700 rounded p-4">
+              <p className="text-sm">Error rendering block</p>
+            </div>
+          )
         }
-        
-        // Fallback
-        return null
       })}
     </div>
   )
@@ -652,33 +688,55 @@ function HTMLCarousel({ component, theme }: { component: any, theme: string }) {
 
 function renderSeoSettings(data: any) {
   return (
-    <div className="border-2 border-dashed border-purple-400 rounded-lg p-6 bg-purple-50/30 mx-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-purple-700">
-          SeoSettings
-        </h2>
-        <span className="text-sm text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
-          SEO Configuration
-        </span>
-      </div>
-      
-      <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-white/50">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Meta Title:</p>
-            <div className="h-6 bg-gray-200 rounded w-full"></div>
+    <div className="border-2 border-dashed border-purple-400 rounded-lg p-8 bg-white/50 mx-8">
+      <div className="flex gap-6">
+        {/* Left area - Wireframe UI (75%) */}
+        <div className="w-3/4">
+          <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
+            <div className="space-y-3">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "SeoSettings"</p>
+              </div>
+
+              {/* Existing wireframe form layout */}
+              <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-white/50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Meta Title:</p>
+                    <div className="h-6 bg-gray-200 rounded w-full"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Meta Description:</p>
+                    <div className="h-6 bg-gray-200 rounded w-full"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Graph Type:</p>
+                    <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Indexing:</p>
+                    <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Right area - Properties (25%) */}
+        <div className="w-1/4">
+          <h4 className="text-sm font-semibold text-purple-700 mb-3">SEO Settings Properties</h4>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Meta Description:</p>
-            <div className="h-6 bg-gray-200 rounded w-full"></div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Graph Type:</p>
-            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Indexing:</p>
-            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+            <div className="text-xs">
+              <span className="font-bold text-gray-700">BlockName:</span>
+              <p className="text-gray-600 mt-1">"SeoSettings"</p>
+            </div>
+            {data.SeoSettings && Object.entries(data.SeoSettings).map(([key, value]) => (
+              <div key={key} className="text-xs">
+                <span className="font-bold text-gray-700">{key}:</span>
+                <p className="text-gray-600 mt-1">"{typeof value === 'string' ? value : JSON.stringify(value) || 'Not set'}"</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

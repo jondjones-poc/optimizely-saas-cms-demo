@@ -7,6 +7,7 @@ import CustomHeader from '@/components/CustomHeader'
 import CustomFooter from '@/components/CustomFooter'
 import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 import SEOButton from '@/components/SEOButton'
+import NewsLandingPage from '@/components/NewsLandingPage'
 import LandingPageDisplay from '@/components/LandingPageDisplay'
 import { transformPageData, transformLandingPageData } from '@/utils/seoDataTransformers'
 
@@ -160,6 +161,8 @@ export default function DynamicPage() {
         <ArticlePage data={pageData} />
       ) : pageType === 'LandingPage' ? (
         <LandingPageDisplay data={pageData} />
+      ) : pageType === 'NewsLandingPage' ? (
+        <NewsLandingPage data={pageData} />
       ) : (
         <GenericPage data={pageData} />
       )}
@@ -508,33 +511,76 @@ function LandingPage({ data }: { data: PageData }) {
 
         {/* SEO Settings Display */}
         {data.SeoSettings && (
-          <div className="border-2 border-dashed border-purple-400 rounded-lg p-6 bg-purple-50/30">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-purple-700">
-                SeoSettings
-              </h2>
-              <span className="text-sm text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
-                SEO Configuration
-              </span>
-            </div>
-            
-            <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 bg-white/50">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Meta Title:</p>
-                  <div className="h-6 bg-gray-200 rounded w-full"></div>
+          <div className="border-2 border-dashed border-purple-400 rounded-lg p-8 bg-white/50">
+            <div className="flex gap-6">
+              {/* Left area - Properties (75%) */}
+              <div className="w-3/4">
+                <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
+                  <div className="space-y-3">
+                    {/* Display the BlockName property */}
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "SeoSettings"</p>
+                    </div>
+                    
+                    {/* Mock SEO content - wireframe representation */}
+                    <div className="space-y-4">
+                      {/* Meta Title wireframe */}
+                      <div className="space-y-2">
+                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-full"></div>
+                      </div>
+                      
+                      {/* Meta Description wireframe */}
+                      <div className="space-y-2">
+                        <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                        <div className="h-4 bg-gray-200 rounded w-full"></div>
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      </div>
+                      
+                      {/* Graph Type and Indexing wireframes */}
+                      <div className="flex gap-4">
+                        <div className="space-y-2 flex-1">
+                          <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                        <div className="space-y-2 flex-1">
+                          <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+              
+              {/* Right sidebar - Properties (25%) */}
+              <div className="w-1/4">
+                <h4 className="text-sm font-semibold text-purple-700 mb-3">SEO Settings Properties</h4>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Meta Description:</p>
-                  <div className="h-6 bg-gray-200 rounded w-full"></div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Graph Type:</p>
-                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Indexing:</p>
-                  <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                  <div className="text-xs">
+                    <span className="font-bold text-gray-700">BlockName:</span>
+                    <p className="text-gray-600 mt-1">"SeoSettings"</p>
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-gray-700">MetaTitle:</span>
+                    <p className="text-gray-600 mt-1">"{data.SeoSettings.MetaTitle || 'Not set'}"</p>
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-gray-700">MetaDescription:</span>
+                    <p className="text-gray-600 mt-1">"{data.SeoSettings.MetaDescription || 'Not set'}"</p>
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-gray-700">GraphType:</span>
+                    <p className="text-gray-600 mt-1">"{data.SeoSettings.GraphType || 'Not set'}"</p>
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-gray-700">DisplayInMenu:</span>
+                    <p className="text-gray-600 mt-1">"{data.SeoSettings.DisplayInMenu || 'Not set'}"</p>
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-gray-700">Indexing:</span>
+                    <p className="text-gray-600 mt-1">"{data.SeoSettings.Indexing || 'Not set'}"</p>
+                  </div>
                 </div>
               </div>
             </div>
