@@ -2,6 +2,34 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
+// Function to fetch Menu data from SettingsPage using the existing Menu API
+async function fetchMenuDataFromSettingsPage(sdkKey: string) {
+  try {
+    // Use the existing Menu API endpoint
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/optimizely/menu`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store'
+    })
+
+    const data = await response.json()
+    
+    if (!data.success) {
+      console.error('Menu API error:', data.error)
+      return null
+    }
+
+    console.log('Page API - Fetched Menu data from Menu API:', data.data)
+    
+    return {
+      MenuItem: data.data || []
+    }
+  } catch (error) {
+    console.error('Error fetching Menu data from Menu API:', error)
+    return null
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   let path = searchParams.get('path') || '/'
@@ -124,6 +152,12 @@ export async function GET(request: Request) {
                   }
                 }
               }
+              ... on Menu {
+                _metadata {
+                  key
+                  displayName
+                }
+              }
             }
             SeoSettings {
               DisplayInMenu
@@ -161,12 +195,45 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: 'GraphQL errors', details: data.errors }, { status: 400 })
     }
 
+    // Log Menu block data for debugging
+    if (data.data?._Content?.items?.[0]?.MainContentArea) {
+      const menuBlocks = data.data._Content.items[0].MainContentArea.filter((block: any) => 
+        block._metadata?.types?.[0] === 'Menu'
+      )
+      if (menuBlocks.length > 0) {
+        console.log('Page API - Menu blocks found:', menuBlocks)
+        menuBlocks.forEach((block: any, index: number) => {
+          console.log(`Page API - Menu block ${index} full structure:`, JSON.stringify(block, null, 2))
+          console.log(`Page API - Menu block ${index} all properties:`, Object.keys(block))
+          console.log(`Page API - Menu block ${index} property values:`, Object.entries(block).map(([key, value]) => `${key}: ${typeof value} = ${JSON.stringify(value)}`))
+        })
+      }
+    }
+
     const items = data.data?._Content?.items || []
+    const pageData = items[0]
+    
+    // Fetch Menu data from SettingsPage and merge into Menu blocks
+    if (pageData?.MainContentArea) {
+      const menuData = await fetchMenuDataFromSettingsPage(sdkKey)
+      if (menuData) {
+        pageData.MainContentArea = pageData.MainContentArea.map((block: any) => {
+          if (block._metadata?.types?.[0] === 'Menu') {
+            console.log('Page API - Merging Menu data into Menu block:', menuData)
+            return {
+              ...block,
+              MenuItem: menuData.MenuItem || []
+            }
+          }
+          return block
+        })
+      }
+    }
     
     // Return data in the format expected by the page component
     return NextResponse.json({
       success: true,
-      data: items[0] || null,
+      data: pageData || null,
       path: path,
       count: items.length
     })

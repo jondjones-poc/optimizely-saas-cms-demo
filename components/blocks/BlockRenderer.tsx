@@ -8,6 +8,7 @@ import CallToAction from './CallToAction'
 import Carousel from './Carousel'
 import PromoBlock from './PromoBlock'
 import ImageBlock from './Image'
+import Menu from './Menu'
 
 interface BlockRendererProps {
   component: any
@@ -96,6 +97,31 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           className={contextMode === 'edit' ? 'relative' : ''}
         >
           <ImageBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        </div>
+      )
+    case 'Menu':
+      console.log('🎯 MENU BLOCK RENDERER - Individual Menu Block Loading')
+      console.log('Menu component data:', component)
+      console.log('Menu _metadata:', component._metadata)
+      console.log('Menu MenuItem:', component.MenuItem)
+      console.log('Menu MenuItem type:', typeof component.MenuItem)
+      console.log('Menu MenuItem is array:', Array.isArray(component.MenuItem))
+      console.log('Menu MenuItem length:', component.MenuItem?.length)
+      console.log('Menu full props being passed:', {
+        ...component,
+        _metadata: component._metadata,
+        _gridDisplayName: component._gridDisplayName,
+        isPreview,
+        contextMode
+      })
+      console.log('🎯 END MENU BLOCK RENDERER')
+      
+      return (
+        <div 
+          data-epi-block-id={component._metadata.key || 'menu-block'}
+          className={contextMode === 'edit' ? 'relative' : ''}
+        >
+          <Menu {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     default:

@@ -153,9 +153,9 @@ export default function GraphQLViewer() {
   const generateGraphQLQuery = (pageType: PageType) => {
     // Generate fields list from the page type fields
     const customFields = pageType.fields
-      .filter(field => field.name !== '_metadata') // Skip _metadata as it's already included
-      .map(field => `        ${field.name}`)
-      .join('\n')
+      ?.filter(field => field.name !== '_metadata') // Skip _metadata as it's already included
+      ?.map(field => `        ${field.name}`)
+      ?.join('\n')
 
     const fragmentContent = customFields ? `\n${customFields}` : '\n        # No additional fields available'
 

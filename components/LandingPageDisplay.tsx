@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import SEOButton from '@/components/SEOButton'
 import { transformLandingPageData } from '@/utils/seoDataTransformers'
 import { useTheme } from '@/contexts/ThemeContext'
+import Menu from './blocks/Menu'
 
 interface PageData {
   _metadata: {
@@ -420,6 +421,89 @@ function renderWireframeMain(data: any) {
             )
             }
             
+            if (componentType === 'Menu') {
+              console.log('🎯 LANDING PAGE MENU BLOCK - Wireframe Mode')
+              console.log('Menu component data:', component)
+              console.log('Menu _metadata:', component._metadata)
+              console.log('Menu MenuItem:', component.MenuItem)
+              console.log('Menu MenuItem type:', typeof component.MenuItem)
+              console.log('Menu MenuItem is array:', Array.isArray(component.MenuItem))
+              console.log('Menu MenuItem length:', component.MenuItem?.length)
+              console.log('Menu all properties:', Object.keys(component))
+              console.log('🎯 END LANDING PAGE MENU BLOCK')
+              
+              return (
+                <div key={index} className="border-2 border-dashed border-green-300 rounded-lg p-8 bg-white/50">
+                  <div className="flex gap-6">
+                    <div className="w-3/4">
+                      <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50/50 min-h-[200px]">
+                        <div className="space-y-3">
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-gray-700"><span className="font-bold">BlockName:</span> "{component._metadata?.displayName}"</p>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="h-8 bg-gray-200 rounded w-full"></div>
+                            <div className="flex space-x-2">
+                              <div className="h-6 bg-gray-200 rounded w-20"></div>
+                              <div className="h-6 bg-gray-200 rounded w-24"></div>
+                              <div className="h-6 bg-gray-200 rounded w-16"></div>
+                            </div>
+                            {Array.isArray(component.MenuItem) && component.MenuItem.some((item: any) => Array.isArray(item.SubMenuItems) && item.SubMenuItems.length > 0) && (
+                              <div className="ml-4 space-y-1">
+                                <div className="h-4 bg-gray-300 rounded w-16"></div>
+                                <div className="h-4 bg-gray-300 rounded w-20"></div>
+                                <div className="h-4 bg-gray-300 rounded w-14"></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="w-1/4">
+                      <h4 className="text-sm font-semibold text-green-700 mb-3">Menu Block Properties</h4>
+                      <div className="space-y-2">
+                        <div className="text-xs">
+                          <span className="font-bold text-gray-700">BlockName:</span>
+                          <p className="text-gray-600 mt-1">"{component._metadata?.displayName}"</p>
+                        </div>
+                        {Array.isArray(component.MenuItem) && component.MenuItem.length > 0 ? (
+                          <div className="text-xs">
+                            <span className="font-bold text-gray-700">Menu Items ({component.MenuItem.length}):</span>
+                            <ul className="mt-2 space-y-1">
+                              {component.MenuItem.map((item: any, itemIndex: number) => (
+                                <li key={itemIndex} className="space-y-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-gray-700 truncate">{item?.Link?.text || 'Untitled'}</span>
+                                    <span className="text-gray-400 text-[11px] truncate">{item?.Link?.url?.default || '#'}</span>
+                                  </div>
+                                  {Array.isArray(item.SubMenuItems) && item.SubMenuItems.length > 0 && (
+                                    <ul className="ml-4 space-y-1">
+                                      {item.SubMenuItems.map((subItem: any, subIndex: number) => (
+                                        <li key={subIndex} className="flex items-center justify-between gap-2">
+                                          <span className="text-gray-600 truncate">- {subItem?.Link?.text || 'Untitled'}</span>
+                                          <span className="text-gray-400 text-[10px] truncate">{subItem?.Link?.url?.default || '#'}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <div className="text-xs">
+                            <span className="font-bold text-gray-700">Menu Items:</span>
+                            <p className="text-gray-600 mt-1">No items configured</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+            
             return (
               <div key={index} className="border border-red-200 bg-red-50 text-red-700 rounded p-4">
                 <p className="text-sm">Unsupported block type in MainContentArea</p>
@@ -497,6 +581,25 @@ function renderHTMLMain(data: any) {
               </div>
             </section>
           )
+          }
+          
+          if (componentType === 'Menu') {
+            console.log('🎯 LANDING PAGE MENU BLOCK - HTML Mode')
+            console.log('Menu component data:', component)
+            console.log('Menu _metadata:', component._metadata)
+            console.log('Menu MenuItem:', component.MenuItem)
+            console.log('Menu MenuItem type:', typeof component.MenuItem)
+            console.log('Menu MenuItem is array:', Array.isArray(component.MenuItem))
+            console.log('Menu MenuItem length:', component.MenuItem?.length)
+            console.log('Menu all properties:', Object.keys(component))
+            console.log('🎯 END LANDING PAGE MENU BLOCK HTML')
+            
+            // Use the actual Menu component instead of custom HTML
+            return (
+              <div key={index}>
+                <Menu {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={false} contextMode={null} />
+              </div>
+            )
           }
           
           // Fallback
