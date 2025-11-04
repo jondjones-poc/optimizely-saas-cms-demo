@@ -26,77 +26,84 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
 
   switch (blockType) {
     case 'Hero':
+      // Hero component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <div 
-          data-epi-block-id={component._metadata.key || 'hero-block'}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <Hero {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <Hero {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
       )
     case 'Text':
+      // TextBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <div 
-          data-epi-block-id={component._metadata.key || 'text-block'}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <TextBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <TextBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
       )
     case 'demo_block':
+      // DemoBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <div 
-          data-epi-block-id={component._metadata.key || 'demo-block'}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <DemoBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <DemoBlock 
+          {...component} 
+          _metadata={component._metadata} 
+          _gridDisplayName={component._gridDisplayName} 
+          isPreview={isPreview} 
+          contextMode={contextMode}
+          _componentKey={component._metadata?.key}
+        />
       )
     case 'FeatureGrid':
+      // FeatureGrid component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <div 
-          data-epi-block-id={component._metadata.key || 'feature-grid-block'}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <FeatureGrid {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <FeatureGrid 
+          {...component} 
+          _metadata={component._metadata} 
+          _gridDisplayName={component._gridDisplayName} 
+          isPreview={isPreview} 
+          contextMode={contextMode}
+          _componentKey={component._metadata?.key}
+        />
       )
     case 'CallToAction':
     case 'CallToActionOutput':
+      // CallToAction component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <div 
-          data-epi-block-id={component._metadata.key || 'call-to-action-block'}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <CallToAction {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <CallToAction 
+          {...component} 
+          _metadata={component._metadata} 
+          _gridDisplayName={component._gridDisplayName} 
+          isPreview={isPreview} 
+          contextMode={contextMode}
+          _componentKey={component._metadata?.key}
+        />
       )
     case 'Carousel':
       return (
         <div 
-          data-epi-block-id={component._metadata.key || 'carousel-block'}
+          {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
           className={contextMode === 'edit' ? 'relative' : ''}
         >
           <Carousel {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
         </div>
       )
     case 'PromoBlock':
+      // PromoBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <div 
-          data-epi-block-id={component._metadata.key || 'promo-block'}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <PromoBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <PromoBlock 
+          {...component} 
+          _metadata={component._metadata} 
+          _gridDisplayName={component._gridDisplayName} 
+          isPreview={isPreview} 
+          contextMode={contextMode}
+          _componentKey={component._metadata?.key}
+        />
       )
     case 'Image':
+      // ImageBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <div 
-          data-epi-block-id={component._metadata.key || 'image-block'}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <ImageBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <ImageBlock 
+          {...component} 
+          _metadata={component._metadata} 
+          _gridDisplayName={component._gridDisplayName} 
+          isPreview={isPreview} 
+          contextMode={contextMode}
+          _componentKey={component._metadata?.key}
+        />
       )
     case 'Menu':
       console.log('🎯 MENU BLOCK RENDERER - Individual Menu Block Loading')
@@ -117,7 +124,7 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
       
       return (
         <div 
-          data-epi-block-id={component._metadata.key || 'menu-block'}
+          {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
           className={contextMode === 'edit' ? 'relative' : ''}
         >
           <Menu {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />

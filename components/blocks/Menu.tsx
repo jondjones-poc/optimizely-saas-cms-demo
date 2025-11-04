@@ -383,7 +383,7 @@ const Menu = ({ MenuItem, _metadata, _gridDisplayName, isPreview = false, contex
       `}</style>
       <nav 
         className="bg-white shadow-lg border-b border-gray-200"
-        data-epi-block-id={_metadata?.key || 'menu-block'}
+        {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-start items-center h-20">

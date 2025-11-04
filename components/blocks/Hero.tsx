@@ -109,12 +109,17 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
   }
 
   return (
-    <section 
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-      {...(_metadata?.key && { 'data-epi-block-id': _metadata.key })}
-    >
+    <>
+      {/* Hero */}
+      <section 
+        className="relative min-h-screen flex items-center justify-center overflow-hidden"
+        {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
+      >
       {/* Background Image - mandatory */}
-      <div className="absolute inset-0 z-0">
+      <div 
+        className="absolute inset-0 z-0"
+        {...(contextMode === 'edit' && { 'data-epi-edit': 'Image' })}
+      >
         <Image
           src={imageData.url.default}
           alt={Heading || 'Hero background'}
@@ -140,7 +145,7 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
               className={`text-lg md:text-xl font-medium ${
                 theme === 'dark' ? 'text-dark-text/90' : 'text-white/90'
               }`}
-              {...(contextMode === 'edit' && { 'data-epi-edit': 'Subheading' })}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'SubHeading' })}
             >
               {Subheading}
             </motion.p>
@@ -198,6 +203,7 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
                         ? 'border-dark-text text-dark-text hover:bg-dark-text hover:text-dark-primary border-2'
                         : 'border-white text-white hover:bg-white hover:text-phamily-blue border-2'
                   }`}
+                  {...(contextMode === 'edit' && { 'data-epi-edit': `Links[${index}].Text` })}
                 >
                   {link.text || `Button ${index + 1}`}
                   {index === 0 ? <ArrowRight size={20} /> : <Play size={20} />}
@@ -248,9 +254,10 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
               theme === 'dark' ? 'bg-dark-text' : 'bg-white'
             }`}
           />
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </section>
+      </section>
+    </>
   )
 }
 

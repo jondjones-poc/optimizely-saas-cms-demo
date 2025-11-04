@@ -22,6 +22,7 @@ interface PromoBlockProps {
     key?: string
     displayName?: string
   }
+  _componentKey?: string // Passed from BlockRenderer for data-epi-block-id
   _gridDisplayName?: string
   isPreview?: boolean
   contextMode?: string | null
@@ -36,6 +37,7 @@ const PromoBlock = ({
   Title,
   _metadata,
   _gridDisplayName,
+  _componentKey,
   isPreview = false,
   contextMode = null
 }: PromoBlockProps) => {
@@ -89,8 +91,17 @@ const PromoBlock = ({
     }
   }
 
+  // Use _componentKey if provided (from BlockRenderer), otherwise fall back to _metadata.key
+  const componentKey = _componentKey || _metadata?.key || ''
+  
   return (
-    <section className={`py-16 ${getBackgroundColor()}`}>
+    <>
+      {/* PromoBlock */}
+      <section 
+        className={`py-16 ${getBackgroundColor()}`}
+        {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+        {...(contextMode === 'edit' && { 'data-epi-edit': 'BackgroundStyle' })}
+      >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Left side: Title, Description, and CTA */}
@@ -101,7 +112,10 @@ const PromoBlock = ({
             className="space-y-6"
           >
             {Title && (
-              <h2 className={`text-3xl md:text-4xl font-bold ${getTextColor()}`}>
+              <h2 
+                className={`text-3xl md:text-4xl font-bold ${getTextColor()}`}
+                {...(contextMode === 'edit' && { 'data-epi-edit': 'Title' })}
+              >
                 {Title}
               </h2>
             )}
@@ -110,6 +124,7 @@ const PromoBlock = ({
               <div 
                 className={`text-lg leading-relaxed ${getDescriptionColor()}`}
                 dangerouslySetInnerHTML={{ __html: Description.html }}
+                {...(contextMode === 'edit' && { 'data-epi-edit': 'Description' })}
               />
             )}
             
@@ -117,6 +132,7 @@ const PromoBlock = ({
               <a
                 href={CTA.default}
                 className={`inline-block px-8 py-3 text-white rounded-lg font-medium transition-all duration-200 ${getCTAColor()}`}
+                {...(contextMode === 'edit' && { 'data-epi-edit': 'CTA' })}
               >
                 {CTA.default.split('/').pop() || 'Learn More'}
               </a>
@@ -130,6 +146,7 @@ const PromoBlock = ({
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
               className="flex justify-center"
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'Image' })}
             >
               <img
                 src={Image.default}
@@ -138,9 +155,10 @@ const PromoBlock = ({
               />
             </motion.div>
           )}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   )
 }
 

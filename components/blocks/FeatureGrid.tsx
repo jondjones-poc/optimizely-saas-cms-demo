@@ -26,6 +26,11 @@ interface CardData {
       base: string
     }
   }>
+  _metadata?: {
+    key?: string
+    types?: string[]
+    displayName?: string
+  }
 }
 
 interface FeatureGridProps {
@@ -66,6 +71,7 @@ interface FeatureGridProps {
     key?: string
     displayName?: string
   }
+  _componentKey?: string // Passed from BlockRenderer for data-epi-block-id
   _gridDisplayName?: string
   isPreview?: boolean
   contextMode?: string | null
@@ -78,7 +84,8 @@ const FeatureGrid = ({
   Asset, 
   Cards, 
   _metadata, 
-  _gridDisplayName, 
+  _gridDisplayName,
+  _componentKey,
   isPreview = false, 
   contextMode = null 
 }: FeatureGridProps) => {
@@ -108,7 +115,8 @@ const FeatureGrid = ({
           Image: card.Image ? {
             base: card.Image.base,
             default: card.Image.default
-          } : undefined
+          } : undefined,
+          _metadata: card._metadata // Pass _metadata for FeatureCard data-epi-block-id
         })).filter(card => card.Heading || card.Body) // Filter out empty cards
         
         setCardData(processedCards)
@@ -194,7 +202,8 @@ const FeatureGrid = ({
                 Image: cardData.Image ? {
                   base: cardData.Image.base,
                   default: cardData.Image.default
-                } : undefined
+                } : undefined,
+                _metadata: cardData._metadata // Pass _metadata for FeatureCard data-epi-block-id
               }
             } else {
               console.error('❌ FeatureGrid: Card fetch failed', {
@@ -223,10 +232,19 @@ const FeatureGrid = ({
     processCardData()
   }, [Cards])
 
+  // Use _componentKey if provided (from BlockRenderer), otherwise fall back to _metadata.key
+  const componentKey = _componentKey || _metadata?.key || ''
+  
+  const sectionClassName = `py-20 ${theme === 'dark' ? 'bg-dark-secondary' : 'bg-phamily-lightGray'}`
+  
   return (
-    <section ref={ref} className={`py-20 ${
-      theme === 'dark' ? 'bg-dark-secondary' : 'bg-phamily-lightGray'
-    }`}>
+    <>
+      {/* FeatureGrid */}
+      <section 
+        ref={ref} 
+        className={sectionClassName}
+        {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+      >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -235,14 +253,20 @@ const FeatureGrid = ({
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${
-            theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-          }`}>
+          <h2 
+            className={`text-4xl md:text-5xl font-bold mb-6 ${
+              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+            }`}
+            {...(contextMode === 'edit' && { 'data-epi-edit': 'Heading' })}
+          >
             {Heading || 'Our mission'}
           </h2>
-          <h3 className={`text-3xl md:text-4xl font-bold mb-8 ${
-            theme === 'dark' ? 'text-dark-text' : 'text-phamily-blue'
-          }`}>
+          <h3 
+            className={`text-3xl md:text-4xl font-bold mb-8 ${
+              theme === 'dark' ? 'text-dark-text' : 'text-phamily-blue'
+            }`}
+            {...(contextMode === 'edit' && { 'data-epi-edit': 'SubHeading' })}
+          >
             {SubHeading || 'Your business peace of mind'}
           </h3>
           {Body?.html && (
@@ -251,6 +275,7 @@ const FeatureGrid = ({
                 theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/80'
               }`}
               dangerouslySetInnerHTML={{ __html: Body.html }}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'Body' })}
             />
           )}
         </motion.div>
@@ -268,7 +293,7 @@ const FeatureGrid = ({
             'grid-cols-1 md:grid-cols-3'
           }`}>
             {cardData.map((card, index) => {
-              const { key, ...cardProps } = card
+              const { key, _metadata, ...cardProps } = card
               return (
                 <motion.div
                   key={key || index}
@@ -278,6 +303,7 @@ const FeatureGrid = ({
                 >
                   <FeatureCard
                     {...cardProps}
+                    _metadata={_metadata}
                     isPreview={isPreview}
                     contextMode={contextMode}
                   />
@@ -288,6 +314,7 @@ const FeatureGrid = ({
         )}
       </div>
     </section>
+    </>
   )
 }
 

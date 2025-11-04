@@ -64,92 +64,140 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
   const homepage = data.data.data.BlankExperience.items[0]
   const composition = homepage.composition
 
-  // Extract all blocks from composition to render them
-  const blocks: any[] = []
-  if (composition && composition.grids) {
-    composition.grids.forEach((grid: any) => {
-      // Skip empty grids
-      if (!grid || !grid.rows) return
-      
-      grid.rows.forEach((row: any) => {
-        if (row.columns) {
-          row.columns.forEach((column: any) => {
-            if (column.elements) {
-              column.elements.forEach((element: any) => {
-                // Handle both inline blocks (component) and shared blocks (element with contentLink)
-                if (element.component) {
-                  blocks.push({
-                    ...element.component,
-                    _isShared: element.component._metadata?.key !== null,
-                    _elementKey: element.key,
-                    _elementDisplayName: element.displayName,
-                    _gridDisplayName: grid.displayName,
-                    _columnData: {
-                      gridKey: grid.key,
-                      rowKey: row.key,
-                      columnKey: column.key
-                    }
-                  })
-                } else if (element.element) {
-                  // Shared block reference
-                  blocks.push({
-                    ...element.element,
-                    _isShared: true,
-                    _elementKey: element.key,
-                    _elementDisplayName: element.displayName
-                  })
-                }
-              })
-            }
-          })
-        }
-      })
-    })
+  // Render the full composition hierarchy (grid > row > column > component)
+  // This matches the GraphQL structure and is required for inline editing
+  // According to Optimizely docs: "The structure of your GraphQL query must match the structure of your DOM"
+  // GraphQL uses aliases: grids: nodes, rows: nodes, columns: nodes
+  // So we need to handle both direct arrays and .nodes structure
+  if (!composition) {
+    return null
   }
 
-  // Group blocks by grid for special handling
-  const blocksByGrid: Record<string, any[]> = {}
-  blocks.forEach(block => {
-    const gridName = block._gridDisplayName || 'default'
-    if (!blocksByGrid[gridName]) {
-      blocksByGrid[gridName] = []
-    }
-    blocksByGrid[gridName].push(block)
-  })
+  // Handle GraphQL alias structure: grids: nodes means grids is an array directly
+  const grids = Array.isArray(composition.grids) 
+    ? composition.grids 
+    : composition.grids?.nodes || []
+
+  if (!grids || grids.length === 0) {
+    return null
+  }
 
   return (
     <>
-      {/* Render CMS Blocks */}
-      {Object.entries(blocksByGrid).map(([gridName, gridBlocks]) => {
-        // Special handling for Content Section with two columns
-        if (gridName === 'Content Section' && gridBlocks.length === 2) {
-          return (
-            <section key={gridName} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {gridBlocks.map((block, index) => (
-                  <BlockRenderer 
-                    key={block._metadata?.key || index} 
-                    component={block} 
-                    isPreview={isPreview}
-                    contextMode={contextMode}
-                  />
-                ))}
-              </div>
-            </section>
-          )
-        }
-        
-        // Default rendering for other grids
-        return gridBlocks.map((block, index) => (
-          <BlockRenderer 
-            key={block._metadata?.key || index} 
-            component={block} 
-            isPreview={isPreview}
-            contextMode={contextMode}
-          />
-        ))
+      {grids.map((grid: any) => {
+        if (!grid) return null
+
+        // Handle rows: nodes alias structure
+        const rows = Array.isArray(grid.rows) ? grid.rows : grid.rows?.nodes || []
+        if (!rows || rows.length === 0) return null
+
+        return (
+          <section 
+            key={grid.key} 
+            {...(contextMode === 'edit' && grid.key && { 'data-epi-block-id': grid.key })}
+            data-epi-role="grid"
+            data-epi-display-name={grid.displayName || 'Grid'}
+            className="w-full"
+          >
+            {rows.map((row: any) => {
+              if (!row) return null
+
+              // Handle columns: nodes alias structure
+              const columns = Array.isArray(row.columns) ? row.columns : row.columns?.nodes || []
+              if (!columns || columns.length === 0) return null
+
+              // Special handling for Content Section with multiple columns - display side by side
+              const isContentSection = grid.displayName === 'Content Section'
+              const hasMultipleColumns = columns.length > 1
+              const rowClassName = isContentSection && hasMultipleColumns 
+                ? 'grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'
+                : undefined
+
+              return (
+                <div 
+                  key={row.key}
+                  {...(contextMode === 'edit' && row.key && { 'data-epi-block-id': row.key })}
+                  data-epi-role="row"
+                  data-epi-display-name={row.displayName || 'Row'}
+                  {...(rowClassName && { className: rowClassName })}
+                >
+                  {columns.map((column: any) => {
+                    if (!column) return null
+
+                    // Handle elements: nodes alias structure
+                    const elements = Array.isArray(column.elements) ? column.elements : column.elements?.nodes || []
+                    if (!elements || elements.length === 0) return null
+
+                    return (
+                      <div 
+                        key={column.key}
+                        {...(contextMode === 'edit' && column.key && { 'data-epi-block-id': column.key })}
+                        data-epi-role="column"
+                        data-epi-display-name={column.displayName || 'Column'}
+                      >
+                        {elements.map((element: any) => {
+                          // Handle both inline blocks (component) and shared blocks (element with contentLink)
+                          // According to Optimizely docs: "The id field from each content item must be rendered as data-epi-block-id"
+                          // In Optimizely Graph, the "id field" is actually the "key" field
+                          // For inline components in composition, if component._metadata.key is null, use element.key as fallback
+                          if (element.component) {
+                            // Ensure component has the element key for fallback when _metadata.key is null
+                            const componentWithElementKey = {
+                              ...element.component,
+                              _elementKey: element.key,
+                              // If _metadata.key is missing, temporarily set it to element.key for inline editing
+                              _metadata: {
+                                ...element.component._metadata,
+                                key: element.component._metadata?.key || element.key
+                              },
+                              _elementDisplayName: element.displayName,
+                              _gridDisplayName: grid.displayName,
+                              _columnData: {
+                                gridKey: grid.key,
+                                rowKey: row.key,
+                                columnKey: column.key
+                              }
+                            }
+                            return (
+                              <BlockRenderer 
+                                key={element.key || componentWithElementKey._metadata?.key} 
+                                component={componentWithElementKey} 
+                                isPreview={isPreview}
+                                contextMode={contextMode}
+                              />
+                            )
+                          } else if (element.element) {
+                            // Shared block reference
+                            const sharedComponentWithElementKey = {
+                              ...element.element,
+                              _isShared: true,
+                              _elementKey: element.key,
+                              _metadata: {
+                                ...element.element._metadata,
+                                key: element.element._metadata?.key || element.key
+                              },
+                              _elementDisplayName: element.displayName
+                            }
+                            return (
+                              <BlockRenderer 
+                                key={element.key || sharedComponentWithElementKey._metadata?.key} 
+                                component={sharedComponentWithElementKey} 
+                                isPreview={isPreview}
+                                contextMode={contextMode}
+                              />
+                            )
+                          }
+                          return null
+                        })}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </section>
+        )
       })}
     </>
   )
 }
-

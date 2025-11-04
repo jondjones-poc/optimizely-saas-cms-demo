@@ -257,7 +257,10 @@ function renderHTMLHero(data: any, isPreview: boolean = false, contextMode: stri
             // Only render if component has Cards data
             if (component?.Cards && component.Cards.length > 0) {
               return (
-                <div key={index} data-epi-block-id={component._metadata?.key || `carousel-${index}`}>
+                <div 
+                  key={index} 
+                  {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
+                >
                   <HTMLCarousel component={component} theme={theme} />
                 </div>
               )
@@ -291,7 +294,7 @@ function renderHTMLHero(data: any, isPreview: boolean = false, contextMode: stri
             return (
               <div 
                 key={blockKey || `hero-${index}`}
-                data-epi-block-id={blockKey || undefined}
+                {...(contextMode === 'edit' && blockKey && { 'data-epi-block-id': blockKey })}
               >
                 <Hero 
                   {...component} 
@@ -314,7 +317,7 @@ function renderHTMLHero(data: any, isPreview: boolean = false, contextMode: stri
           return (
             <section 
               key={blockKey || `hero-${index}`}
-              data-epi-block-id={blockKey || undefined}
+              {...(contextMode === 'edit' && blockKey && { 'data-epi-block-id': blockKey })}
               className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-20 rounded-lg overflow-hidden"
             >
               <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -607,8 +610,8 @@ function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: stri
           return (
             <section 
               key={index} 
-              data-epi-block-id={component._metadata?.key || `text-${index}`}
-              data-epi-edit={contextMode === 'edit' ? 'Content' : undefined}
+              {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
+              {...(contextMode === 'edit' && { 'data-epi-edit': 'Content' })}
               className="py-12 px-4"
             >
               <div className="max-w-4xl mx-auto">
@@ -636,7 +639,7 @@ function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: stri
             return (
               <section 
                 key={index} 
-                data-epi-block-id={component._metadata?.key || `image-${index}`}
+                {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
                 className="py-8 px-4"
               >
                 <div className="max-w-6xl mx-auto">
@@ -653,7 +656,7 @@ function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: stri
           return (
             <section 
               key={index} 
-              data-epi-block-id={component._metadata?.key || `image-${index}`}
+              {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
               className="py-8 px-4"
             >
               <div className="w-full">
@@ -674,7 +677,7 @@ function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: stri
             return (
               <div 
                 key={index}
-                data-epi-block-id={component._metadata?.key || `menu-${index}`}
+                {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
               >
                 <Menu 
                   {...component} 

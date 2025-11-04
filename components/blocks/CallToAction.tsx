@@ -24,6 +24,7 @@ interface CallToActionProps {
     key?: string
     displayName?: string
   }
+  _componentKey?: string // Passed from BlockRenderer for data-epi-block-id
   _gridDisplayName?: string
   isPreview?: boolean
   contextMode?: string | null
@@ -33,7 +34,8 @@ const CallToAction = ({
   Header, 
   Links, 
   _metadata, 
-  _gridDisplayName, 
+  _gridDisplayName,
+  _componentKey,
   isPreview = false, 
   contextMode = null 
 }: CallToActionProps) => {
@@ -44,6 +46,9 @@ const CallToAction = ({
 
   // Check if there's no content data
   const hasContent = Header || (Links && Links.length > 0)
+
+  // Use _componentKey if provided (from BlockRenderer), otherwise fall back to _metadata.key
+  const componentKey = _componentKey || _metadata?.key || ''
 
   if (!hasContent) {
     // In preview mode, return null instead of showing error to avoid confusion
@@ -62,9 +67,15 @@ const CallToAction = ({
   }
 
   return (
-    <section ref={ref} className={`py-20 ${
-      theme === 'dark' ? 'bg-dark-secondary' : 'bg-phamily-lightGray'
-    }`}>
+    <>
+      {/* CallToAction */}
+      <section 
+        ref={ref} 
+        className={`py-20 ${
+          theme === 'dark' ? 'bg-dark-secondary' : 'bg-phamily-lightGray'
+        }`}
+        {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+      >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -110,9 +121,10 @@ const CallToAction = ({
               ))}
             </div>
           )}
-        </motion.div>
-      </div>
-    </section>
+          </motion.div>
+        </div>
+      </section>
+    </>
   )
 }
 

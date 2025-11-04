@@ -39,15 +39,24 @@ const Card = ({
 }: CardProps) => {
   const { theme } = useTheme()
 
+  // Use _metadata.key for data-epi-block-id if available
+  const componentKey = _metadata?.key || ''
+
   return (
-    <motion.div
+    <>
+      {/* FeatureCard */}
+      <motion.div
       className={`rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 btn-hover ${
         theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
       }`}
+      {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
     >
       <div className="flex flex-col items-center text-center space-y-6">
         {Image?.default && (
-          <div className="w-16 h-16 rounded-full overflow-hidden">
+          <div 
+            className="w-16 h-16 rounded-full overflow-hidden"
+            {...(contextMode === 'edit' && { 'data-epi-edit': 'Image' })}
+          >
             <img
               src={Image.default}
               alt={Heading || 'Card image'}
@@ -56,23 +65,32 @@ const Card = ({
           </div>
         )}
         {Heading && (
-          <h4 className={`text-xl font-bold ${
-            theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-          }`}>
+          <h4 
+            className={`text-xl font-bold ${
+              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
+            }`}
+            {...(contextMode === 'edit' && { 'data-epi-edit': 'Heading' })}
+          >
             {Heading}
           </h4>
         )}
         {SubHeading && (
-          <h5 className={`text-lg font-semibold ${
-            theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-blue'
-          }`}>
+          <h5 
+            className={`text-lg font-semibold ${
+              theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-blue'
+            }`}
+            {...(contextMode === 'edit' && { 'data-epi-edit': 'SubHeading' })}
+          >
             {SubHeading}
           </h5>
         )}
         {Body && (
-          <p className={`leading-relaxed ${
-            theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/80'
-          }`}>
+          <p 
+            className={`leading-relaxed ${
+              theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/80'
+            }`}
+            {...(contextMode === 'edit' && { 'data-epi-edit': 'Body' })}
+          >
             {Body}
           </p>
         )}
@@ -97,6 +115,7 @@ const Card = ({
         )}
       </div>
     </motion.div>
+    </>
   )
 }
 

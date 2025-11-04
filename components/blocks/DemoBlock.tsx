@@ -11,11 +11,12 @@ interface DemoBlockProps {
     key?: string
     displayName?: string
   }
+  _componentKey?: string // Passed from BlockRenderer for data-epi-block-id
   isPreview?: boolean
   contextMode?: string | null
 }
 
-const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, isPreview = false, contextMode = null }: DemoBlockProps) => {
+const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, _componentKey, isPreview = false, contextMode = null }: DemoBlockProps) => {
   const { theme } = useTheme()
   const { branding } = useBranding()
   
@@ -30,8 +31,18 @@ const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, isPreview = fal
   const marginValue = MarginTopAndBottom ? parseInt(MarginTopAndBottom) : 0
   const marginStyle = marginValue > 0 ? { marginTop: `${marginValue}px`, marginBottom: `${marginValue}px` } : {}
 
+  // Use _componentKey if provided (from BlockRenderer), otherwise fall back to _metadata.key
+  const componentKey = _componentKey || _metadata?.key || ''
+  
   return (
-    <section className="w-full" style={marginStyle}>
+    <>
+      {/* DemoBlock */}
+      <section 
+        className="w-full" 
+        style={marginStyle}
+        {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+        {...(contextMode === 'edit' && { 'data-epi-edit': 'MarginTopAndBottom' })}
+      >
       {/* Full-width banner image */}
       <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
         <img
@@ -55,6 +66,7 @@ const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, isPreview = fal
         />
       </div>
     </section>
+    </>
   )
 }
 

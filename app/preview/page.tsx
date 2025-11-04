@@ -20,7 +20,8 @@ export default function PreviewPage() {
   const key = searchParams.get('key')
   const ver = searchParams.get('ver')
   const loc = searchParams.get('loc')
-  const ctx = searchParams.get('ctx')
+  // Default to 'edit' mode if ctx is not provided - inline editing should always be enabled in preview
+  const ctx = searchParams.get('ctx') || 'edit'
   const previewToken = searchParams.get('preview_token')
   const host = typeof window !== 'undefined' ? window.location.host : 'server'
   
