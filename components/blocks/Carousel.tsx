@@ -110,13 +110,30 @@ const Carousel = ({ Slides, Cards, _metadata, _gridDisplayName, isPreview = fals
         const urlParams = new URLSearchParams(window.location.search)
         const previewToken = urlParams.get('preview_token')
         
+        console.log('🎠 Carousel: Fetching slide data', {
+          hasPreviewToken: !!previewToken,
+          previewTokenLength: previewToken?.length || 0,
+          previewTokenPrefix: previewToken ? previewToken.substring(0, 20) + '...' : 'none',
+          queryLength: query.length,
+          queryPreview: query.substring(0, 200) + '...'
+        })
+        
         if (previewToken) {
           // Use preview token for draft content
           headers['Authorization'] = `Bearer ${previewToken}`
           apiUrl = `${apiUrl}?t=${Date.now()}` // Add cache-busting
+          console.log('✅ Carousel: Using preview token for draft content', {
+            hasAuthHeader: true,
+            apiUrl,
+            cacheBusting: true
+          })
         } else {
           // Use SDK key for published content
           apiUrl = `${apiUrl}?auth=${process.env.NEXT_PUBLIC_SDK_KEY}`
+          console.log('⚠️ Carousel: Using SDK key for published content', {
+            hasAuthHeader: false,
+            apiUrl: apiUrl.substring(0, 50) + '...'
+          })
         }
         
         const response = await fetch(apiUrl, {
@@ -126,11 +143,23 @@ const Carousel = ({ Slides, Cards, _metadata, _gridDisplayName, isPreview = fals
         })
 
         const result = await response.json()
-        console.log('SlideItems fetch result:', result)
+        console.log('🎠 Carousel: SlideItems fetch result', {
+          success: !!result.data,
+          hasErrors: !!result.errors,
+          errorCount: result.errors?.length || 0,
+          itemsCount: result.data?._Content?.items?.length || 0,
+          items: result.data?._Content?.items?.map((item: any) => ({
+            key: item._metadata?.key,
+            types: item._metadata?.types,
+            version: item._metadata?.version,
+            status: item._metadata?.status,
+            title: item.Title?.substring(0, 30) + '...'
+          })) || []
+        })
         
         // Check for GraphQL errors
         if (result.errors) {
-          console.error('Carousel GraphQL errors:', JSON.stringify(result.errors, null, 2))
+          console.error('❌ Carousel: GraphQL errors', JSON.stringify(result.errors, null, 2))
           console.error('Carousel GraphQL error details:', {
             errorCount: result.errors.length,
             firstError: result.errors[0],

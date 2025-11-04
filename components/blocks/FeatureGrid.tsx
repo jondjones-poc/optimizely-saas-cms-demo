@@ -45,10 +45,21 @@ interface FeatureGridProps {
   }
   Cards?: Array<{
     key: string
-    url: {
+    url?: {
       base: string
       default: string
       graph: string
+    }
+    Heading?: string
+    Body?: string
+    Image?: {
+      base: string
+      default: string
+    }
+    _metadata?: {
+      key?: string
+      types?: string[]
+      displayName?: string
     }
   }>
   _metadata?: {
@@ -77,60 +88,105 @@ const FeatureGrid = ({
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
-  // Fetch card data using the graph URL directly with Optimizely GraphQL endpoint
+  // Process card data - use inlined content if available, otherwise fetch via API
   useEffect(() => {
-    const fetchCardData = async () => {
-      console.log('FeatureGrid: Cards prop:', Cards)
+    const processCardData = async () => {
       if (!Cards || Cards.length === 0) {
-        console.log('FeatureGrid: No Cards, setting empty array')
         setCardData([])
         return
       }
 
+      // Check if cards already have content inlined (from preview API)
+      const hasInlinedContent = Cards.some(card => card.Heading !== undefined || card.Body !== undefined)
+      
+      if (hasInlinedContent) {
+        // Cards are already inlined from the preview API - use them directly
+        const processedCards = Cards.map((card) => ({
+          key: card._metadata?.key || card.key,
+          Heading: card.Heading || '',
+          Body: card.Body || '',
+          Image: card.Image ? {
+            base: card.Image.base,
+            default: card.Image.default
+          } : undefined
+        })).filter(card => card.Heading || card.Body) // Filter out empty cards
+        
+        setCardData(processedCards)
+        return
+      }
+
+      // Cards are not inlined - fetch them via API (production mode or fallback)
       setIsLoading(true)
       try {
-        // Check if we're in preview mode (check URL for preview_token and version)
+        // Check if we're in preview mode (check URL for preview_token)
         const urlParams = new URLSearchParams(window.location.search)
         const previewToken = urlParams.get('preview_token')
-        const version = urlParams.get('ver')
         
         // Build headers with preview token if available
         const headers: HeadersInit = { 'Content-Type': 'application/json' }
         if (previewToken) {
           const bearerToken = previewToken.startsWith('Bearer ') ? previewToken : `Bearer ${previewToken}`
           headers['Authorization'] = bearerToken
-          console.log('✅ FeatureGrid: Sending preview token to feature-card API', {
-            hasToken: true,
-            tokenLength: previewToken.length,
-            tokenPrefix: previewToken.substring(0, 20) + '...',
-            version: version || 'not provided'
-          })
-        } else {
-          console.log('⚠️ FeatureGrid: No preview token found in URL')
+          // Add cache-busting headers for preview mode
+          headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+          headers['Pragma'] = 'no-cache'
         }
         
-        // Use the new API endpoint to fetch card data
+        // Fetch card data via API with cache-busting timestamp for preview
+        // Use graph URL from card reference if available (contains version info)
         const cardPromises = Cards.map(async (card) => {
           try {
-            console.log('FeatureGrid: Fetching card with key:', card.key)
-            // Build URL - version not needed, preview token alone returns draft content
-            const response = await fetch(`/api/optimizely/feature-card?key=${encodeURIComponent(card.key)}`, {
+            // Build query params - prefer graph URL if available (contains version info)
+            const params = new URLSearchParams()
+            if (card.url?.graph) {
+              params.append('graph', card.url.graph)
+              console.log('✅ FeatureGrid: Using graph URL for card', { key: card.key, graph: card.url.graph })
+            } else {
+              params.append('key', card.key || '')
+            }
+            // Add cache-busting timestamp for preview
+            if (previewToken) {
+              params.append('t', Date.now().toString())
+            }
+            
+            const apiUrl = `/api/optimizely/feature-card?${params.toString()}`
+            console.log('📦 FeatureGrid: Fetching card', {
+              key: card.key,
+              hasGraphUrl: !!card.url?.graph,
+              graphUrl: card.url?.graph,
+              apiUrl,
+              hasPreviewToken: !!previewToken,
+              previewTokenLength: previewToken?.length || 0
+            })
+            
+            const response = await fetch(apiUrl, {
               headers,
               cache: 'no-store'
             })
             const result = await response.json()
-            console.log('FeatureGrid: Card fetch result:', result)
-            if (result.details && result.details.length > 0) {
-              console.error('FeatureGrid: GraphQL error details:', JSON.stringify(result.details[0], null, 2))
-              console.error('FeatureGrid: Error message:', result.details[0]?.message)
-            }
-            if (result.message) {
-              console.error('FeatureGrid: Error message:', result.message)
-            }
+            
+            console.log('📦 FeatureGrid: Card fetch result', {
+              success: result.success,
+              hasData: !!result.data,
+              hasErrors: !!result.error,
+              error: result.error,
+              key: card.key
+            })
             
             if (result.success && result.data) {
-              // Return the card data directly - it already matches the expected structure
               const cardData = result.data
+              // Log card data to verify draft content
+              if (previewToken && cardData._metadata) {
+                console.log('✅ FeatureGrid: Card fetched with preview token', {
+                  key: cardData._metadata.key,
+                  version: cardData._metadata.version,
+                  status: cardData._metadata.status,
+                  heading: cardData.Heading?.substring(0, 30) + '...',
+                  hasHeading: !!cardData.Heading,
+                  hasBody: !!cardData.Body,
+                  hasImage: !!cardData.Image
+                })
+              }
               return {
                 key: cardData._metadata?.key || card.key,
                 Heading: cardData.Heading,
@@ -140,8 +196,13 @@ const FeatureGrid = ({
                   default: cardData.Image.default
                 } : undefined
               }
+            } else {
+              console.error('❌ FeatureGrid: Card fetch failed', {
+                key: card.key,
+                error: result.error,
+                details: result.details
+              })
             }
-            console.warn('FeatureGrid: Card fetch failed or no data:', result)
             return null
           } catch (error) {
             console.error('Error fetching card:', error)
@@ -150,18 +211,16 @@ const FeatureGrid = ({
         })
 
         const cards = await Promise.all(cardPromises)
-        console.log('FeatureGrid: All cards fetched:', cards)
         const validCards = cards.filter(card => card)
-        console.log('FeatureGrid: Valid cards:', validCards)
-        setCardData(validCards) // Filter out any failed requests
+        setCardData(validCards)
       } catch (error) {
-        console.error('Error fetching card data:', error)
+        console.error('Error processing card data:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchCardData()
+    processCardData()
   }, [Cards])
 
   return (
@@ -208,20 +267,23 @@ const FeatureGrid = ({
             cardData.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto' :
             'grid-cols-1 md:grid-cols-3'
           }`}>
-            {cardData.map((card, index) => (
-              <motion.div
-                key={card.key || index}
-                initial={{ opacity: 0, y: 50 }}
-                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-              >
-                <FeatureCard
-                  {...card}
-                  isPreview={isPreview}
-                  contextMode={contextMode}
-                />
-              </motion.div>
-            ))}
+            {cardData.map((card, index) => {
+              const { key, ...cardProps } = card
+              return (
+                <motion.div
+                  key={key || index}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                >
+                  <FeatureCard
+                    {...cardProps}
+                    isPreview={isPreview}
+                    contextMode={contextMode}
+                  />
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </div>
