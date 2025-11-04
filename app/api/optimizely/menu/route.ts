@@ -9,6 +9,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: 'SDK Key not configured' }, { status: 500 })
   }
 
+  // Check for preview token in Authorization header
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization')
+  let authorization: string | null = null
+  if (authHeader) {
+    let headerValue = authHeader.split(',')[0].trim()
+    let token = headerValue.replace(/^Bearer\s+/i, '').trim()
+    if (token && token.length > 0) {
+      authorization = `Bearer ${token}`
+    }
+  }
+
   const query = `
     query GetMenu {
       _Content(
@@ -73,9 +84,29 @@ export async function GET(request: Request) {
   try {
     console.log('Menu API - Query:', query)
     
-    const response = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+    // Use preview token if available, otherwise use SDK key
+    let headers: HeadersInit = { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+    let apiUrl = 'https://cg.optimizely.com/content/v2'
+    
+    if (authorization) {
+      // Preview token: use Authorization header for draft content
+      headers['Authorization'] = authorization
+      apiUrl = `${apiUrl}?t=${Date.now()}` // Add cache-busting
+      console.log('Menu API - Using PREVIEW TOKEN for draft content')
+    } else {
+      // SDK key: use query parameter for published content
+      apiUrl = `${apiUrl}?auth=${sdkKey}`
+      console.log('Menu API - Using SDK KEY for published content')
+    }
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ query }),
       cache: 'no-store'
     })

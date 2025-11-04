@@ -19,26 +19,16 @@ const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, isPreview = fal
   const { theme } = useTheme()
   const { branding } = useBranding()
   
-  // Debug: Log the branding context values
-  console.log('DemoBlock branding context:', branding)
-  console.log('DemoBlock cms_demo value:', branding.cms_demo)
-  console.log('DemoBlock MarginTopAndBottom:', MarginTopAndBottom)
-  
   // Default to image 1 if no ImageNumber is provided
   const imageNumber = ImageNumber || 1
   
   // Use cms_demo header value as folder name, default to 'default' if not present
   const folderName = branding.cms_demo || 'default'
   const imagePath = `/${folderName}/${imageNumber}.png`
-  
-  console.log('DemoBlock imagePath:', imagePath)
 
   // Parse MarginTopAndBottom value and convert to pixels
   const marginValue = MarginTopAndBottom ? parseInt(MarginTopAndBottom) : 0
   const marginStyle = marginValue > 0 ? { marginTop: `${marginValue}px`, marginBottom: `${marginValue}px` } : {}
-  
-  console.log('DemoBlock marginValue:', marginValue)
-  console.log('DemoBlock marginStyle:', marginStyle)
 
   return (
     <section className="w-full" style={marginStyle}>
@@ -63,17 +53,6 @@ const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, isPreview = fal
           }}
           {...(contextMode === 'edit' && { 'data-epi-edit': 'ImageNumber' })}
         />
-        
-        {/* Only show overlay content in edit mode */}
-        {isPreview && contextMode === 'edit' && (
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-            <div className="text-center text-white">
-              <p className="text-sm text-gray-300 mt-2">
-                Edit 'ImageNumber' property in CMS to change image.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   )

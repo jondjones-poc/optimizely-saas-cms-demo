@@ -7,6 +7,7 @@ import SEOButton from '@/components/SEOButton'
 import { transformLandingPageData } from '@/utils/seoDataTransformers'
 import { useTheme } from '@/contexts/ThemeContext'
 import Menu from './blocks/Menu'
+import Hero from './blocks/Hero'
 
 interface PageData {
   _metadata: {
@@ -30,55 +31,60 @@ interface PageData {
 
 interface LandingPageDisplayProps {
   data: PageData
+  isPreview?: boolean
+  contextMode?: string | null
 }
 
-export default function LandingPageDisplay({ data }: LandingPageDisplayProps) {
+export default function LandingPageDisplay({ data, isPreview = false, contextMode = null }: LandingPageDisplayProps) {
   const transformedData = transformLandingPageData(data)
-  const [displayMode, setDisplayMode] = useState<'wireframe' | 'html'>('wireframe')
+  // In preview mode, always show HTML view and hide the toggle
+  const [displayMode, setDisplayMode] = useState<'wireframe' | 'html'>(isPreview ? 'html' : 'wireframe')
   
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Toggle for Display Mode */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-center">
-            <div className="inline-flex items-center gap-4">
-              <div className="relative inline-flex items-center bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setDisplayMode('wireframe')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                    displayMode === 'wireframe'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Wireframe
-                </button>
-                <button
-                  onClick={() => setDisplayMode('html')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                    displayMode === 'html'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  HTML View
-                </button>
+      <div className="min-h-screen bg-gray-50">
+      {/* Toggle for Display Mode - Hide in preview mode */}
+      {!isPreview && (
+        <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-center">
+              <div className="inline-flex items-center gap-4">
+                <div className="relative inline-flex items-center bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setDisplayMode('wireframe')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      displayMode === 'wireframe'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Wireframe
+                  </button>
+                  <button
+                    onClick={() => setDisplayMode('html')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                      displayMode === 'html'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    HTML View
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
       
       <div className="space-y-8">
           {/* TopContentArea - Hero Component */}
           {data.TopContentArea && data.TopContentArea.length > 0 && (
-            displayMode === 'wireframe' ? renderWireframeHero(data) : renderHTMLHero(data)
+            displayMode === 'wireframe' ? renderWireframeHero(data) : renderHTMLHero(data, isPreview, contextMode)
           )}
 
           {/* MainContentArea - Multiple Components */}
           {data.MainContentArea && data.MainContentArea.length > 0 && (
-            displayMode === 'wireframe' ? renderWireframeMain(data) : renderHTMLMain(data)
+            displayMode === 'wireframe' ? renderWireframeMain(data) : renderHTMLMain(data, isPreview, contextMode)
           )}
 
           {/* SEO Settings Display - Only show in wireframe mode */}
@@ -238,7 +244,7 @@ function renderWireframeHero(data: any) {
   )
 }
 
-function renderHTMLHero(data: any) {
+function renderHTMLHero(data: any, isPreview: boolean = false, contextMode: string | null = null) {
   const { theme } = useTheme()
   
   return (
@@ -248,21 +254,84 @@ function renderHTMLHero(data: any) {
           const componentType = component._metadata?.types?.[0]
           
           if (componentType === 'Carousel') {
-            return <HTMLCarousel key={index} component={component} theme={theme} />
+            // Only render if component has Cards data
+            if (component?.Cards && component.Cards.length > 0) {
+              return (
+                <div key={index} data-epi-block-id={component._metadata?.key || `carousel-${index}`}>
+                  <HTMLCarousel component={component} theme={theme} />
+                </div>
+              )
+            }
+            // Return null if no cards data
+            return null
           }
           
           if (componentType === 'Hero') {
+          // Debug: Log the component data structure
+          if (isPreview && contextMode === 'edit') {
+            console.log('Hero block in renderHTMLHero:', {
+              component,
+              metadata: component._metadata,
+              blockKey: component._metadata?.key,
+              hasKey: !!component._metadata?.key
+            })
+          }
+          
+          // In preview/edit mode, use the actual Hero component for proper live preview support
+          if (isPreview && contextMode === 'edit') {
+            const blockKey = component._metadata?.key
+            if (!blockKey) {
+              console.warn('Hero block missing _metadata.key - cannot enable inline editing', {
+                component,
+                metadata: component._metadata,
+                allKeys: Object.keys(component)
+              })
+            }
+            
+            return (
+              <div 
+                key={blockKey || `hero-${index}`}
+                data-epi-block-id={blockKey || undefined}
+              >
+                <Hero 
+                  {...component} 
+                  _metadata={component._metadata} 
+                  _gridDisplayName={component._gridDisplayName} 
+                  isPreview={isPreview} 
+                  contextMode={contextMode} 
+                />
+              </div>
+            )
+          }
+          
+          // Fallback to custom HTML rendering for non-preview mode
+          // Ensure we have a valid block key for live preview
+          const blockKey = component._metadata?.key
+          if (!blockKey && isPreview) {
+            console.warn('Hero block missing _metadata.key for live preview:', component._metadata)
+          }
+          
           return (
-            <section key={index} className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-20 rounded-lg overflow-hidden">
+            <section 
+              key={blockKey || `hero-${index}`}
+              data-epi-block-id={blockKey || undefined}
+              className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-20 rounded-lg overflow-hidden"
+            >
               <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="max-w-4xl mx-auto text-center">
                   {component.SubHeading && (
-                    <p className="text-lg mb-4 text-blue-100 font-medium">
+                    <p 
+                      className="text-lg mb-4 text-blue-100 font-medium"
+                      {...(contextMode === 'edit' && { 'data-epi-edit': 'SubHeading' })}
+                    >
                       {component.SubHeading}
                     </p>
                   )}
                   {component.Heading && (
-                    <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                    <h1 
+                      className="text-5xl md:text-6xl font-bold mb-6 leading-tight"
+                      {...(contextMode === 'edit' && { 'data-epi-edit': 'Heading' })}
+                    >
                       {component.Heading}
                     </h1>
                   )}
@@ -270,14 +339,18 @@ function renderHTMLHero(data: any) {
                     <div 
                       className="text-lg mb-8 text-blue-50 leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: component.Body.html }}
+                      {...(contextMode === 'edit' && { 'data-epi-edit': 'Body' })}
                     />
                   )}
                   {component.Links && component.Links.length > 0 && (
-                    <div className="flex flex-wrap justify-center gap-4">
+                    <div 
+                      className="flex flex-wrap justify-center gap-4"
+                      {...(contextMode === 'edit' && { 'data-epi-edit': 'Links' })}
+                    >
                       {component.Links.map((link: any, idx: number) => (
                         <a
                           key={idx}
-                          href={link.url || '#'}
+                          href={link.url?.default || link.url || '#'}
                           className="px-8 py-3 bg-white text-blue-700 rounded-full font-semibold hover:bg-blue-50 transition-colors duration-200 shadow-lg"
                         >
                           {link.text || link.title}
@@ -523,7 +596,7 @@ function renderWireframeMain(data: any) {
   )
 }
 
-function renderHTMLMain(data: any) {
+function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: string | null = null) {
   return (
     <div className="space-y-8">
       {data.MainContentArea.map((component: any, index: number) => {
@@ -532,7 +605,12 @@ function renderHTMLMain(data: any) {
           
         if (componentType === 'Text') {
           return (
-            <section key={index} className="py-12 px-4">
+            <section 
+              key={index} 
+              data-epi-block-id={component._metadata?.key || `text-${index}`}
+              data-epi-edit={contextMode === 'edit' ? 'Content' : undefined}
+              className="py-12 px-4"
+            >
               <div className="max-w-4xl mx-auto">
                 <div className={`prose prose-lg max-w-none ${
                   component.Position === 'center' ? 'text-center' : ''
@@ -556,7 +634,11 @@ function renderHTMLMain(data: any) {
           if (!imageUrl) {
             // Display a placeholder if no image
             return (
-              <section key={index} className="py-8 px-4">
+              <section 
+                key={index} 
+                data-epi-block-id={component._metadata?.key || `image-${index}`}
+                className="py-8 px-4"
+              >
                 <div className="max-w-6xl mx-auto">
                   <div className="flex justify-center">
                     <div className="w-full h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -569,7 +651,11 @@ function renderHTMLMain(data: any) {
           }
           
           return (
-            <section key={index} className="py-8 px-4">
+            <section 
+              key={index} 
+              data-epi-block-id={component._metadata?.key || `image-${index}`}
+              className="py-8 px-4"
+            >
               <div className="w-full">
                 <div className="flex justify-center">
                   <img 
@@ -584,20 +670,19 @@ function renderHTMLMain(data: any) {
           }
           
           if (componentType === 'Menu') {
-            console.log('🎯 LANDING PAGE MENU BLOCK - HTML Mode')
-            console.log('Menu component data:', component)
-            console.log('Menu _metadata:', component._metadata)
-            console.log('Menu MenuItem:', component.MenuItem)
-            console.log('Menu MenuItem type:', typeof component.MenuItem)
-            console.log('Menu MenuItem is array:', Array.isArray(component.MenuItem))
-            console.log('Menu MenuItem length:', component.MenuItem?.length)
-            console.log('Menu all properties:', Object.keys(component))
-            console.log('🎯 END LANDING PAGE MENU BLOCK HTML')
-            
-            // Use the actual Menu component instead of custom HTML
+            // Use the actual Menu component with preview support
             return (
-              <div key={index}>
-                <Menu {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={false} contextMode={null} />
+              <div 
+                key={index}
+                data-epi-block-id={component._metadata?.key || `menu-${index}`}
+              >
+                <Menu 
+                  {...component} 
+                  _metadata={component._metadata} 
+                  _gridDisplayName={component._gridDisplayName} 
+                  isPreview={isPreview} 
+                  contextMode={contextMode} 
+                />
               </div>
             )
           }
@@ -617,45 +702,28 @@ function renderHTMLMain(data: any) {
   )
 }
 
-// HTML Carousel Component - copied from homepage Carousel
+// HTML Carousel Component - uses actual CMS data
 function HTMLCarousel({ component, theme }: { component: any, theme: string }) {
   const [currentSlide, setCurrentSlide] = useState(0)
   
-  // Using hardcoded slides like the homepage carousel
-  const slides = [
-    {
-      id: 1,
-      title: "Transform Your Business",
-      subtitle: "Innovation at Scale",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=1200&h=600&fit=crop",
-      cta: "Learn More"
-    },
-    {
-      id: 2,
-      title: "Advanced Analytics",
-      subtitle: "Data-Driven Decisions",
-      description: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop",
-      cta: "Get Started"
-    },
-    {
-      id: 3,
-      title: "Seamless Integration",
-      subtitle: "Connect Everything",
-      description: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-      image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1200&h=600&fit=crop",
-      cta: "Explore"
-    },
-    {
-      id: 4,
-      title: "24/7 Support",
-      subtitle: "Always Here for You",
-      description: "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-      image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=600&fit=crop",
-      cta: "Contact Us"
-    }
-  ]
+  // Check if component has Cards data from CMS
+  const cards = component?.Cards || []
+  
+  // If no cards, don't render carousel
+  if (!cards || cards.length === 0) {
+    return null
+  }
+  
+  // Use actual CMS Cards data
+  const slides = cards.map((card: any, index: number) => ({
+    id: index + 1,
+    title: card.title || card.displayName || '',
+    subtitle: card.subtitle || '',
+    description: card.description || '',
+    image: card.image?.url?.default || card.url?.default || '',
+    cta: card.cta || 'Learn More',
+    url: card.url?.default || '#'
+  }))
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -763,7 +831,7 @@ function HTMLCarousel({ component, theme }: { component: any, theme: string }) {
       </button>
 
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex space-x-2">
-        {slides.map((_, index) => (
+        {slides.map((_: any, index: number) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}

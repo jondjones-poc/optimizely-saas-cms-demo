@@ -31,9 +31,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           if (data.clientId === 'test') {
             setTheme('dark')
           }
+        } else {
+          // Response not ok, but not an error - just no clientId header
+          // This is expected behavior
         }
       } catch (error) {
-        console.log('Could not fetch clientId from server')
+        // Network error or fetch failed - silently ignore
+        // This is expected during development or if API is unavailable
       }
     }
 

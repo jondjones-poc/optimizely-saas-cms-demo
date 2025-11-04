@@ -106,9 +106,26 @@ const Menu = ({ MenuItem, _metadata, _gridDisplayName, isPreview = false, contex
                 }
               }
             `
-            const resp = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+            // In preview mode, use preview token instead of SDK key
+            let headers: HeadersInit = { 'Content-Type': 'application/json' }
+            let apiUrl = `https://cg.optimizely.com/content/v2`
+            
+            // Check if we're in preview mode (check URL for preview_token)
+            const urlParams = new URLSearchParams(window.location.search)
+            const previewToken = urlParams.get('preview_token')
+            
+            if (previewToken) {
+              // Use preview token for draft content
+              headers['Authorization'] = `Bearer ${previewToken}`
+              apiUrl = `${apiUrl}?t=${Date.now()}` // Add cache-busting
+            } else {
+              // Use SDK key for published content
+              apiUrl = `${apiUrl}?auth=${sdkKey}`
+            }
+            
+            const resp = await fetch(apiUrl, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers,
               body: JSON.stringify({ query: gql }),
             })
             const data = await resp.json()
@@ -171,9 +188,26 @@ const Menu = ({ MenuItem, _metadata, _gridDisplayName, isPreview = false, contex
                     }
                   }
                 `
-                const resp = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+                // In preview mode, use preview token instead of SDK key
+                let headers: HeadersInit = { 'Content-Type': 'application/json' }
+                let apiUrl = `https://cg.optimizely.com/content/v2`
+                
+                // Check if we're in preview mode (check URL for preview_token)
+                const urlParams = new URLSearchParams(window.location.search)
+                const previewToken = urlParams.get('preview_token')
+                
+                if (previewToken) {
+                  // Use preview token for draft content
+                  headers['Authorization'] = `Bearer ${previewToken}`
+                  apiUrl = `${apiUrl}?t=${Date.now()}` // Add cache-busting
+                } else {
+                  // Use SDK key for published content
+                  apiUrl = `${apiUrl}?auth=${sdkKey}`
+                }
+                
+                const resp = await fetch(apiUrl, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers,
                   body: JSON.stringify({ query: gql }),
                 })
                 const data = await resp.json()

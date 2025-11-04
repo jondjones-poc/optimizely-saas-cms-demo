@@ -46,6 +46,10 @@ const CallToAction = ({
   const hasContent = Header || (Links && Links.length > 0)
 
   if (!hasContent) {
+    // In preview mode, return null instead of showing error to avoid confusion
+    if (isPreview) {
+      return null
+    }
     console.log('CallToAction: No content available, showing empty state')
     return (
       <section ref={ref} className="py-20 border-4 border-red-500 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">

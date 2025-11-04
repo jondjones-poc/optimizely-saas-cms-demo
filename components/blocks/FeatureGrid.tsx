@@ -77,33 +77,71 @@ const FeatureGrid = ({
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
-  // Debug: Log the props to see what data is being passed  
-  console.log('FeatureGrid component props:', { Heading, SubHeading, Body, Asset, Cards, _metadata, _gridDisplayName })
-
   // Fetch card data using the graph URL directly with Optimizely GraphQL endpoint
   useEffect(() => {
     const fetchCardData = async () => {
-      console.log('FeatureGrid Cards prop:', Cards)
+      console.log('FeatureGrid: Cards prop:', Cards)
       if (!Cards || Cards.length === 0) {
-        console.log('No Cards data, setting empty array')
+        console.log('FeatureGrid: No Cards, setting empty array')
         setCardData([])
         return
       }
 
-      console.log('Fetching card data for', Cards.length, 'cards')
       setIsLoading(true)
       try {
+        // Check if we're in preview mode (check URL for preview_token and version)
+        const urlParams = new URLSearchParams(window.location.search)
+        const previewToken = urlParams.get('preview_token')
+        const version = urlParams.get('ver')
+        
+        // Build headers with preview token if available
+        const headers: HeadersInit = { 'Content-Type': 'application/json' }
+        if (previewToken) {
+          const bearerToken = previewToken.startsWith('Bearer ') ? previewToken : `Bearer ${previewToken}`
+          headers['Authorization'] = bearerToken
+          console.log('✅ FeatureGrid: Sending preview token to feature-card API', {
+            hasToken: true,
+            tokenLength: previewToken.length,
+            tokenPrefix: previewToken.substring(0, 20) + '...',
+            version: version || 'not provided'
+          })
+        } else {
+          console.log('⚠️ FeatureGrid: No preview token found in URL')
+        }
+        
         // Use the new API endpoint to fetch card data
         const cardPromises = Cards.map(async (card) => {
-          console.log('Fetching card with key:', card.key)
           try {
-            const response = await fetch(`/api/optimizely/feature-card?key=${encodeURIComponent(card.key)}`)
+            console.log('FeatureGrid: Fetching card with key:', card.key)
+            // Build URL - version not needed, preview token alone returns draft content
+            const response = await fetch(`/api/optimizely/feature-card?key=${encodeURIComponent(card.key)}`, {
+              headers,
+              cache: 'no-store'
+            })
             const result = await response.json()
-            console.log('Card fetch result:', result)
+            console.log('FeatureGrid: Card fetch result:', result)
+            if (result.details && result.details.length > 0) {
+              console.error('FeatureGrid: GraphQL error details:', JSON.stringify(result.details[0], null, 2))
+              console.error('FeatureGrid: Error message:', result.details[0]?.message)
+            }
+            if (result.message) {
+              console.error('FeatureGrid: Error message:', result.message)
+            }
             
             if (result.success && result.data) {
-              return result.data
+              // Return the card data directly - it already matches the expected structure
+              const cardData = result.data
+              return {
+                key: cardData._metadata?.key || card.key,
+                Heading: cardData.Heading,
+                Body: cardData.Body,
+                Image: cardData.Image ? {
+                  base: cardData.Image.base,
+                  default: cardData.Image.default
+                } : undefined
+              }
             }
+            console.warn('FeatureGrid: Card fetch failed or no data:', result)
             return null
           } catch (error) {
             console.error('Error fetching card:', error)
@@ -112,8 +150,10 @@ const FeatureGrid = ({
         })
 
         const cards = await Promise.all(cardPromises)
-        console.log('All cards fetched:', cards)
-        setCardData(cards.filter(card => card)) // Filter out any failed requests
+        console.log('FeatureGrid: All cards fetched:', cards)
+        const validCards = cards.filter(card => card)
+        console.log('FeatureGrid: Valid cards:', validCards)
+        setCardData(validCards) // Filter out any failed requests
       } catch (error) {
         console.error('Error fetching card data:', error)
       } finally {

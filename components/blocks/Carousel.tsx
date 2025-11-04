@@ -58,64 +58,107 @@ const Carousel = ({ Slides, Cards, _metadata, _gridDisplayName, isPreview = fals
       console.log('Fetching slide data for Carousel')
       setIsLoading(true)
       try {
-        // First, try to get all available SlideItems
-               const query = `
-                 query GetSlideItems {
-                   SlideItem {
-                     items {
-                       _metadata {
-                         key
-                         displayName
-                         types
-                       }
-                       Title
-                       BackgroundImage {
-                         Image {
-                           url {
-                             base
-                             default
-                             graph
-                             hierarchical
-                           }
-                         }
-                       }
-                       Link {
-                         base
-                         default
-                         graph
-                         hierarchical
-                       }
-                       CTAText
-                     }
-                   }
-                 }
-               `
+        // Query SlideItems using _Content with type filter (correct Optimizely Graph syntax)
+        const query = `
+          query GetSlideItems {
+            _Content(
+              where: {
+                _metadata: {
+                  types: {
+                    in: ["SlideItem"]
+                  }
+                }
+              }
+              limit: 10
+            ) {
+              items {
+                _metadata {
+                  key
+                  displayName
+                  types
+                }
+                ... on SlideItem {
+                  Title
+                  BackgroundImage {
+                    Image {
+                      url {
+                        base
+                        default
+                        graph
+                        hierarchical
+                      }
+                    }
+                  }
+                  Link {
+                    base
+                    default
+                    graph
+                    hierarchical
+                  }
+                  CTAText
+                }
+              }
+            }
+          }
+        `
 
-        const response = await fetch('https://cg.optimizely.com/content/v2?auth=' + process.env.NEXT_PUBLIC_SDK_KEY, {
+        // In preview mode, use preview token instead of SDK key
+        let headers: HeadersInit = { 'Content-Type': 'application/json' }
+        let apiUrl = 'https://cg.optimizely.com/content/v2'
+        
+        // Check if we're in preview mode (check URL for preview_token)
+        const urlParams = new URLSearchParams(window.location.search)
+        const previewToken = urlParams.get('preview_token')
+        
+        if (previewToken) {
+          // Use preview token for draft content
+          headers['Authorization'] = `Bearer ${previewToken}`
+          apiUrl = `${apiUrl}?t=${Date.now()}` // Add cache-busting
+        } else {
+          // Use SDK key for published content
+          apiUrl = `${apiUrl}?auth=${process.env.NEXT_PUBLIC_SDK_KEY}`
+        }
+        
+        const response = await fetch(apiUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify({ query })
         })
 
         const result = await response.json()
         console.log('SlideItems fetch result:', result)
         
-               if (result.data?.SlideItem?.items && result.data.SlideItem.items.length > 0) {
-                 const slides = result.data.SlideItem.items.map((slideData: any) => ({
-                   key: slideData._metadata.key,
-                   title: slideData.Title || 'Default Title',
-                   subtitle: 'Default Subtitle', // SlideItem doesn't have subtitle
-                   description: 'Default description', // SlideItem doesn't have description
-                   image: slideData.BackgroundImage?.Image?.url?.default || 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=1200&h=600&fit=crop',
-                   cta: slideData.CTAText || 'Learn More',
-                   ctaUrl: slideData.Link?.default || '#'
-                 }))
+        // Check for GraphQL errors
+        if (result.errors) {
+          console.error('Carousel GraphQL errors:', JSON.stringify(result.errors, null, 2))
+          console.error('Carousel GraphQL error details:', {
+            errorCount: result.errors.length,
+            firstError: result.errors[0],
+            message: result.errors[0]?.message,
+            locations: result.errors[0]?.locations,
+            path: result.errors[0]?.path
+          })
+        }
+        
+        // Updated path: _Content.items instead of SlideItem.items
+        if (result.data?._Content?.items && result.data._Content.items.length > 0) {
+          const slides = result.data._Content.items.map((slideData: any) => ({
+            key: slideData._metadata?.key,
+            title: slideData.Title || 'Default Title',
+            subtitle: 'Default Subtitle', // SlideItem doesn't have subtitle
+            description: 'Default description', // SlideItem doesn't have description
+            image: slideData.BackgroundImage?.Image?.url?.default || 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=1200&h=600&fit=crop',
+            cta: slideData.CTAText || 'Learn More',
+            ctaUrl: slideData.Link?.default || '#'
+          }))
           console.log('Carousel: Found slides:', slides.length, slides)
           setSlides(slides)
         } else {
-          console.log('Carousel: No slide data found in CMS')
+          console.log('Carousel: No slide data found in CMS', {
+            hasData: !!result.data,
+            hasContent: !!result.data?._Content,
+            itemsLength: result.data?._Content?.items?.length || 0
+          })
           setSlides([])
         }
       } catch (error) {

@@ -49,6 +49,32 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
   const [imageData, setImageData] = useState(initialImageData)
   const [links, setLinks] = useState(initialLinks)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Update state when props change (for live preview updates)
+  useEffect(() => {
+    if (initialHeading !== undefined) setHeading(initialHeading)
+    if (initialSubHeading !== undefined) setSubheading(initialSubHeading)
+    if (initialBody) setBody(initialBody)
+    if (initialImageData) setImageData(initialImageData)
+    if (initialLinks) setLinks(initialLinks)
+  }, [initialHeading, initialSubHeading, initialBody, initialImageData, initialLinks])
+  
+  // Debug: Log block info in preview mode
+  useEffect(() => {
+    if (isPreview && contextMode === 'edit') {
+      console.log('🎯 Hero block preview info:', {
+        blockKey: _metadata?.key,
+        contextMode,
+        Heading: Heading,
+        Subheading: Subheading,
+        hasBody: !!Body?.html,
+        hasLinks: !!links?.length,
+        initialHeading: initialHeading,
+        initialSubHeading: initialSubHeading,
+        hasPreviewText: Subheading?.includes('Preview') || initialSubHeading?.includes('Preview')
+      })
+    }
+  }, [isPreview, contextMode, _metadata?.key, Heading, Subheading, Body, links, initialHeading, initialSubHeading])
 
   useEffect(() => {
     // If we have a content key, try to fetch the block data
@@ -83,7 +109,10 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
   }
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section 
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      {...(_metadata?.key && { 'data-epi-block-id': _metadata.key })}
+    >
       {/* Background Image - mandatory */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -152,6 +181,7 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
+            {...(contextMode === 'edit' && { 'data-epi-edit': 'Links' })}
           >
             {links && links.length > 0 ? (
               links.map((link, index) => (

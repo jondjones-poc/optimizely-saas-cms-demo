@@ -53,7 +53,6 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
         </div>
       )
     case 'FeatureGrid':
-      console.log('BlockRenderer FeatureGrid component:', component)
       return (
         <div 
           data-epi-block-id={component._metadata.key || 'feature-grid-block'}
