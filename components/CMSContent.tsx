@@ -84,7 +84,22 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
   }
 
   return (
-    <>
+    <div 
+      id="cms-content-wrapper"
+      style={{ 
+        position: 'relative', // This makes this div the offset parent for Grid sections
+        isolation: 'isolate',
+        zIndex: 0,
+        // Ensure this container starts after any header elements above
+        clear: 'both',
+        // No padding - let Grid start immediately after header to avoid white space
+        paddingTop: 0,
+        marginTop: 0,
+        // Ensure this container is positioned (not static) so it becomes offset parent
+        top: 0,
+        left: 0
+      }}
+    >
       {grids.map((grid: any) => {
         if (!grid) return null
 
@@ -99,6 +114,17 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
             data-epi-role="grid"
             data-epi-display-name={grid.displayName || 'Grid'}
             className="w-full"
+            style={{ 
+              position: 'relative',
+              display: 'block',
+              // No margin/padding to prevent white space - Grid flows directly after header
+              margin: 0,
+              padding: 0,
+              // Force hardware acceleration and new stacking context
+              transform: 'translateZ(0)',
+              willChange: 'transform',
+              isolation: 'isolate'
+            }}
           >
             {rows.map((row: any) => {
               if (!row) return null
@@ -161,10 +187,31 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                                 columnKey: column.key
                               }
                             }
+                            // For Hero, don't add wrapper - Hero component has data-epi-block-id on its root section
+                            const isHero = componentWithElementKey._metadata?.types?.[0] === 'Hero'
+                            
+                            if (isHero) {
+                              return (
+                                <BlockRenderer 
+                                  key={element.key || componentWithElementKey._metadata?.key}
+                                  component={componentWithElementKey} 
+                                  isPreview={isPreview}
+                                  contextMode={contextMode}
+                                  cmsDemo={cmsDemo}
+                                />
+                              )
+                            }
+                            
                             return (
                               <div 
                                 key={element.key || componentWithElementKey._metadata?.key}
                                 {...(contextMode === 'edit' && element.key && { 'data-epi-block-id': element.key })}
+                                style={{ 
+                                  display: 'block', 
+                                  position: 'relative',
+                                  width: '100%',
+                                  contain: 'layout style'
+                                }}
                               >
                                 <BlockRenderer 
                                   component={componentWithElementKey} 
@@ -211,6 +258,6 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
           </section>
         )
       })}
-    </>
+    </div>
   )
 }

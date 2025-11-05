@@ -85,15 +85,12 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
   }
 
   return (
-    <>
-      {/* Hero */}
-      <section 
-        className="relative h-[600px] md:h-[700px] lg:h-[800px] flex items-center justify-center overflow-hidden"
-        style={{ maxHeight: '100vh' }}
-        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
-        // {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
-      >
-      {/* Background Image - mandatory */}
+    <div 
+      className="relative" 
+      style={{ height: '600px', minHeight: '600px', position: 'relative', overflow: 'hidden' }}
+      {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
+    >
+      {/* Background Image - OUTSIDE the component wrapper, but still needs relative parent */}
       <div 
         className="absolute inset-0 z-0"
         {...(contextMode === 'edit' && { 'data-epi-edit': 'Image' })}
@@ -109,7 +106,15 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      {/* Component wrapper - only contains editable content, NOT the background */}
+      {/* NOTE: data-epi-block-id is now on the outer container to ensure overlay bounds are correct */}
+      <div 
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center h-full flex items-center justify-center"
+        style={{ 
+          position: 'relative',
+          zIndex: 10
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -118,32 +123,38 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
         >
           {/* Subtitle */}
           {Subheading && (
-            <motion.p
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className={`text-lg md:text-xl font-medium ${
-                theme === 'dark' ? 'text-dark-text/90' : 'text-white/90'
-              }`}
-              {...(contextMode === 'edit' && { 'data-epi-edit': 'SubHeading' })}
             >
-              {Subheading}
-            </motion.p>
+              <p
+                className={`text-lg md:text-xl font-medium ${
+                  theme === 'dark' ? 'text-dark-text/90' : 'text-white/90'
+                }`}
+                {...(contextMode === 'edit' && { 'data-epi-edit': 'SubHeading' })}
+              >
+                {Subheading}
+              </p>
+            </motion.div>
           )}
 
           {/* Main Title */}
           {Heading && (
-            <motion.h1
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className={`text-4xl md:text-6xl lg:text-7xl font-bold leading-tight ${
-                theme === 'dark' ? 'text-dark-text' : 'text-white'
-              }`}
-              {...(contextMode === 'edit' && { 'data-epi-edit': 'Heading' })}
             >
-              {Heading}
-            </motion.h1>
+              <h1
+                className={`text-4xl md:text-6xl lg:text-7xl font-bold leading-tight ${
+                  theme === 'dark' ? 'text-dark-text' : 'text-white'
+                }`}
+                {...(contextMode === 'edit' && { 'data-epi-edit': 'Heading' })}
+              >
+                {Heading}
+              </h1>
+            </motion.div>
           )}
 
           {/* Body Content */}
@@ -152,12 +163,15 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className={`text-lg md:text-xl leading-relaxed max-w-4xl mx-auto ${
-                theme === 'dark' ? 'text-dark-text/90' : 'text-white/90'
-              }`}
-              dangerouslySetInnerHTML={{ __html: Body.html }}
-              {...(contextMode === 'edit' && { 'data-epi-edit': 'Body' })}
-            />
+            >
+              <div
+                className={`text-lg md:text-xl leading-relaxed max-w-4xl mx-auto ${
+                  theme === 'dark' ? 'text-dark-text/90' : 'text-white/90'
+                }`}
+                dangerouslySetInnerHTML={{ __html: Body.html }}
+                {...(contextMode === 'edit' && { 'data-epi-edit': 'Body' })}
+              />
+            </motion.div>
           )}
 
           {/* CTA Buttons */}
@@ -234,10 +248,9 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
               theme === 'dark' ? 'bg-dark-text' : 'bg-white'
             }`}
           />
-          </motion.div>
         </motion.div>
-      </section>
-    </>
+      </motion.div>
+    </div>
   )
 }
 

@@ -60,14 +60,12 @@ const TextBlock = ({ Content: initialContent, Position = 'left', _metadata, _gri
   }
   
   return (
-    <>
-      {/* TextBlock */}
-      <section 
-        className="py-16 bg-white dark:bg-dark-primary"
-        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
-        // {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
-        {...(contextMode === 'edit' && { 'data-epi-edit': 'Position' })}
-      >
+    <section 
+      className="py-16 bg-white dark:bg-dark-primary"
+      // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
+      // {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
+      {...(contextMode === 'edit' && { 'data-epi-edit': 'Position' })}
+    >
       <div className="container mx-auto px-4">
         <div className={`max-w-4xl mx-auto ${getTextAlignment()}`}>
           {Content && (
@@ -77,10 +75,9 @@ const TextBlock = ({ Content: initialContent, Position = 'left', _metadata, _gri
               {...(contextMode === 'edit' && { 'data-epi-edit': 'Content' })}
             />
           )}
-          </div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   )
 }
 

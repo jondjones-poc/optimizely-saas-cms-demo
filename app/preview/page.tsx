@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import PreviewClient from './PreviewClient'
 import { fetchPreviewContentFromGraph } from '@/lib/optimizely/fetchPreviewContent'
+import { getBrandingConfig } from '@/lib/branding'
 
 interface PreviewPageProps {
   searchParams: Promise<{
@@ -160,6 +161,9 @@ export default async function PreviewPage({ searchParams }: PreviewPageProps) {
   // Fetch content server-side
   const initialData = await fetchPreviewContent(key || undefined, ver || undefined, loc || undefined, previewToken || undefined)
 
+  // Get branding config server-side
+  const branding = await getBrandingConfig()
+
   if (!initialData && key) {
     // Log error details for debugging
     console.error('🚨 Preview page error - No initial data received:', {
@@ -196,6 +200,7 @@ export default async function PreviewPage({ searchParams }: PreviewPageProps) {
       ver={ver}
       loc={loc}
       cmsDemo={cmsDemo}
+      branding={branding}
     />
   )
 }

@@ -4,9 +4,10 @@ import { useEffect, useState, useRef } from 'react'
 import CMSContent from '@/components/CMSContent'
 import LandingPageDisplay from '@/components/LandingPageDisplay'
 import OptimizelyDataPopup from '@/components/OptimizelyDataPopup'
-import CustomHeader from '@/components/CustomHeader'
-import CustomFooter from '@/components/CustomFooter'
+import CustomHeaderClient from '@/components/CustomHeaderClient'
+import CustomFooterClient from '@/components/CustomFooterClient'
 import Navigation from '@/components/Navigation'
+import type { BrandingConfig } from '@/lib/branding'
 
 interface PreviewClientProps {
   initialData: any
@@ -16,6 +17,7 @@ interface PreviewClientProps {
   ver: string | null
   loc: string | null
   cmsDemo?: string | null  // cms_demo header value from server
+  branding: BrandingConfig  // Branding config from server
 }
 
 export default function PreviewClient({ 
@@ -25,13 +27,17 @@ export default function PreviewClient({
   contentKey,  // Renamed from 'key'
   ver, 
   loc,
-  cmsDemo 
+  cmsDemo,
+  branding
 }: PreviewClientProps) {
   const [optimizelyData, setOptimizelyData] = useState<any>(initialData)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentPreviewToken, setCurrentPreviewToken] = useState<string | null>(previewToken)
   const scriptLoadAttempted = useRef(false)
+  
+  // Define contextMode early so it can be used in useEffect hooks
+  const contextMode = ctx || 'edit'
 
   // Debug: Log initial data structure
   useEffect(() => {
@@ -198,6 +204,55 @@ export default function PreviewClient({
     }
   }
 
+  // Log Grid positioning for debugging (without adjusting padding)
+  useEffect(() => {
+    if (contextMode !== 'edit') return
+
+    const logGridPositioning = () => {
+      // Get header section
+      const headerSection = document.getElementById('header-section')
+      const headerHeight = headerSection ? headerSection.getBoundingClientRect().height : 0
+      
+      // Get the CMS content wrapper
+      const cmsWrapper = document.getElementById('cms-content-wrapper')
+      
+      // Log positioning for debugging
+      const firstGrid = document.querySelector('[data-epi-role="grid"][data-epi-block-id]') as HTMLElement
+      if (firstGrid) {
+        const gridRect = firstGrid.getBoundingClientRect()
+        const gridOffsetTop = firstGrid.offsetTop
+        const offsetParent = firstGrid.offsetParent as HTMLElement
+        const offsetParentId = offsetParent?.id || 'body'
+        const offsetParentRect = offsetParent ? offsetParent.getBoundingClientRect() : null
+        
+        console.log('📊 Grid & Header Positioning Debug:', {
+          headerHeight,
+          headerBottom: headerSection ? headerSection.getBoundingClientRect().bottom : 0,
+          gridBoundingTop: gridRect.top,
+          gridBoundingBottom: gridRect.bottom,
+          gridOffsetTop,
+          offsetParentId,
+          offsetParentBoundingTop: offsetParentRect?.top,
+          offsetParentOffsetTop: offsetParent?.offsetTop,
+          wrapperPaddingTop: cmsWrapper ? window.getComputedStyle(cmsWrapper).paddingTop : '0',
+          overlayIncludesHeader: gridRect.top < headerHeight
+        })
+      }
+    }
+
+    // Run after DOM is ready
+    setTimeout(() => {
+      logGridPositioning()
+    }, 1000)
+
+    // Also run when window resizes
+    window.addEventListener('resize', logGridPositioning)
+
+    return () => {
+      window.removeEventListener('resize', logGridPositioning)
+    }
+  }, [contextMode, optimizelyData])
+
   // Initialize Optimizely after script loads and DOM is ready
   useEffect(() => {
     const initializeOptimizely = async () => {
@@ -272,7 +327,7 @@ export default function PreviewClient({
   }
 
   const isPreview = true
-  const contextMode = ctx || 'edit'
+  // contextMode is now defined earlier in the component (line ~37)
 
   // Only show loading if we have a key but no data yet
   if (contentKey && !optimizelyData) {
@@ -379,8 +434,28 @@ export default function PreviewClient({
   return (
     <>
       <OptimizelyDataPopup data={pageData} />
-      <CustomHeader />
-      <Navigation />
+      {/* Header section - explicitly excluded from CMS overlay calculations */}
+      {/* This wrapper ensures header is completely separate from CMS content for overlay calculations */}
+      <div 
+        id="header-section"
+        style={{ 
+          position: 'relative', 
+          isolation: 'isolate', 
+          zIndex: 9999, // Very high z-index to ensure it's above CMS overlays
+          width: '100%',
+          // CSS containment to isolate from CMS content calculations
+          contain: 'layout style paint',
+          // Explicit boundaries to prevent Optimizely from including this in overlay calculations
+          boxSizing: 'border-box'
+        }}
+        data-epi-exclude="true"
+        data-not-cms-content="true"
+      >
+        {branding.hasCustomBranding && branding.headerImage && (
+          <CustomHeaderClient branding={branding} />
+        )}
+        <Navigation />
+      </div>
       
       {pageType === 'LandingPage' ? (
         <LandingPageDisplay 
@@ -389,25 +464,29 @@ export default function PreviewClient({
           contextMode={contextMode}
         />
       ) : (
-        <CMSContent 
-          data={{
-            data: {
+        <div style={{ position: 'relative', isolation: 'isolate', zIndex: 0 }}>
+          <CMSContent 
+            data={{
               data: {
-                BlankExperience: {
-                  items: pageData ? [pageData] : []
+                data: {
+                  BlankExperience: {
+                    items: pageData ? [pageData] : []
+                  }
                 }
               }
-            }
-          }}
-          isLoading={false}
-          error={null}
-          isPreview={isPreview}
-          contextMode={contextMode}
-          cmsDemo={cmsDemo}
-        />
+            }}
+            isLoading={false}
+            error={null}
+            isPreview={isPreview}
+            contextMode={contextMode}
+            cmsDemo={cmsDemo}
+          />
+        </div>
       )}
       
-      <CustomFooter />
+      {branding.hasCustomBranding && branding.footerImage && (
+        <CustomFooterClient branding={branding} />
+      )}
     </>
   )
 }
