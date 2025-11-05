@@ -76,32 +76,8 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
     }
   }, [isPreview, contextMode, _metadata?.key, Heading, Subheading, Body, links, initialHeading, initialSubHeading])
 
-  useEffect(() => {
-    // If we have a content key, try to fetch the block data
-    if (_metadata?.key) {
-      const fetchBlockData = async () => {
-        try {
-          setIsLoading(true)
-          const response = await fetch(`/api/optimizely/block?key=${_metadata.key}`)
-          const result = await response.json()
-          
-          if (result.success && result.data?.data?._Content?.items?.[0]) {
-            const blockData = result.data.data._Content.items[0]
-            if (blockData.Heading) setHeading(blockData.Heading)
-            if (blockData.Subheading) setSubheading(blockData.Subheading)
-            if (blockData.Image) setImageData(blockData.Image)
-          }
-        } catch (error) {
-          console.error('Error fetching Hero block data:', error)
-          // Keep fallback content on error
-        } finally {
-          setIsLoading(false)
-        }
-      }
-
-      fetchBlockData()
-    }
-  }, [_metadata?.key])
+  // Removed unnecessary block fetch - data is already passed via props
+  // This was causing 500 errors and is not needed for inline editing
   
   // Don't render if no background image (mandatory field)
   if (!imageData?.url?.default) {
@@ -112,8 +88,10 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
     <>
       {/* Hero */}
       <section 
-        className="relative min-h-screen flex items-center justify-center overflow-hidden"
-        {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
+        className="relative h-[600px] md:h-[700px] lg:h-[800px] flex items-center justify-center overflow-hidden"
+        style={{ maxHeight: '100vh' }}
+        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
+        // {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
       >
       {/* Background Image - mandatory */}
       <div 
@@ -124,8 +102,10 @@ const Hero = ({ Heading: initialHeading, SubHeading: initialSubHeading, Body: in
           src={imageData.url.default}
           alt={Heading || 'Hero background'}
           fill
-          className="object-cover"
+          className="object-cover object-center"
+          sizes="100vw"
           priority
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
         />
       </div>
 

@@ -14,9 +14,10 @@ interface BlockRendererProps {
   component: any
   isPreview?: boolean
   contextMode?: string | null
+  cmsDemo?: string | null  // cms_demo header value for DemoBlock
 }
 
-const BlockRenderer = ({ component, isPreview = false, contextMode = null }: BlockRendererProps) => {
+const BlockRenderer = ({ component, isPreview = false, contextMode = null, cmsDemo = null }: BlockRendererProps) => {
   if (!component || !component._metadata) {
     return null
   }
@@ -45,6 +46,7 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
           isPreview={isPreview} 
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
+          cmsDemo={cmsDemo}
         />
       )
     case 'FeatureGrid':
@@ -73,13 +75,9 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
         />
       )
     case 'Carousel':
+      // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
       return (
-        <div 
-          {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <Carousel {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <Carousel {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
       )
     case 'PromoBlock':
       // PromoBlock component applies data-epi-block-id to its root element, so no wrapper needed
@@ -122,13 +120,9 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null }: Blo
       })
       console.log('🎯 END MENU BLOCK RENDERER')
       
+      // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
       return (
-        <div 
-          {...(contextMode === 'edit' && component._metadata?.key && { 'data-epi-block-id': component._metadata.key })}
-          className={contextMode === 'edit' ? 'relative' : ''}
-        >
-          <Menu {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
-        </div>
+        <Menu {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
       )
     default:
       // Return null for unhandled block types

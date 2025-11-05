@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Database, X, CheckCircle, XCircle, Code, Layers } from 'lucide-react'
+import { Database, X, CheckCircle, XCircle, Code, Layers, AlertCircle } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 
 interface OptimizelyDataPopupProps {
@@ -118,16 +118,37 @@ const OptimizelyDataPopup = ({ data, isLoading, error }: OptimizelyDataPopupProp
                     </h3>
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className={`p-2 rounded-full transition-colors ${
-                    theme === 'dark'
-                      ? 'hover:bg-dark-secondary text-dark-text'
-                      : 'hover:bg-phamily-lightGray text-phamily-darkGray'
-                  }`}
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (typeof window !== 'undefined' && (window as any).diagnoseInlineEditing) {
+                        (window as any).diagnoseInlineEditing()
+                      } else {
+                        console.error('⚠️ diagnoseInlineEditing function not available. Make sure the page has loaded.')
+                        alert('Diagnostic function not available yet. Please wait for the page to fully load and try again.')
+                      }
+                    }}
+                    className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${
+                      theme === 'dark'
+                        ? 'hover:bg-dark-secondary text-dark-text border border-dark-border'
+                        : 'hover:bg-phamily-lightGray text-phamily-blue border border-gray-200'
+                    }`}
+                    title="Run inline editing diagnostics"
+                  >
+                    <AlertCircle size={16} />
+                    Diagnose Inline Editing
+                  </button>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className={`p-2 rounded-full transition-colors ${
+                      theme === 'dark'
+                        ? 'hover:bg-dark-secondary text-dark-text'
+                        : 'hover:bg-phamily-lightGray text-phamily-darkGray'
+                    }`}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Status */}

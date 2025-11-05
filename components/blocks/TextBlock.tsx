@@ -64,7 +64,8 @@ const TextBlock = ({ Content: initialContent, Position = 'left', _metadata, _gri
       {/* TextBlock */}
       <section 
         className="py-16 bg-white dark:bg-dark-primary"
-        {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
+        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
+        // {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
         {...(contextMode === 'edit' && { 'data-epi-edit': 'Position' })}
       >
       <div className="container mx-auto px-4">

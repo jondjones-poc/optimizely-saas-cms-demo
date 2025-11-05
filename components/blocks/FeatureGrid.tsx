@@ -243,7 +243,8 @@ const FeatureGrid = ({
       <section 
         ref={ref} 
         className={sectionClassName}
-        {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
+        // {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
       >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}

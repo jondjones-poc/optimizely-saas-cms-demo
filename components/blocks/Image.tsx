@@ -42,7 +42,8 @@ const Image = ({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
         className="w-full"
-        {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
+        // {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
         {...(contextMode === 'edit' && { 'data-epi-edit': 'Image' })}
       >
       <img

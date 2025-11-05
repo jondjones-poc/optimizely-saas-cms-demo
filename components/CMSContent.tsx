@@ -8,9 +8,10 @@ interface CMSContentProps {
   error: string | null
   isPreview?: boolean
   contextMode?: string | null
+  cmsDemo?: string | null  // cms_demo header value for DemoBlock
 }
 
-export default function CMSContent({ data, isLoading, error, isPreview = false, contextMode = null }: CMSContentProps) {
+export default function CMSContent({ data, isLoading, error, isPreview = false, contextMode = null, cmsDemo = null }: CMSContentProps) {
   if (isLoading) {
     return (
       <section className="py-16 bg-white dark:bg-dark-primary">
@@ -116,7 +117,8 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
               return (
                 <div 
                   key={row.key}
-                  {...(contextMode === 'edit' && row.key && { 'data-epi-block-id': row.key })}
+                  // NOTE: Row does NOT have data-epi-block-id in working example - only Grid and Component do
+                  // {...(contextMode === 'edit' && row.key && { 'data-epi-block-id': row.key })}
                   data-epi-role="row"
                   data-epi-display-name={row.displayName || 'Row'}
                   {...(rowClassName && { className: rowClassName })}
@@ -131,7 +133,8 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                     return (
                       <div 
                         key={column.key}
-                        {...(contextMode === 'edit' && column.key && { 'data-epi-block-id': column.key })}
+                        // NOTE: Column does NOT have data-epi-block-id in working example - only Grid and Component do
+                        // {...(contextMode === 'edit' && column.key && { 'data-epi-block-id': column.key })}
                         data-epi-role="column"
                         data-epi-display-name={column.displayName || 'Column'}
                       >
@@ -159,12 +162,17 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                               }
                             }
                             return (
-                              <BlockRenderer 
-                                key={element.key || componentWithElementKey._metadata?.key} 
-                                component={componentWithElementKey} 
-                                isPreview={isPreview}
-                                contextMode={contextMode}
-                              />
+                              <div 
+                                key={element.key || componentWithElementKey._metadata?.key}
+                                {...(contextMode === 'edit' && element.key && { 'data-epi-block-id': element.key })}
+                              >
+                                <BlockRenderer 
+                                  component={componentWithElementKey} 
+                                  isPreview={isPreview}
+                                  contextMode={contextMode}
+                                  cmsDemo={cmsDemo}
+                                />
+                              </div>
                             )
                           } else if (element.element) {
                             // Shared block reference
@@ -179,12 +187,17 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                               _elementDisplayName: element.displayName
                             }
                             return (
-                              <BlockRenderer 
-                                key={element.key || sharedComponentWithElementKey._metadata?.key} 
-                                component={sharedComponentWithElementKey} 
-                                isPreview={isPreview}
-                                contextMode={contextMode}
-                              />
+                              <div 
+                                key={element.key || sharedComponentWithElementKey._metadata?.key}
+                                {...(contextMode === 'edit' && element.key && { 'data-epi-block-id': element.key })}
+                              >
+                                <BlockRenderer 
+                                  component={sharedComponentWithElementKey} 
+                                  isPreview={isPreview}
+                                  contextMode={contextMode}
+                                  cmsDemo={cmsDemo}
+                                />
+                              </div>
                             )
                           }
                           return null

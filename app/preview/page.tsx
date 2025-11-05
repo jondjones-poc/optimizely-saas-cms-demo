@@ -1,492 +1,201 @@
-'use client'
+import { headers } from 'next/headers'
+import PreviewClient from './PreviewClient'
+import { fetchPreviewContentFromGraph } from '@/lib/optimizely/fetchPreviewContent'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import CMSContent from '@/components/CMSContent'
-import LandingPageDisplay from '@/components/LandingPageDisplay'
-import OptimizelyDataPopup from '@/components/OptimizelyDataPopup'
-import CustomHeader from '@/components/CustomHeader'
-import CustomFooter from '@/components/CustomFooter'
-import Navigation from '@/components/Navigation'
+interface PreviewPageProps {
+  searchParams: Promise<{
+    key?: string
+    ver?: string
+    loc?: string
+    ctx?: string
+    preview_token?: string
+  }>
+}
 
-export default function PreviewPage() {
-  const searchParams = useSearchParams()
-  const [optimizelyData, setOptimizelyData] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [currentPreviewToken, setCurrentPreviewToken] = useState<string | null>(null)
-  
-  // Extract preview parameters - log each separately as per documentation
-  const key = searchParams.get('key')
-  const ver = searchParams.get('ver')
-  const loc = searchParams.get('loc')
-  // Default to 'edit' mode if ctx is not provided - inline editing should always be enabled in preview
-  const ctx = searchParams.get('ctx') || 'edit'
-  const previewToken = searchParams.get('preview_token')
-  const host = typeof window !== 'undefined' ? window.location.host : 'server'
-  
-  // Log each parameter separately
-  useEffect(() => {
-    console.log('📋 Preview URL Parameters (from CMS iframe):', {
-      '{key}': key || 'MISSING',
-      '{version}': ver || 'MISSING',
-      '{locale}': loc || 'MISSING',
-      '{context}': ctx || 'MISSING',
-      '{host}': host || 'MISSING',
-      'preview_token': previewToken ? previewToken.substring(0, 50) + '...' : 'MISSING',
-      'preview_token_length': previewToken?.length || 0,
-      'full_url': typeof window !== 'undefined' ? window.location.href : 'server-side'
+async function fetchPreviewContent(
+  key: string | undefined,
+  ver: string | undefined,
+  loc: string | undefined,
+  previewToken: string | undefined
+) {
+  if (!key) {
+    return null
+  }
+
+  try {
+    console.log('🔗 Server-side fetch (direct Graph call):', {
+      key,
+      ver,
+      loc,
+      hasPreviewToken: !!previewToken
     })
-  }, [key, ver, loc, ctx, previewToken, host])
-
-  useEffect(() => {
-    // Load communication script for live preview
-    const loadCommunicationScript = () => {
-      // Get the Optimizely instance ID from environment or use a placeholder
-      const instanceId = 'epsajjcmson91rm1p001'
-      const scriptUrl = `https://app-${instanceId}.cms.optimizely.com/util/javascript/communicationinjector.js`
+    
+    // Call the shared function directly instead of making HTTP request
+    const result = await fetchPreviewContentFromGraph({
+      key,
+      ver: ver || null,
+      loc: loc || null,
+      previewToken: previewToken || null
+    })
+    
+    console.log('📥 Server-side fetch result:', {
+      success: result.success,
+      hasData: !!result.data,
+      hasContentItems: !!result.data?._Content?.items,
+      itemCount: result.data?._Content?.items?.length || 0
+    })
+    
+    if (result.success && result.data) {
+      // Extract the actual content data (matching client-side logic)
+      const contentData = result.data?._Content?.items?.[0]
       
-      // Check if script is already loaded
-      if (document.querySelector(`script[src="${scriptUrl}"]`)) {
-        return
-      }
-      
-      const script = document.createElement('script')
-      script.src = scriptUrl
-      script.async = true
-      script.onload = () => {
-        console.log('Optimizely communication script loaded successfully')
-      }
-      script.onerror = () => {
-        console.error('Failed to load Optimizely communication script')
-      }
-      document.head.appendChild(script)
-    }
-
-    // Function to fetch menu data and merge into Menu blocks
-    const fetchAndMergeMenuData = async (pageData: any, token?: string | null) => {
-      try {
-        // Pass preview token to menu API if available
-        const tokenToUse = token || currentPreviewToken || previewToken
-        const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (contentData) {
+        // Determine page type and structure data accordingly
+        const pageTypes = contentData._metadata?.types || []
+        const isLandingPage = pageTypes.includes('LandingPage')
+        const isBlankExperience = pageTypes.includes('BlankExperience')
         
-        if (tokenToUse) {
-          const bearerToken = tokenToUse.startsWith('Bearer ') ? tokenToUse : `Bearer ${tokenToUse}`
-          headers['Authorization'] = bearerToken
-        }
-        
-        const menuResponse = await fetch('/api/optimizely/menu', {
-          method: 'GET',
-          headers,
-          cache: 'no-store'
-        })
-        const menuData = await menuResponse.json()
-        
-        if (menuData.success && menuData.data && pageData) {
-          // Merge menu data into Menu blocks in MainContentArea
-          if (pageData.MainContentArea) {
-            pageData.MainContentArea = pageData.MainContentArea.map((block: any) => {
-              if (block._metadata?.types?.[0] === 'Menu') {
-                return {
-                  ...block,
-                  MenuItem: menuData.data || []
-                }
-              }
-              return block
-            })
-          }
-          
-          // Also merge in TopContentArea if it exists
-          if (pageData.TopContentArea) {
-            pageData.TopContentArea = pageData.TopContentArea.map((block: any) => {
-              if (block._metadata?.types?.[0] === 'Menu') {
-                return {
-                  ...block,
-                  MenuItem: menuData.data || []
-                }
-              }
-              return block
-            })
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching menu data for preview:', error)
-        // Don't fail the preview if menu fetch fails
-      }
-    }
-
-    // Fetch content with preview token
-    const fetchPreviewContent = async (token?: string | null) => {
-      if (!key) {
-        setError('No content key provided')
-        setIsLoading(false)
-        return
-      }
-
-      try {
-        setIsLoading(true)
-        
-        // Extract preview token from URL (per Optimizely docs: https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/enable-live-preview-saas)
-        // The preview token is automatically appended to the preview URL by Optimizely CMS as query parameter 'preview_token'
-        // Priority: token from function param (if refetching) > currentPreviewToken (from contentSaved event) > previewToken (from URL)
-        const tokenToUse = token || currentPreviewToken || previewToken
-        
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-        }
-        
-        if (tokenToUse) {
-          // Ensure token is properly formatted as Bearer token
-          const bearerToken = tokenToUse.startsWith('Bearer ') ? tokenToUse : `Bearer ${tokenToUse}`
-          // Only set Authorization (capital A) - Next.js will handle case-insensitive matching
-          headers['Authorization'] = bearerToken
-        }
-
-        // Fetch content by key with preview token
-        const response = await fetch('/api/optimizely/preview-content', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ key, ver, loc })
+        console.log('📄 Server-side page type detected:', {
+          pageTypes,
+          isLandingPage,
+          isBlankExperience,
+          hasComposition: !!contentData.composition
         })
         
-        // Check if response is ok first
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Preview API error:', response.status, errorText)
-          setError(`Server error: ${response.status} ${response.statusText}`)
-          setIsLoading(false)
-          return
-        }
-        
-        let result: any
-        try {
-          const text = await response.text()
-          if (!text || text.trim() === '') {
-            throw new Error('Empty response from server')
+        if (isLandingPage) {
+          return {
+            pageType: 'LandingPage',
+            pageData: contentData
           }
-          result = JSON.parse(text)
-        } catch (jsonError) {
-          console.error('Failed to parse JSON response:', jsonError)
-          setError(`Failed to parse server response: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`)
-          setIsLoading(false)
-          return
-        }
-        
-        if (result.success) {
-          // Extract the actual page data
-          const contentData = result.data?.data?._Content?.items?.[0]
-          
-          if (contentData) {
-            // Determine page type
-            const pageTypes = contentData._metadata?.types || []
-            const isLandingPage = pageTypes.includes('LandingPage')
-            const isBlankExperience = pageTypes.includes('BlankExperience')
-            
-            // Log Hero SubHeading from API response (for debugging draft content)
-            if (isBlankExperience && contentData.composition) {
-              // Match server-side structure: composition.grids[].rows[].columns[].elements[].component
-              const grids = Array.isArray(contentData.composition?.grids) 
-                ? contentData.composition.grids 
-                : (contentData.composition?.grids?.nodes || [])
-              
-              if (Array.isArray(grids)) {
-                // Traverse composition structure to find Hero and Text blocks (matching server-side logic)
-                for (const grid of grids) {
-                  const rows = Array.isArray(grid.rows) ? grid.rows : (grid.rows?.nodes || [])
-                  for (const row of rows) {
-                    const columns = Array.isArray(row.columns) ? row.columns : (row.columns?.nodes || [])
-                    for (const column of columns) {
-                      const elements = Array.isArray(column.elements) ? column.elements : (column.elements?.nodes || [])
-                      for (const element of elements) {
-                        const component = element.component
-                        if (component?._metadata?.types?.includes('Hero')) {
-                          console.log('📝 Hero data received:', {
-                            'SubHeading': component.SubHeading,
-                            'Block Key': component._metadata?.key
-                          })
-                        }
-                        if (component?._metadata?.types?.includes('Text')) {
-                          console.log('📝 TextBlock data received:', {
-                            'Content': component.Content?.substring(0, 100) + (component.Content?.length > 100 ? '...' : ''),
-                            'Block Key': component._metadata?.key
-                          })
-                        }
-                      }
-                    }
-                  }
-                }
-              } else {
-                console.warn('⚠️ composition.grids is not accessible:', {
-                  hasComposition: !!contentData.composition,
-                  hasGrids: !!contentData.composition?.grids,
-                  gridsType: typeof contentData.composition?.grids,
-                  composition: contentData.composition
-                })
-              }
-            } else if (isLandingPage && contentData.TopContentArea && Array.isArray(contentData.TopContentArea)) {
-              contentData.TopContentArea.forEach((block: any) => {
-                if (block._metadata?.types?.includes('Hero')) {
-                  console.log('📝 Hero data received (LandingPage):', {
-                    'SubHeading': block.SubHeading,
-                    'Block Key': block._metadata?.key
-                  })
-                }
-              })
-            }
-            
-            
-            // Merge menu data if it's a LandingPage
-            if (isLandingPage) {
-              await fetchAndMergeMenuData(contentData, tokenToUse)
-            }
-            
-            // Transform data structure for different page types
-            if (isLandingPage) {
-              // For LandingPage, use the data directly
-              setOptimizelyData({
-                pageType: 'LandingPage',
-                pageData: contentData
-              })
-            } else if (isBlankExperience) {
-              // For BlankExperience, wrap in the expected structure
-              setOptimizelyData({
-                pageType: 'BlankExperience',
-                data: {
-                  data: {
-                    data: {
-                      BlankExperience: {
-                        items: [contentData]
-                      }
-                    }
-                  }
-                }
-              })
-            } else {
-              // For other page types, use as-is
-              setOptimizelyData({
-                pageType: 'Other',
-                pageData: contentData
-              })
-            }
-            
-            setError(null)
-            
-            // Update document title
-            if (contentData._metadata?.displayName) {
-              document.title = `Preview: ${contentData._metadata.displayName}`
-            }
-            
-            // Update meta description
-            const description = contentData._metadata?.displayName || 'Preview Mode'
-            let metaDescription = document.querySelector('meta[name="description"]')
-            if (metaDescription) {
-              metaDescription.setAttribute('content', description)
-            } else {
-              metaDescription = document.createElement('meta')
-              metaDescription.setAttribute('name', 'description')
-              metaDescription.setAttribute('content', description)
-              document.head.appendChild(metaDescription)
-            }
-          } else {
-            setError('No content found for the provided key')
+        } else if (isBlankExperience) {
+          return {
+            pageType: 'BlankExperience',
+            data: contentData
           }
         } else {
-          setError(result.error || 'Failed to fetch preview content')
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    // Initialize preview token from URL
-    if (previewToken && !currentPreviewToken) {
-      setCurrentPreviewToken(previewToken)
-    }
-    
-    // Load communication script for live preview
-    loadCommunicationScript()
-    
-    // Fetch preview content
-    fetchPreviewContent()
-
-    // Listen for content saved events
-    const handleContentSaved = (event: CustomEvent) => {
-      console.log('📝 Content saved event received:', {
-        eventType: event.type,
-        detail: event.detail,
-        detailType: typeof event.detail,
-        detailKeys: event.detail ? Object.keys(event.detail) : null
-      })
-      
-      // Extract new preview token from the event
-      // The event.detail can be in various formats:
-      // 1. { previewUrl: "http://...?preview_token=xxx" }
-      // 2. { preview_token: "xxx" }
-      // 3. "http://...?preview_token=xxx" (string URL)
-      // 4. "xxx" (just the token string)
-      const message = event.detail
-      let newPreviewToken: string | null = null
-      
-      if (message && message.previewUrl) {
-        // If previewUrl is a full URL, extract the token
-        if (message.previewUrl.includes('preview_token=')) {
-          const urlParams = new URLSearchParams(message.previewUrl.split('?')[1] || message.previewUrl)
-          newPreviewToken = urlParams.get('preview_token')
-        } else {
-          // If it's just the token
-          newPreviewToken = message.previewUrl
-        }
-      } else if (message && message.preview_token) {
-        newPreviewToken = message.preview_token
-      } else if (message && typeof message === 'string') {
-        // Try to parse as URL
-        try {
-          if (message.includes('preview_token=')) {
-            const url = new URL(message)
-            newPreviewToken = url.searchParams.get('preview_token')
-          } else if (message.startsWith('http')) {
-            // Full URL but no preview_token param - might be in hash
-            const url = new URL(message)
-            newPreviewToken = url.searchParams.get('preview_token')
-          } else {
-            // Might be the token itself
-            newPreviewToken = message
+          return {
+            pageType: 'Other',
+            pageData: contentData
           }
-        } catch {
-          // If not a URL, might be the token itself
-          newPreviewToken = message
         }
       }
       
-      console.log('🔑 Token extraction result:', {
-        extractedToken: newPreviewToken ? newPreviewToken.substring(0, 50) + '...' : null,
-        tokenLength: newPreviewToken?.length || 0,
-        hasToken: !!newPreviewToken,
-        currentToken: currentPreviewToken ? currentPreviewToken.substring(0, 50) + '...' : null,
-        tokensMatch: newPreviewToken === currentPreviewToken
-      })
-      
-      if (newPreviewToken && newPreviewToken !== currentPreviewToken) {
-        console.log('✅ Updating to NEW preview token (different from current)')
-        // Update state
-        setCurrentPreviewToken(newPreviewToken)
-        
-        // Update the URL
-        const newUrl = new URL(window.location.href)
-        newUrl.searchParams.set('preview_token', newPreviewToken)
-        window.history.replaceState({}, '', newUrl.toString())
-        
-        // Refetch content with new token after a delay to ensure state is updated
-        // IMPORTANT: Use the new token to get the latest draft version
-        // Give Optimizely Graph a moment to sync the draft content (500ms)
-        setTimeout(() => {
-          console.log('🔄 Refetching content with NEW preview token (after 500ms delay for Graph sync)')
-          fetchPreviewContent(newPreviewToken)
-        }, 500)
-      } else if (newPreviewToken && newPreviewToken === currentPreviewToken) {
-        console.log('⚠️ New token same as current token - refetching anyway to get latest draft')
-        // Token is the same, but we still need to refetch to get the latest draft content
-        // Optimizely might have updated the draft content for this token
-        // Give Graph time to sync the new draft content
-        setTimeout(() => {
-          console.log('🔄 Refetching content with same token (force refresh after 500ms)')
-          fetchPreviewContent(newPreviewToken)
-        }, 500)
-      } else {
-        // Fallback: refetch content with current token (might get updated draft)
-        console.log('⚠️ No new preview token extracted, refetching with current token')
-        setTimeout(() => {
-          fetchPreviewContent()
-        }, 100)
-      }
+      console.warn('⚠️ Server-side: contentData is null or undefined')
+      return result.data
     }
 
-    window.addEventListener('optimizely:cms:contentSaved', handleContentSaved as EventListener)
+    console.warn('⚠️ Server-side: API response was not successful or missing data')
+    return null
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
+    // Log to console with detailed info
+    console.error('❌ Failed to fetch preview content:', {
+      error: errorMessage,
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      stack: errorStack,
+      key,
+      ver,
+      loc,
+      hasPreviewToken: !!previewToken,
+      previewTokenPrefix: previewToken ? previewToken.substring(0, 20) + '...' : null
+    })
+    
+    // Also log a simplified version that's easier to spot
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.error('🚨 PREVIEW FETCH ERROR:', errorMessage)
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    
+    return null
+  }
+}
 
-    return () => {
-      window.removeEventListener('optimizely:cms:contentSaved', handleContentSaved as EventListener)
-    }
-  }, [key, ver, loc, previewToken, currentPreviewToken])
+export default async function PreviewPage({ searchParams }: PreviewPageProps) {
+  // Await searchParams in Next.js 15+
+  const params = await searchParams
+  
+  // Get cms_demo header for server-side rendering
+  const headersList = headers()
+  // Try multiple header name variations (Next.js may lowercase headers)
+  const cmsDemo = headersList.get('cms_demo') 
+    || headersList.get('cms-demo') 
+    || headersList.get('CMS_DEMO')
+    || headersList.get('CMS-DEMO')
+    || headersList.get('x-cms-demo')
+    || headersList.get('x-cms_demo')
+    || null
+  
+  // Log header reading for debugging
+  console.log('📋 Server-side cms_demo header:', {
+    cmsDemo,
+    allHeaders: Object.fromEntries(headersList.entries()),
+    headerKeys: Array.from(headersList.keys()),
+    hasCmsDemo: !!cmsDemo
+  })
+  
+  const key = params.key || null
+  const ver = params.ver || null
+  const loc = params.loc || null
+  const ctx = params.ctx || 'edit'
+  const previewToken = params.preview_token || null
+
+  // Log all parameters for debugging
+  console.log('📋 Server-side searchParams received:', {
+    rawParams: params,
+    key: key || 'MISSING',
+    ver: ver || 'MISSING',
+    loc: loc || 'MISSING',
+    ctx: ctx || 'MISSING',
+    previewToken: previewToken ? previewToken.substring(0, 50) + '...' : 'MISSING',
+    allKeys: Object.keys(params)
+  })
+  
+  // If no key, log a warning and show helpful error
+  if (!key) {
+    console.warn('⚠️ Preview page accessed without required "key" parameter')
+    console.warn('⚠️ This page should be accessed from Optimizely CMS, not directly')
+  }
+
+  // Fetch content server-side
+  const initialData = await fetchPreviewContent(key || undefined, ver || undefined, loc || undefined, previewToken || undefined)
+
+  if (!initialData && key) {
+    // Log error details for debugging
+    console.error('🚨 Preview page error - No initial data received:', {
+      key,
+      ver,
+      loc,
+      hasPreviewToken: !!previewToken,
+      cmsDemo: cmsDemo || 'MISSING'
+    })
+    
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-2xl mx-auto p-8">
+          <h1 className="text-3xl font-bold mb-4 text-red-600">Preview Error</h1>
+          <p className="text-lg text-gray-700 mb-4">Failed to load preview content</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
+            <p className="text-sm text-gray-600 mb-2"><strong>Key:</strong> {key || 'MISSING'}</p>
+            <p className="text-sm text-gray-600 mb-2"><strong>Version:</strong> {ver || 'MISSING'}</p>
+            <p className="text-sm text-gray-600 mb-2"><strong>Has Preview Token:</strong> {previewToken ? 'Yes' : 'No'}</p>
+            <p className="text-sm text-gray-600"><strong>CMS Demo:</strong> {cmsDemo || 'Not set'}</p>
+          </div>
+          <p className="text-sm text-gray-500 mt-4">Check the server console logs for detailed error information.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <main className="min-h-screen">
-      {/* Preview Mode Indicator */}
-      {ctx === 'edit' && (
-        <div className="bg-blue-600 text-white p-2 text-center text-sm font-medium sticky top-0 z-50">
-          🔧 Live Preview Mode - Content editing enabled
-        </div>
-      )}
-      
-      <CustomHeader />
-      <Navigation 
-        optimizelyData={optimizelyData?.data || null} 
-        isLoading={isLoading} 
-        error={error}
-      />
-      
-      <OptimizelyDataPopup 
-        data={optimizelyData} 
-        isLoading={isLoading} 
-        error={error}
-      />
-      
-      {/* Render content based on page type - ONLY CMS content, no static HTML */}
-      {!isLoading && !error && optimizelyData && (
-        <>
-          {optimizelyData.pageType === 'LandingPage' && optimizelyData.pageData && (
-            <LandingPageDisplay 
-              data={optimizelyData.pageData}
-              isPreview={true}
-              contextMode={ctx}
-            />
-          )}
-          {optimizelyData.pageType === 'BlankExperience' && (
-            <>
-              <CMSContent 
-                data={optimizelyData.data} 
-                isLoading={isLoading} 
-                error={error}
-                isPreview={true}
-                contextMode={ctx}
-              />
-            </>
-          )}
-          {optimizelyData.pageType === 'Other' && (
-            <div className="container mx-auto px-4 py-8">
-              <p className="text-gray-600">Preview for page type: {optimizelyData.pageData?._metadata?.types?.join(', ')}</p>
-              <pre className="mt-4 text-xs bg-gray-100 p-4 rounded overflow-auto">
-                {JSON.stringify(optimizelyData.pageData, null, 2)}
-              </pre>
-            </div>
-          )}
-        </>
-      )}
-      
-      <CustomFooter 
-        optimizelyData={optimizelyData?.data || null} 
-        isLoading={isLoading} 
-        error={error}
-      />
-      
-      {isLoading && (
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading preview...</p>
-          </div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="container mx-auto px-4 py-16">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h3 className="text-red-800 font-semibold mb-2">Preview Error</h3>
-            <p className="text-red-700">{error}</p>
-          </div>
-        </div>
-      )}
-    </main>
+    <PreviewClient
+      initialData={initialData}
+      ctx={ctx}
+      previewToken={previewToken}
+      contentKey={key}
+      ver={ver}
+      loc={loc}
+      cmsDemo={cmsDemo}
+    />
   )
 }
