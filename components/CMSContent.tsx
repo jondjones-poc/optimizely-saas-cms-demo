@@ -86,6 +86,7 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
   return (
     <div 
       id="cms-content-wrapper"
+      className="relative w-full flex-1"
       style={{ 
         position: 'relative', // This makes this div the offset parent for Grid sections
         isolation: 'isolate',
@@ -100,23 +101,25 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
         left: 0
       }}
     >
-      {grids.map((grid: any) => {
+      <div className="relative w-full flex-1 flex flex-col flex-nowrap justify-start">
+        {grids.map((grid: any) => {
         if (!grid) return null
 
         // Handle rows: nodes alias structure
         const rows = Array.isArray(grid.rows) ? grid.rows : grid.rows?.nodes || []
         if (!rows || rows.length === 0) return null
 
+        // Use flexbox layout for grid (matching VisualBuilderComponent pattern)
+        // This ensures proper stacking of rows and columns for ALL sections
         return (
           <section 
             key={grid.key} 
             {...(contextMode === 'edit' && grid.key && { 'data-epi-block-id': grid.key })}
             data-epi-role="grid"
             data-epi-display-name={grid.displayName || 'Grid'}
-            className="w-full"
+            className="relative w-full flex flex-col flex-nowrap justify-start"
             style={{ 
               position: 'relative',
-              display: 'block',
               // No margin/padding to prevent white space - Grid flows directly after header
               margin: 0,
               padding: 0,
@@ -133,21 +136,18 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
               const columns = Array.isArray(row.columns) ? row.columns : row.columns?.nodes || []
               if (!columns || columns.length === 0) return null
 
-              // Special handling for Content Section with multiple columns - display side by side
-              const isContentSection = grid.displayName === 'Content Section'
-              const hasMultipleColumns = columns.length > 1
-              const rowClassName = isContentSection && hasMultipleColumns 
-                ? 'grid grid-cols-1 md:grid-cols-2 gap-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'
-                : undefined
-
+              // Use flexbox layout for rows (matching VisualBuilderComponent pattern)
+              // This ensures columns display side-by-side for ALL sections, not just hardcoded ones
               return (
                 <div 
                   key={row.key}
-                  // NOTE: Row does NOT have data-epi-block-id in working example - only Grid and Component do
-                  // {...(contextMode === 'edit' && row.key && { 'data-epi-block-id': row.key })}
+                  className="flex-1 flex flex-row flex-nowrap justify-start w-full"
                   data-epi-role="row"
                   data-epi-display-name={row.displayName || 'Row'}
-                  {...(rowClassName && { className: rowClassName })}
+                  style={{
+                    position: 'relative',
+                    width: '100%'
+                  }}
                 >
                   {columns.map((column: any) => {
                     if (!column) return null
@@ -156,13 +156,18 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                     const elements = Array.isArray(column.elements) ? column.elements : column.elements?.nodes || []
                     if (!elements || elements.length === 0) return null
 
+                    // Use flexbox layout for columns (matching VisualBuilderComponent pattern)
+                    // flex-1 makes columns equal width, flex-col stacks elements vertically
                     return (
                       <div 
                         key={column.key}
-                        // NOTE: Column does NOT have data-epi-block-id in working example - only Grid and Component do
-                        // {...(contextMode === 'edit' && column.key && { 'data-epi-block-id': column.key })}
+                        className="flex-1 flex flex-col flex-nowrap justify-start"
                         data-epi-role="column"
                         data-epi-display-name={column.displayName || 'Column'}
+                        style={{
+                          position: 'relative',
+                          minWidth: 0 // Prevents flex items from overflowing
+                        }}
                       >
                         {elements.map((element: any) => {
                           // Handle both inline blocks (component) and shared blocks (element with contentLink)
@@ -202,16 +207,12 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                               )
                             }
                             
+                            // Match VisualBuilderComponent pattern exactly:
+                            // Simple wrapper div with data-epi-block-id, no special styles
                             return (
                               <div 
                                 key={element.key || componentWithElementKey._metadata?.key}
                                 {...(contextMode === 'edit' && element.key && { 'data-epi-block-id': element.key })}
-                                style={{ 
-                                  display: 'block', 
-                                  position: 'relative',
-                                  width: '100%',
-                                  contain: 'layout style'
-                                }}
                               >
                                 <BlockRenderer 
                                   component={componentWithElementKey} 
@@ -233,6 +234,8 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
                               },
                               _elementDisplayName: element.displayName
                             }
+                            // Match VisualBuilderComponent pattern exactly:
+                            // Simple wrapper div with data-epi-block-id, no special styles
                             return (
                               <div 
                                 key={element.key || sharedComponentWithElementKey._metadata?.key}
@@ -258,6 +261,7 @@ export default function CMSContent({ data, isLoading, error, isPreview = false, 
           </section>
         )
       })}
+      </div>
     </div>
   )
 }

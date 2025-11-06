@@ -1,8 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { useInView } from 'framer-motion'
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import Link from 'next/link'
@@ -39,10 +37,47 @@ const CallToAction = ({
   isPreview = false, 
   contextMode = null 
 }: CallToActionProps) => {
-  console.log('CallToAction component called with props:', { Header, Links, _metadata, _gridDisplayName })
+  console.log('CallToAction component called with props:', { Header, Links, _metadata, _gridDisplayName, contextMode, _componentKey })
   const { theme } = useTheme()
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-100px" })
+  
+  // Client-side logging to verify data-epi-edit attributes (similar to Hero)
+  useEffect(() => {
+    if (contextMode === 'edit') {
+      // Check if attributes are actually in the DOM after render
+      const checkDOM = () => {
+        // The wrapper div in CMSContent has data-epi-block-id, so we need to find it
+        const sectionElement = ref.current as HTMLElement | null
+        const wrapperElement = sectionElement?.closest('[data-epi-block-id]')
+        const blockId = wrapperElement?.getAttribute('data-epi-block-id')
+        
+        if (blockId && wrapperElement) {
+          const headerEl = wrapperElement.querySelector('[data-epi-edit="Header"]')
+          
+          console.log('🔍 CallToAction DOM Check:', {
+            hasWrapper: !!wrapperElement,
+            blockId,
+            hasHeaderEl: !!headerEl,
+            headerElTag: headerEl?.tagName,
+            headerText: headerEl?.textContent?.substring(0, 30),
+            contextMode,
+            componentKey: _componentKey || _metadata?.key
+          })
+          
+          if (!headerEl) {
+            console.warn('⚠️ CallToAction - Header element with data-epi-edit not found in DOM!')
+          }
+        } else {
+          console.warn('⚠️ CallToAction - Wrapper element with data-epi-block-id not found!')
+        }
+      }
+      
+      // Check immediately and after delays
+      checkDOM()
+      setTimeout(checkDOM, 100)
+      setTimeout(checkDOM, 500)
+    }
+  }, [contextMode, _componentKey, _metadata?.key])
 
   // Check if there's no content data
   const hasContent = Header || (Links && Links.length > 0)
@@ -67,34 +102,30 @@ const CallToAction = ({
   }
 
   return (
-    <>
-      {/* CallToAction */}
-      <section 
-        ref={ref} 
-        className={`py-20 ${
-          theme === 'dark' ? 'bg-dark-secondary' : 'bg-phamily-lightGray'
-        }`}
-        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
-        // {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
-      >
+    <section 
+      ref={ref} 
+      className={`py-20 ${
+        theme === 'dark' ? 'bg-dark-secondary' : 'bg-phamily-lightGray'
+      }`}
+      style={{ position: 'relative' }}
+      // NOTE: data-epi-block-id is on wrapper div in CMSContent.tsx (matching ContentBlock structure)
+      // {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.8 }}
+        <div
           className={`text-center rounded-2xl p-12 ${
             theme === 'dark' ? 'bg-dark-primary' : 'bg-phamily-lightGray'
           }`}
         >
           {Header && (
-            <h4 
+            <div 
               className={`text-3xl font-bold mb-6 ${
                 theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
               }`}
               {...(contextMode === 'edit' && { 'data-epi-edit': 'Header' })}
             >
               {Header}
-            </h4>
+            </div>
           )}
           {Links && Links.length > 0 && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -122,10 +153,9 @@ const CallToAction = ({
               ))}
             </div>
           )}
-          </motion.div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   )
 }
 

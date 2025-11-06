@@ -138,9 +138,22 @@ export async function GET(request: Request) {
                 displayName
                 types
               }
-              ... on Text {
-                Content
+              ... on ContentBlock {
+                Content {
+                  html
+                }
                 Position
+              }
+              ... on Heading {
+                Heading
+                HeadingSize
+                Alignment
+              }
+              ... on Divider {
+                _metadata {
+                  key
+                }
+                DividerSize
               }
               ... on Image {
                 AltText

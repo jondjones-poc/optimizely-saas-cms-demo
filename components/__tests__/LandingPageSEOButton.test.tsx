@@ -39,7 +39,7 @@ const mockLandingPageData = {
               {
                 _metadata: {
                   displayName: 'Text Component',
-                  types: ['Text']
+                  types: ['ContentBlock']
                 },
                 Content: 'Main content text'
               },

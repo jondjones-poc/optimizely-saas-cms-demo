@@ -397,7 +397,7 @@ function LandingPage({ data }: { data: PageData }) {
               {data.MainContentArea.map((component: any, index: number) => {
                 const componentType = component._metadata?.types?.[0]
                 
-                if (componentType === 'Text') {
+                if (componentType === 'ContentBlock') {
                   return (
                     <div key={index} className="border-2 border-dashed border-green-300 rounded-lg p-8 bg-white/50">
                       <div className="flex gap-6">

@@ -1,7 +1,7 @@
 'use client'
 
 import Hero from './Hero'
-import TextBlock from './TextBlock'
+import ContentBlock from './ContentBlock'
 import DemoBlock from './DemoBlock'
 import FeatureGrid from './FeatureGrid'
 import CallToAction from './CallToAction'
@@ -9,6 +9,8 @@ import Carousel from './Carousel'
 import PromoBlock from './PromoBlock'
 import ImageBlock from './Image'
 import Menu from './Menu'
+import Heading from './Heading'
+import Divider from './Divider'
 
 interface BlockRendererProps {
   component: any
@@ -31,10 +33,34 @@ const BlockRenderer = ({ component, isPreview = false, contextMode = null, cmsDe
       return (
         <Hero {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
       )
-    case 'Text':
-      // TextBlock component applies data-epi-block-id to its root element, so no wrapper needed
+    case 'ContentBlock':
+      // ContentBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <TextBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        <ContentBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+      )
+    case 'Heading':
+      // Heading component applies data-epi-block-id to its root element, so no wrapper needed
+      return (
+        <Heading 
+          {...component} 
+          _metadata={component._metadata} 
+          _gridDisplayName={component._gridDisplayName} 
+          isPreview={isPreview} 
+          contextMode={contextMode}
+          _componentKey={component._metadata?.key}
+        />
+      )
+    case 'Divider':
+      // Divider component applies data-epi-block-id to its root element, so no wrapper needed
+      return (
+        <Divider 
+          {...component} 
+          _metadata={component._metadata} 
+          _gridDisplayName={component._gridDisplayName} 
+          isPreview={isPreview} 
+          contextMode={contextMode}
+          _componentKey={component._metadata?.key}
+        />
       )
     case 'demo_block':
       // DemoBlock component applies data-epi-block-id to its root element, so no wrapper needed

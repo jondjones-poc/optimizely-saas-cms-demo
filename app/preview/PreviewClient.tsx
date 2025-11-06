@@ -253,6 +253,69 @@ export default function PreviewClient({
     }
   }, [contextMode, optimizelyData])
 
+  // Trigger Optimizely to recalculate overlay positions
+  const triggerOverlayRecalculation = () => {
+    console.log('🔄 Triggering overlay recalculation...')
+    
+    // Wait for React to finish rendering the updated DOM
+    setTimeout(() => {
+      try {
+        const epi = (window as any).epi
+        if (epi) {
+          // Try various methods to trigger recalculation
+          if (typeof epi.publish === 'function') {
+            epi.publish('page:ready')
+            epi.publish('content:loaded')
+            epi.publish('content:updated')
+            console.log('✅ Published Optimizely events')
+          }
+          
+          // Try rescan/rescan methods if available
+          if (typeof epi.rescan === 'function') {
+            epi.rescan()
+            console.log('✅ Called epi.rescan()')
+          }
+          if (typeof epi.scan === 'function') {
+            epi.scan()
+            console.log('✅ Called epi.scan()')
+          }
+          if (typeof epi.reinitializePageEditing === 'function') {
+            epi.reinitializePageEditing()
+            console.log('✅ Called epi.reinitializePageEditing()')
+          }
+        }
+        
+        // Force DOM mutation to trigger Optimizely's MutationObserver
+        const cmsWrapper = document.getElementById('cms-content-wrapper')
+        if (cmsWrapper) {
+          // Temporarily add/remove an attribute to trigger mutation
+          cmsWrapper.setAttribute('data-recalc', Date.now().toString())
+          setTimeout(() => {
+            cmsWrapper.removeAttribute('data-recalc')
+          }, 100)
+          console.log('✅ Triggered DOM mutation')
+        }
+        
+        // Signal parent CMS window
+        if (window.parent !== window) {
+          const targetOrigin = '*'
+          window.parent.postMessage({
+            type: 'optimizely:content:updated',
+            timestamp: Date.now()
+          }, targetOrigin)
+          console.log('✅ Sent postMessage to parent')
+        }
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('optimizely:content:updated'))
+        console.log('✅ Dispatched custom event')
+        
+      } catch (e) {
+        console.warn('⚠️ Error triggering overlay recalculation:', e)
+      }
+    }, 300) // Wait 300ms for React to render
+  }
+
   // Initialize Optimizely after script loads and DOM is ready
   useEffect(() => {
     const initializeOptimizely = async () => {
@@ -285,34 +348,142 @@ export default function PreviewClient({
     initializeOptimizely()
   }, [optimizelyData])
 
+  // Trigger overlay recalculation when optimizelyData changes (after React re-renders)
+  useEffect(() => {
+    if (!optimizelyData || contextMode !== 'edit') return
+    
+    // Wait for React to finish rendering, then trigger recalculation
+    const timeoutId = setTimeout(() => {
+      triggerOverlayRecalculation()
+    }, 500) // Slightly longer delay to ensure DOM is fully updated
+    
+    return () => clearTimeout(timeoutId)
+  }, [optimizelyData, contextMode])
+
   // Listen for contentSaved events
   useEffect(() => {
-    const handleContentSaved = () => {
-      console.log('🔄 Content saved - refetching...')
-      // Refetch content
+    const handleContentSaved = (event: any) => {
+      console.log('🔄 Content saved event received:', event)
+      console.log('🔄 Event detail:', event?.detail)
+      console.log('🔄 Event data:', event?.data)
+      
+      // Check if event contains a new preview URL (Optimizely may provide this)
+      const eventDetail = event?.detail || event?.data || {}
+      const newPreviewUrl = eventDetail.previewUrl || eventDetail.url
+      const newVersion = eventDetail.version || eventDetail.ver
+      const newKey = eventDetail.key || eventDetail.contentKey
+      
+      // If Optimizely provides a new preview URL, use it for full refresh
+      if (newPreviewUrl) {
+        console.log('🔄 Optimizely provided new preview URL, refreshing page:', newPreviewUrl)
+        window.location.href = newPreviewUrl
+        return
+      }
+      
+      // Read current URL parameters (version may have changed after moving items)
+      const urlParams = new URLSearchParams(window.location.search)
+      const currentKey = urlParams.get('key') || contentKey
+      const currentVer = urlParams.get('ver') || ver || newVersion
+      const currentLoc = urlParams.get('loc') || loc
+      const currentToken = urlParams.get('preview_token') || currentPreviewToken
+      
+      // Option 1: Full page refresh (let Optimizely handle everything)
+      // This ensures overlay positions are recalculated correctly
+      console.log('🔄 Triggering full page refresh to recalculate overlays...')
+      const refreshUrl = new URL(window.location.href)
+      if (newVersion) {
+        refreshUrl.searchParams.set('ver', newVersion)
+      }
+      if (newKey && newKey !== currentKey) {
+        refreshUrl.searchParams.set('key', newKey)
+      }
+      // Add cache-busting timestamp
+      refreshUrl.searchParams.set('_t', Date.now().toString())
+      
+      window.location.href = refreshUrl.toString()
+      return
+      
+      /* OLD REFETCH CODE - Commented out in favor of full page refresh
+      // If you want to try the refetch approach instead, uncomment this and comment out the return above
+      
+      console.log('🔄 Refetch params:', {
+        key: currentKey,
+        ver: currentVer,
+        loc: currentLoc,
+        hasToken: !!currentToken
+      })
+      
+      // Refetch content with current URL parameters
       fetch('/api/optimizely/preview-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(currentPreviewToken && { 'Authorization': `Bearer ${currentPreviewToken}` })
+          ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
         },
-        body: JSON.stringify({ key: contentKey, ver, loc }),
+        body: JSON.stringify({ key: currentKey, ver: currentVer, loc: currentLoc }),
         cache: 'no-store'
       })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`)
+        }
+        return res.json()
+      })
       .then(data => {
-        if (data.success) {
-          setOptimizelyData(data.data)
+        if (data.success && data.data) {
+          const contentData = data.data?._Content?.items?.[0]
+          
+          if (!contentData) {
+            console.error('❌ Refetch failed - no content data in items array')
+            setError('No content data found in refetch response')
+            return
+          }
+          
+          const pageTypes = contentData?._metadata?.types || []
+          const isLandingPage = pageTypes.includes('LandingPage')
+          const isBlankExperience = pageTypes.includes('BlankExperience')
+          
+          let processedData
+          if (isLandingPage) {
+            processedData = { pageType: 'LandingPage', pageData: contentData }
+          } else if (isBlankExperience) {
+            processedData = { pageType: 'BlankExperience', data: contentData }
+          } else {
+            processedData = { pageType: 'Other', pageData: contentData }
+          }
+          
+          setOptimizelyData(processedData)
+          triggerOverlayRecalculation()
+        } else {
+          console.error('❌ Refetch failed - invalid response:', data)
+          setError(data.error || 'Failed to refetch content')
         }
       })
       .catch(err => {
-        console.error('Failed to refetch content:', err)
+        console.error('❌ Failed to refetch content:', err)
+        setError(err.message || 'Failed to refetch content')
       })
+      */
     }
 
     window.addEventListener('optimizely:cms:contentSaved', handleContentSaved)
     return () => window.removeEventListener('optimizely:cms:contentSaved', handleContentSaved)
   }, [contentKey, ver, loc, currentPreviewToken])
+  
+  // Alternative: Listen for contentSaved and do immediate full page refresh
+  // Uncomment this if you want the simplest approach (full refresh on any content change)
+  /*
+  useEffect(() => {
+    const handleContentSavedSimple = (event: any) => {
+      console.log('🔄 Content saved - doing full page refresh...', event)
+      // Simple full refresh - let Optimizely handle everything
+      window.location.reload()
+    }
+    
+    window.addEventListener('optimizely:cms:contentSaved', handleContentSavedSimple)
+    return () => window.removeEventListener('optimizely:cms:contentSaved', handleContentSavedSimple)
+  }, [])
+  */
 
   // Handle content rendering
   if (error) {

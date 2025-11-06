@@ -117,12 +117,28 @@ export async function fetchPreviewContentFromGraph({
                                     }
                                   }
                                 }
-                                ... on Text {
+                                ... on ContentBlock {
                                   _metadata {
                                     key
                                   }
-                                  Content
+                                  Content {
+                                    html
+                                  }
                                   Position
+                                }
+                                ... on Heading {
+                                  _metadata {
+                                    key
+                                  }
+                                  Heading
+                                  HeadingSize
+                                  Alignment
+                                }
+                                ... on Divider {
+                                  _metadata {
+                                    key
+                                  }
+                                  DividerSize
                                 }
                                 ... on Image {
                                   AltText
@@ -268,9 +284,22 @@ export async function fetchPreviewContentFromGraph({
                 displayName
                 types
               }
-              ... on Text {
-                Content
+              ... on ContentBlock {
+                Content {
+                  html
+                }
                 Position
+              }
+              ... on Heading {
+                Heading
+                HeadingSize
+                Alignment
+              }
+              ... on Divider {
+                _metadata {
+                  key
+                }
+                DividerSize
               }
               ... on Image {
                 AltText
@@ -399,7 +428,21 @@ export async function fetchPreviewContentFromGraph({
   }
   
   if (data.errors) {
-    console.error('GraphQL errors in fetchPreviewContentFromGraph:', data.errors)
+    console.error('❌ GraphQL errors in fetchPreviewContentFromGraph:', {
+      errors: data.errors,
+      errorCount: data.errors.length,
+      firstError: data.errors[0],
+      fullErrors: JSON.stringify(data.errors, null, 2)
+    })
+    // Log each error separately for clarity
+    data.errors.forEach((error: any, index: number) => {
+      console.error(`❌ GraphQL Error ${index + 1}:`, {
+        message: error.message,
+        locations: error.locations,
+        path: error.path,
+        extensions: error.extensions
+      })
+    })
     throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`)
   }
 

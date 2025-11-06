@@ -111,7 +111,7 @@ export async function GET() {
     }
 
     // Now fetch all content types that have actual content (key != null)
-    const contentTypes = ['Hero', 'Text', 'FeatureCard', 'demo_block']
+    const contentTypes = ['Hero', 'ContentBlock', 'FeatureCard', 'demo_block']
     const contentData: any = {}
 
     for (const contentType of contentTypes) {
