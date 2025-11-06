@@ -21,9 +21,10 @@ interface CMSMenuProps {
   currentPath?: string
   isVisible: boolean
   onClose: () => void
+  headerHeight?: number
 }
 
-const CMSMenu = ({ currentPath = '/', isVisible, onClose }: CMSMenuProps) => {
+const CMSMenu = ({ currentPath = '/', isVisible, onClose, headerHeight = 0 }: CMSMenuProps) => {
   const { theme } = useTheme()
   const [pages, setPages] = useState<PageData[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -120,7 +121,14 @@ const CMSMenu = ({ currentPath = '/', isVisible, onClose }: CMSMenuProps) => {
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/10 dark:bg-black/10 border-t border-white/20 dark:border-white/10 shadow-lg"
+          className="fixed left-0 right-0 border-b border-white/20 dark:border-white/10 shadow-lg"
+          style={{ 
+            zIndex: 10000, // Higher than header's z-index (9999) so it appears on top
+            top: headerHeight || 0, // Position below header
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'
+          }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
 
@@ -142,11 +150,7 @@ const CMSMenu = ({ currentPath = '/', isVisible, onClose }: CMSMenuProps) => {
                 <motion.div variants={itemVariants}>
                   <Link
                     href="/"
-                    className={`block p-4 rounded-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm ${
-                      currentPath === '/'
-                        ? 'bg-phamily-blue text-white shadow-lg'
-                        : 'bg-gray-800/60 dark:bg-gray-900/60 hover:bg-gray-700/70 dark:hover:bg-gray-800/70 text-white border border-gray-600/30 dark:border-gray-700/30'
-                    }`}
+                    className="block p-4 rounded-lg transition-all duration-200 hover:scale-105 backdrop-blur-sm bg-gray-800/60 dark:bg-gray-900/60 hover:bg-gray-700/70 dark:hover:bg-gray-800/70 text-white border border-gray-600/30 dark:border-gray-700/30"
                     onClick={onClose}
                   >
                     <div className="flex items-center gap-3">

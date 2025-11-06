@@ -437,7 +437,13 @@ function renderWireframeMain(data: any) {
                       {component.Content && (
                         <div className="text-xs">
                           <span className="font-bold text-gray-700">Content:</span>
-                          <p className="text-gray-600 mt-1">"{component.Content}"</p>
+                          <p className="text-gray-600 mt-1">
+                            {typeof component.Content === 'string' 
+                              ? `"${component.Content}"` 
+                              : component.Content.html 
+                                ? `"${component.Content.html.substring(0, 100)}..."` 
+                                : '"(empty)"'}
+                          </p>
                         </div>
                       )}
                       {component.Position && (
@@ -619,9 +625,14 @@ function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: stri
                   component.Position === 'center' ? 'text-center' : ''
                 }`}>
                   {component.Content && (
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-                      {component.Content}
-                    </h1>
+                    <div 
+                      className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight"
+                      dangerouslySetInnerHTML={{ 
+                        __html: typeof component.Content === 'string' 
+                          ? component.Content 
+                          : component.Content.html || '' 
+                      }}
+                    />
                   )}
                 </div>
               </div>
