@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
   const ver = searchParams.get('ver')
   const graphUrl = searchParams.get('graph') // Graph URL from card reference
 
+  // Declare graphKey at function scope so it's available throughout
+  let graphKey: string | null = key
+
   if (!key && !graphUrl) {
     return NextResponse.json(
       { success: false, error: 'Card key or graph URL is required' },
@@ -56,7 +59,7 @@ export async function GET(request: NextRequest) {
   if (graphUrl) {
     // Graph URL format: graph://cms/FeatureCard/{key} or similar graph URI scheme
     // Extract the key from the graph URI
-    let graphKey = key
+    graphKey = key
     let graphVer = ver
     
     // Handle graph:// URI scheme - extract key from path
