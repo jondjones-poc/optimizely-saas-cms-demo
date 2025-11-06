@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import PreviewClient from './PreviewClient'
-import { fetchPreviewContentFromGraph } from '@/lib/optimizely/fetchPreviewContent'
+import { fetchPreviewContentFromGraph, processFeatureGridCardsServerSide } from '@/lib/optimizely/fetchPreviewContent'
 import { getBrandingConfig } from '@/lib/branding'
 
 interface PreviewPageProps {
@@ -51,6 +51,83 @@ async function fetchPreviewContent(
       const contentData = result.data?._Content?.items?.[0]
       
       if (contentData) {
+        // Process FeatureGrid cards server-side if this is a BlankExperience
+        // Handle GraphQL alias structure: grids: nodes means grids can be an array directly or grids.nodes
+        const grids = Array.isArray(contentData.composition?.grids) 
+          ? contentData.composition.grids 
+          : contentData.composition?.grids?.nodes || []
+        
+        if (grids && grids.length > 0) {
+          console.log('🔄 Starting server-side FeatureGrid processing...', {
+            gridCount: grids.length,
+            hasComposition: !!contentData.composition,
+            gridsStructure: Array.isArray(contentData.composition?.grids) ? 'direct array' : 'nodes structure'
+          })
+          
+          const processGrids = async (gridsArray: any[]) => {
+            let featureGridCount = 0
+            for (const grid of gridsArray) {
+              // Handle rows: nodes alias structure
+              const rows = Array.isArray(grid.rows) ? grid.rows : grid.rows?.nodes || []
+              for (const row of rows) {
+                // Handle columns: nodes alias structure
+                const columns = Array.isArray(row.columns) ? row.columns : row.columns?.nodes || []
+                for (const column of columns) {
+                  // Handle elements: nodes alias structure
+                  const elements = Array.isArray(column.elements) ? column.elements : column.elements?.nodes || []
+                  for (const element of elements) {
+                    if (element.component) {
+                      // Check if this is a FeatureGrid
+                      const componentTypes = element.component._metadata?.types || []
+                      console.log('🔍 Checking component:', {
+                        types: componentTypes,
+                        displayName: element.component._metadata?.displayName,
+                        isFeatureGrid: componentTypes.includes('FeatureGrid')
+                      })
+                      if (componentTypes.includes('FeatureGrid')) {
+                        featureGridCount++
+                        console.log('🔄 Processing FeatureGrid server-side:', {
+                          key: element.component._metadata?.key,
+                          cardCount: element.component.Cards?.length || 0,
+                          cards: element.component.Cards?.map((c: any) => ({
+                            key: c.key,
+                            hasHeading: c.Heading !== undefined,
+                            hasBody: c.Body !== undefined
+                          }))
+                        })
+                        element.component = await processFeatureGridCardsServerSide(
+                          element.component,
+                          previewToken || null
+                        )
+                        console.log('✅ FeatureGrid processed:', {
+                          key: element.component._metadata?.key,
+                          cardCount: element.component.Cards?.length || 0,
+                          cardsAfter: element.component.Cards?.map((c: any) => ({
+                            key: c.key,
+                            hasHeading: c.Heading !== undefined,
+                            hasBody: c.Body !== undefined,
+                            heading: c.Heading?.substring(0, 30)
+                          }))
+                        })
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            console.log(`✅ Server-side processing complete. Found ${featureGridCount} FeatureGrid(s)`)
+          }
+          
+          await processGrids(grids)
+        } else {
+          console.log('⚠️ No grids found for server-side processing:', {
+            hasComposition: !!contentData.composition,
+            hasGrids: !!contentData.composition?.grids,
+            gridsType: typeof contentData.composition?.grids,
+            gridsIsArray: Array.isArray(contentData.composition?.grids)
+          })
+        }
+        
         // Determine page type and structure data accordingly
         const pageTypes = contentData._metadata?.types || []
         const isLandingPage = pageTypes.includes('LandingPage')

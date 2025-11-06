@@ -415,3 +415,203 @@ export async function fetchPreviewContentFromGraph({
   }
 }
 
+/**
+ * Fetch FeatureCard content server-side and inline it into FeatureGrid Cards
+ */
+async function fetchFeatureCardServerSide(
+  cardKey: string,
+  graphUrl: string | undefined,
+  previewToken: string | null
+): Promise<any> {
+  const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY || process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
+  if (!sdkKey) {
+    throw new Error('SDK Key not configured')
+  }
+
+  // Build authorization header
+  let authorization: string | null = null
+  if (previewToken) {
+    let token = previewToken.replace(/^Bearer\s+/i, '').trim()
+    if (token && token.length > 0) {
+      authorization = `Bearer ${token}`
+    }
+  }
+
+  // Extract key from graph URL if provided
+  let queryKey = cardKey
+  if (graphUrl && graphUrl.startsWith('graph://')) {
+    const parts = graphUrl.split('/')
+    queryKey = parts[parts.length - 1] || cardKey
+  }
+
+  // Query for FeatureCard
+  const query = `
+    query GetFeatureCard {
+      _Content(
+        where: {
+          _metadata: {
+            key: {
+              eq: "${queryKey}"
+            }
+          }
+        }
+        limit: 100
+      ) {
+        items {
+          _metadata {
+            key
+            displayName
+            types
+            version
+            status
+          }
+          ... on FeatureCard {
+            Heading
+            Body
+            Image {
+              base
+              default
+            }
+          }
+        }
+      }
+    }
+  `
+
+  // Build fetch URL and headers
+  let graphApiUrl: string
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }
+
+  if (authorization) {
+    headers['Authorization'] = authorization
+    graphApiUrl = `https://cg.optimizely.com/content/v2?t=${Date.now()}`
+  } else {
+    graphApiUrl = `https://cg.optimizely.com/content/v2?auth=${sdkKey}`
+  }
+
+  const response = await fetch(graphApiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ query }),
+    cache: 'no-store'
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const result = await response.json()
+  
+  if (result.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`)
+  }
+
+  const allVersions = result.data?._Content?.items || []
+  
+  // Find the latest draft version (Current or Draft status, or highest version)
+  let card = allVersions.find((item: any) => 
+    item._metadata?.status === 'Current' || item._metadata?.status === 'Draft'
+  )
+  
+  if (!card && allVersions.length > 0) {
+    const sorted = [...allVersions].sort((a: any, b: any) => {
+      const verA = parseInt(a._metadata?.version || '0', 10)
+      const verB = parseInt(b._metadata?.version || '0', 10)
+      return verB - verA
+    })
+    card = sorted[0]
+  }
+
+  return card || null
+}
+
+/**
+ * Process FeatureGrid data to inline FeatureCard content server-side
+ */
+export async function processFeatureGridCardsServerSide(
+  featureGrid: any,
+  previewToken: string | null
+): Promise<any> {
+  console.log('🔄 processFeatureGridCardsServerSide called:', {
+    hasFeatureGrid: !!featureGrid,
+    hasCards: !!featureGrid?.Cards,
+    cardCount: featureGrid?.Cards?.length || 0,
+    firstCard: featureGrid?.Cards?.[0] ? {
+      key: featureGrid.Cards[0].key,
+      hasHeading: featureGrid.Cards[0].Heading !== undefined,
+      hasBody: featureGrid.Cards[0].Body !== undefined,
+      keys: Object.keys(featureGrid.Cards[0])
+    } : null
+  })
+
+  if (!featureGrid || !featureGrid.Cards || featureGrid.Cards.length === 0) {
+    console.log('⚠️ processFeatureGridCardsServerSide: No cards to process')
+    return featureGrid
+  }
+
+  // Check if cards are already inlined (have Heading/Body)
+  const hasInlinedContent = featureGrid.Cards.some((card: any) => card.Heading !== undefined || card.Body !== undefined)
+  if (hasInlinedContent) {
+    console.log('✅ processFeatureGridCardsServerSide: Cards already inlined, skipping')
+    return featureGrid // Already inlined, return as-is
+  }
+
+  console.log('📦 processFeatureGridCardsServerSide: Fetching cards server-side...')
+  
+  // Fetch all cards server-side
+  const cardPromises = featureGrid.Cards.map(async (card: any) => {
+    try {
+      console.log('📥 Fetching card server-side:', {
+        key: card.key,
+        graphUrl: card.url?.graph,
+        hasPreviewToken: !!previewToken
+      })
+      
+      const cardData = await fetchFeatureCardServerSide(
+        card.key,
+        card.url?.graph,
+        previewToken
+      )
+
+      if (cardData) {
+        console.log('✅ Card fetched successfully:', {
+          key: cardData._metadata?.key,
+          hasHeading: !!cardData.Heading,
+          hasBody: !!cardData.Body,
+          heading: cardData.Heading?.substring(0, 30)
+        })
+        return {
+          ...card,
+          Heading: cardData.Heading,
+          Body: cardData.Body,
+          Image: cardData.Image,
+          _metadata: cardData._metadata
+        }
+      }
+      console.warn('⚠️ Card fetch returned null:', card.key)
+      return card
+    } catch (error) {
+      console.error(`❌ Error fetching FeatureCard ${card.key}:`, error)
+      return card // Return original card if fetch fails
+    }
+  })
+
+  const processedCards = await Promise.all(cardPromises)
+  
+  console.log('✅ processFeatureGridCardsServerSide: All cards processed:', {
+    originalCount: featureGrid.Cards.length,
+    processedCount: processedCards.length,
+    cardsWithContent: processedCards.filter(c => c.Heading || c.Body).length
+  })
+
+  return {
+    ...featureGrid,
+    Cards: processedCards
+  }
+}
+
