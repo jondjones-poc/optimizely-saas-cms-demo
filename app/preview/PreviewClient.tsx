@@ -604,7 +604,7 @@ export default function PreviewClient({
 
   return (
     <>
-      <OptimizelyDataPopup data={pageData} />
+      <OptimizelyDataPopup data={pageData} isLoading={isLoading} error={error} />
       {/* Header section - explicitly excluded from CMS overlay calculations */}
       {/* This wrapper ensures header is completely separate from CMS content for overlay calculations */}
       <div 
@@ -630,7 +630,7 @@ export default function PreviewClient({
       
       {pageType === 'LandingPage' ? (
         <LandingPageDisplay 
-          page={pageData} 
+          data={pageData} 
           isPreview={isPreview} 
           contextMode={contextMode}
         />

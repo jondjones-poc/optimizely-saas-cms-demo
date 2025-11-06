@@ -26,8 +26,8 @@ const Divider = ({
   const normalizeSize = (size: typeof DividerSize): 1 | 2 | 3 => {
     if (size === undefined || size === null) return 2
     const numSize = typeof size === 'string' ? parseInt(size, 10) : size
-    if (numSize === 1 || numSize === '1') return 1
-    if (numSize === 3 || numSize === '3') return 3
+    if (numSize === 1) return 1
+    if (numSize === 3) return 3
     return 2  // default
   }
 

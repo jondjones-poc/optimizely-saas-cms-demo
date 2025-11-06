@@ -9,13 +9,13 @@ import FeatureCard from './FeatureCard'
 interface CardData {
   key: string
   Heading: string
-  SubHeading: string
+  SubHeading?: string  // Made optional since FeatureCard doesn't have this field
   Body: string
   Image?: {
     base: string
     default: string
-    graph: string
-    hierarchical: string
+    graph?: string  // Made optional
+    hierarchical?: string  // Made optional
   }
   Links?: Array<{
     target: string
