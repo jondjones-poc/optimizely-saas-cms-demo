@@ -1,5 +1,22 @@
 'use client'
 
+/**
+ * BLOCK RENDERER — Maps Optimizely block type names to React components.
+ *
+ * Each block from the CMS has _metadata.types[0] set to its content type name
+ * (e.g. "Hero", "Heading", "FeatureGrid"). This file is a simple switch:
+ * read the type name → render the matching component file.
+ *
+ * TO ADD A NEW BLOCK (homepage / BlankExperience):
+ *   1. Add GraphQL fields in app/api/optimizely/homepage/route.ts
+ *   2. Also add to lib/optimizely/fetchPreviewContent.ts (for live preview)
+ *   3. Create components/blocks/YourBlock.tsx
+ *   4. Register in BlockRenderer.tsx — case 'YourBlockType':
+ *
+ * For LandingPage blocks, also edit app/api/optimizely/page/route.ts and
+ * LandingPageDisplay.tsx — see components/blocks/README.md
+ */
+
 import Hero from './Hero'
 import ContentBlock from './ContentBlock'
 import DemoBlock from './DemoBlock'
@@ -16,146 +33,147 @@ interface BlockRendererProps {
   component: any
   isPreview?: boolean
   contextMode?: string | null
-  cmsDemo?: string | null  // cms_demo header value for DemoBlock
+  cmsDemo?: string | null
 }
 
-const BlockRenderer = ({ component, isPreview = false, contextMode = null, cmsDemo = null }: BlockRendererProps) => {
+const BlockRenderer = ({
+  component,
+  isPreview = false,
+  contextMode = null,
+  cmsDemo = null,
+}: BlockRendererProps) => {
   if (!component || !component._metadata) {
     return null
   }
 
+  // e.g. "Hero", "Heading" — must match Optimizely content type API name
   const blockType = component._metadata.types?.[0]
-  console.log('BlockRenderer: Rendering block type:', blockType, component)
 
   switch (blockType) {
     case 'Hero':
-      // Hero component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <Hero {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        <Hero
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
+          contextMode={contextMode}
+        />
       )
     case 'ContentBlock':
-      // ContentBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <ContentBlock {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        <ContentBlock
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
+          contextMode={contextMode}
+        />
       )
     case 'Heading':
-      // Heading component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <Heading 
-          {...component} 
-          _metadata={component._metadata} 
-          _gridDisplayName={component._gridDisplayName} 
-          isPreview={isPreview} 
+        <Heading
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
         />
       )
     case 'Divider':
-      // Divider component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <Divider 
-          {...component} 
-          _metadata={component._metadata} 
-          _gridDisplayName={component._gridDisplayName} 
-          isPreview={isPreview} 
+        <Divider
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
         />
       )
     case 'demo_block':
-      // DemoBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <DemoBlock 
-          {...component} 
-          _metadata={component._metadata} 
-          _gridDisplayName={component._gridDisplayName} 
-          isPreview={isPreview} 
+        <DemoBlock
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
           cmsDemo={cmsDemo}
         />
       )
     case 'FeatureGrid':
-      // FeatureGrid component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <FeatureGrid 
-          {...component} 
-          _metadata={component._metadata} 
-          _gridDisplayName={component._gridDisplayName} 
-          isPreview={isPreview} 
+        <FeatureGrid
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
         />
       )
     case 'CallToAction':
     case 'CallToActionOutput':
-      // CallToAction component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <CallToAction 
-          {...component} 
-          _metadata={component._metadata} 
-          _gridDisplayName={component._gridDisplayName} 
-          isPreview={isPreview} 
+        <CallToAction
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
         />
       )
     case 'Carousel':
-      // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
       return (
-        <Carousel {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        <Carousel
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
+          contextMode={contextMode}
+        />
       )
     case 'PromoBlock':
-      // PromoBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <PromoBlock 
-          {...component} 
-          _metadata={component._metadata} 
-          _gridDisplayName={component._gridDisplayName} 
-          isPreview={isPreview} 
+        <PromoBlock
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
         />
       )
     case 'Image':
-      // ImageBlock component applies data-epi-block-id to its root element, so no wrapper needed
       return (
-        <ImageBlock 
-          {...component} 
-          _metadata={component._metadata} 
-          _gridDisplayName={component._gridDisplayName} 
-          isPreview={isPreview} 
+        <ImageBlock
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
           contextMode={contextMode}
           _componentKey={component._metadata?.key}
         />
       )
     case 'Menu':
-      console.log('🎯 MENU BLOCK RENDERER - Individual Menu Block Loading')
-      console.log('Menu component data:', component)
-      console.log('Menu _metadata:', component._metadata)
-      console.log('Menu MenuItem:', component.MenuItem)
-      console.log('Menu MenuItem type:', typeof component.MenuItem)
-      console.log('Menu MenuItem is array:', Array.isArray(component.MenuItem))
-      console.log('Menu MenuItem length:', component.MenuItem?.length)
-      console.log('Menu full props being passed:', {
-        ...component,
-        _metadata: component._metadata,
-        _gridDisplayName: component._gridDisplayName,
-        isPreview,
-        contextMode
-      })
-      console.log('🎯 END MENU BLOCK RENDERER')
-      
-      // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
       return (
-        <Menu {...component} _metadata={component._metadata} _gridDisplayName={component._gridDisplayName} isPreview={isPreview} contextMode={contextMode} />
+        <Menu
+          {...component}
+          _metadata={component._metadata}
+          _gridDisplayName={component._gridDisplayName}
+          isPreview={isPreview}
+          contextMode={contextMode}
+        />
       )
     default:
-      // Return null for unhandled block types
+      // Unknown type — add a case above when you create a new block in Optimizely
       console.warn('Unhandled block type:', blockType, component)
       return null
   }
 }
 
 export default BlockRenderer
-

@@ -1,3 +1,16 @@
+/**
+ * HOMEPAGE API — Server-side bridge to Optimizely Graph.
+ *
+ * The browser cannot call Optimizely Graph directly with the secret key safely,
+ * so this Next.js "API route" runs on the server and:
+ *   1. Reads NEXT_PUBLIC_SDK_KEY or OPTIMIZELY_GRAPH_SINGLE_KEY from .env.local
+ *   2. Sends a GraphQL query to https://cg.optimizely.com/content/v2
+ *   3. Returns JSON to app/page.tsx
+ *
+ * When you add a NEW block type in Optimizely, add its fields here inside
+ * the `component { ... }` section (see ... on Hero, ... on Heading, etc.).
+ */
+
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -7,18 +20,26 @@ export async function GET() {
 
   if (!sdkKey) {
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'SDK Key not configured',
         debug: {
           hasNextPublicKey: !!process.env.NEXT_PUBLIC_SDK_KEY,
-          hasOptimizelyKey: !!process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
-        }
+          hasOptimizelyKey: !!process.env.OPTIMIZELY_GRAPH_SINGLE_KEY,
+        },
       },
       { status: 500 }
     )
   }
 
+  /**
+   * GraphQL query — asks Optimizely for:
+   *   - One BlankExperience page where URL is "/"
+   *   - Its composition tree: grids → rows → columns → component blocks
+   *   - Each block type's fields (Heading text, Hero image, etc.)
+   *
+   * The type name after "... on" MUST match the Optimizely content type API name.
+   */
   const query = `
     query GetHomepage {
       BlankExperience(
@@ -191,42 +212,51 @@ export async function GET() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query }),
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     const data = await response.json()
-    
+
     if (!response.ok) {
       console.error('Optimizely API error:', data)
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    
+
     if (data.errors) {
       console.error('GraphQL errors:', data.errors)
-      return NextResponse.json({
-        success: false,
-        error: 'GraphQL errors',
-        details: data.errors
-      }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'GraphQL errors',
+          details: data.errors,
+        },
+        { status: 400 }
+      )
     }
 
-    return NextResponse.json({
-      success: true,
-      data,
-      timestamp: new Date().toISOString()
-    }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+    return NextResponse.json(
+      {
+        success: true,
+        // Response shape: { success, data: { data: { BlankExperience: ... } } }
+        // The inner .data is the GraphQL envelope. CMSContent reads data.data.data.BlankExperience.
+        // See docs/DATA_SHAPES.md
+        data,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       }
-    })
+    )
   } catch (error) {
     console.error('Error fetching Optimizely data:', error)
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )

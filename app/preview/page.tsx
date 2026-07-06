@@ -1,3 +1,17 @@
+/**
+ * LIVE PREVIEW — Server entry point (opened by Optimizely CMS in an iframe).
+ *
+ * Optimizely loads a URL like:
+ *   /preview?key={contentKey}&ver={version}&loc={locale}&ctx=edit&preview_token={token}
+ *
+ * This page:
+ *   1. Reads those query params from the URL
+ *   2. Fetches draft/preview content from Graph (fetchPreviewContentFromGraph)
+ *   3. Passes the result to PreviewClient for rendering + inline editing
+ *
+ * Do NOT open /preview directly in a browser tab — it needs the key/ver/token from CMS.
+ */
+
 import { headers } from 'next/headers'
 import PreviewClient from './PreviewClient'
 import { fetchPreviewContentFromGraph, processFeatureGridCardsServerSide } from '@/lib/optimizely/fetchPreviewContent'

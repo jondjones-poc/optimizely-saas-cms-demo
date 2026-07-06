@@ -1,265 +1,410 @@
-# SaaSCMS - Next.js Website
+# SaaSCMS — Optimizely + Next.js POC
 
-A modern, responsive website built with Next.js 14, TypeScript, and Tailwind CSS, inspired by the Phamily Pharma design.
+> **New to this repo?** Start with **[POC_START_HERE.md](POC_START_HERE.md)** — a map of what matters, what to ignore, and common confusion points.
 
-## Features
+A proof-of-concept website that loads its homepage from **Optimizely SaaS CMS** and renders it with **Next.js** and **React**. Content editors work in Optimizely; developers map CMS block types to React components in this repo.
 
-- 🚀 **Next.js 14** with App Router
-- 💎 **TypeScript** for type safety
-- 🎨 **Tailwind CSS** for styling
-- ✨ **Framer Motion** for smooth animations
-- 📱 **Responsive Design** for all devices
-- 🎯 **Scroll Animations** for enhanced UX
-- 🖼️ **Dummy Images** from Unsplash
-- 🌙 **Dynamic Theme Switching** based on HTTP headers
-- 🎨 **Dark Theme Support** for clientId=test
-- 🏗️ **Optimizely CMS Integration** with GraphQL
-- 📊 **GraphQL Viewer** for content inspection
-- 🎯 **Dynamic Content Rendering** from CMS
+You do not need deep React or Next.js knowledge to run the site or add a simple block. Follow the sections below in order.
 
-## Getting Started
+---
 
-### Prerequisites
+## Quick start (get the site running)
 
-- Node.js 18+ 
-- npm or yarn
+### What you need
 
-### Installation
+- **Node.js 18+** — [Download Node.js](https://nodejs.org/)
+- **An Optimizely SaaS CMS instance** with Graph enabled
+- **Your Optimizely Graph Single Key** — found in the Optimizely admin under your CMS / Graph settings
 
-1. Clone the repository:
+### Step 1: Install
+
 ```bash
 git clone <your-repo-url>
 cd SaaSCMS
-```
-
-2. Install dependencies:
-```bash
 npm install
-# or
-yarn install
 ```
 
-3. Set up environment variables:
+### Step 2: Connect to Optimizely
+
+Create a file called `.env.local` in the project root (same folder as `package.json`):
+
 ```bash
-# Create .env.local file
 cp .env.example .env.local
-
-# Edit .env.local and add your Optimizely SDK key
-NEXT_PUBLIC_SDK_KEY=your_actual_sdk_key_here
-OPTIMIZELY_GRAPH_SINGLE_KEY=your_actual_sdk_key_here
 ```
 
-4. Run the development server:
+Open `.env.local` and paste your Graph key:
+
+```bash
+NEXT_PUBLIC_SDK_KEY=your_actual_key_here
+OPTIMIZELY_GRAPH_SINGLE_KEY=your_actual_key_here
+```
+
+Both variables use the same key. The app checks either one.
+
+### Step 3: Run the site
+
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Project Structure
+You should see the homepage with content from Optimizely. If you see "Loading CMS content..." forever or an error, see [Troubleshooting](#troubleshooting).
+
+### Step 4: Verify the API (optional)
+
+Visit [http://localhost:3000/api/optimizely/homepage](http://localhost:3000/api/optimizely/homepage) in your browser. You should see JSON with `"success": true` and homepage data. If `"success": false`, check your SDK key and that a page exists at URL `/` in Optimizely.
+
+---
+
+## How the homepage loads (big picture)
+
+When someone opens the homepage, data flows like this:
+
+```
+Browser (localhost:3000)
+    │
+    ▼
+app/page.tsx                    ← React page; asks our server for CMS data
+    │
+    ▼
+/api/optimizely/homepage        ← Next.js API route; runs a GraphQL query
+    │
+    ▼
+Optimizely Graph (cg.optimizely.com)   ← Returns page + blocks as JSON
+    │
+    ▼
+components/CMSContent.tsx       ← Walks the page layout (grids → rows → columns → blocks)
+    │
+    ▼
+components/blocks/BlockRenderer.tsx   ← Picks the right React component per block type
+    │
+    ▼
+components/blocks/Hero.tsx, Heading.tsx, etc.   ← Renders HTML on screen
+```
+
+**In plain terms:**
+
+1. The **homepage** (`app/page.tsx`) fetches content when the page loads.
+2. Our **API route** asks Optimizely Graph for the page at URL `/` (a `BlankExperience` page type).
+3. Optimizely returns a **composition**: a nested layout of grids, rows, columns, and **blocks** (Hero, Heading, FeatureGrid, etc.).
+4. **CMSContent** loops through that tree and renders each block.
+5. **BlockRenderer** looks at each block’s type name (e.g. `"Heading"`) and renders the matching React file.
+
+Comments in the code mirror this flow — start reading at `app/page.tsx`.
+
+> **Why does JSON sometimes look like `data.data.data`?** See [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md).
+
+---
+
+## Other CMS pages (`[...slug]`)
+
+URLs like `/about/` or `/news/my-article/` are handled by `app/[...slug]/page.tsx` — a **catch-all route** that matches any path not already taken by `/` or `/preview`.
+
+1. URL segments become a CMS path (`/about/` → Optimizely URL field)
+2. `/api/optimizely/page?path=...` fetches content by URL (different API shape than homepage — see [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md))
+3. Page **type** from `_metadata.types[0]` picks the renderer:
+   - `LandingPage` → `LandingPageDisplay.tsx` (content areas, not BlockRenderer)
+   - `ArticlePage` → article template in `[...slug]/page.tsx`
+   - `NewsLandingPage` → `NewsLandingPage.tsx`
+
+The homepage (`/`) is separate because it uses `BlankExperience` + composition layout.
+
+---
+
+## Live preview (edit content in Optimizely, see it on your site)
+
+Live preview lets editors open your Next.js site **inside Optimizely CMS** in an iframe. They see draft/unpublished content and can click blocks to edit them inline.
+
+### How it works (big picture)
+
+```
+Optimizely CMS (parent window, editor UI)
+    │
+    │  Opens iframe →  https://your-site.com/preview?key=...&ver=...&ctx=edit&preview_token=...
+    ▼
+app/preview/page.tsx              ← Server: fetches draft content by key + version
+    │
+    ▼
+lib/optimizely/fetchPreviewContent.ts   ← GraphQL with preview token (not just SDK key)
+    │
+    ▼
+app/preview/PreviewClient.tsx     ← Client: loads Optimizely script, renders CMSContent
+    │
+    ▼
+components/CMSContent.tsx         ← Same block renderer as homepage, plus data-epi-* attributes
+    │
+    ▼
+Optimizely communicationinjector.js   ← Draws edit overlays; talks to parent CMS window
+```
+
+**In plain terms:**
+
+1. An editor clicks **Preview** in Optimizely CMS.
+2. Optimizely loads your `/preview` URL with query params: `key`, `ver`, `loc`, `ctx`, `preview_token`.
+3. The **server** fetches that specific content version from Graph using the preview token (so drafts work).
+4. **PreviewClient** renders the page with `isPreview={true}` and `contextMode="edit"`.
+5. **CMSContent** adds `data-epi-block-id` on each block so Optimizely knows where to draw click-to-edit overlays.
+6. Individual block components add `data-epi-edit="FieldName"` on editable fields.
+7. When the editor saves, Optimizely fires `optimizely:cms:contentSaved` and the page refreshes to show updates.
+
+### Configure preview in Optimizely
+
+1. In Optimizely CMS go to **Settings → Applications** (or your app / frontend host config).
+2. Set the **preview URL** to point at this app, for example:
+   ```
+   https://localhost:3000/preview?key={contentKey}&ver={version}&loc={locale}&ctx=edit&preview_token={previewToken}
+   ```
+   Use the placeholders Optimizely provides for your instance (names may vary slightly).
+3. Run your site (`npm run dev`) and open preview **from inside the CMS** — do not visit `/preview` directly without params.
+
+### URL parameters
+
+| Parameter | Purpose |
+|-----------|---------|
+| `key` | Content item GUID — which page/block to preview (required) |
+| `ver` | Version number — required for draft preview |
+| `loc` | Locale (e.g. `en`) |
+| `ctx` | `edit` = inline editing overlays; `view` = read-only preview |
+| `preview_token` | Auth token so Graph returns unpublished content |
+
+### Key files for preview
+
+| File | Role |
+|------|------|
+| `app/preview/page.tsx` | Server entry — reads URL params, fetches content, passes to client |
+| `app/preview/PreviewClient.tsx` | Loads Optimizely script, handles save/refresh, renders page |
+| `lib/optimizely/fetchPreviewContent.ts` | GraphQL query by key + version (with preview token) |
+| `app/api/optimizely/preview-content/route.ts` | API fallback for client-side refetch after save |
+| `components/CMSContent.tsx` | Adds `data-epi-block-id` when `contextMode === 'edit'` |
+| `components/blocks/*.tsx` | Add `data-epi-edit="FieldName"` on editable elements |
+
+### Inline editing attributes
+
+Optimizely matches CMS fields to DOM elements using these HTML attributes:
+
+- **`data-epi-block-id`** — on the wrapper for each block (set in `CMSContent.tsx`)
+- **`data-epi-edit="FieldName"`** — on the element for a specific CMS property (e.g. `Heading`, `HeadingSize`)
+
+The field name must match the property API name in Optimizely exactly.
+
+### Preview vs homepage
+
+| | Homepage (`/`) | Live preview (`/preview`) |
+|--|----------------|---------------------------|
+| Content source | Published page at URL `/` | Specific item by `key` + `ver` |
+| Auth | SDK key only | SDK key + `preview_token` for drafts |
+| Optimizely script | Not loaded | `communicationinjector.js` loaded |
+| Edit overlays | No | Yes, when `ctx=edit` |
+| Same block components? | Yes | Yes — `CMSContent` + `BlockRenderer` |
+
+---
+
+## Adding a new block: Optimizely → Graph → React
+
+This is the full workflow when you want a new content type on the site.
+
+### Part A — Create the content type in Optimizely CMS
+
+1. Log in to **Optimizely SaaS CMS** admin.
+2. Go to **Settings → Content types** (or **Content model**).
+3. Create a new **Block** type (not a page), e.g. `"TextBanner"`.
+4. Add properties editors will fill in, e.g.:
+   - `Title` — Text
+   - `Body` — Rich text / XHTML
+5. Save the content type. Note the **API name** exactly (e.g. `TextBanner`) — it must match in code.
+
+### Part B — Publish to Graph
+
+Content must be **published** and **available in Optimizely Graph** before the website can read it.
+
+1. Create a block instance: **Content → Create → your new block type**, fill in fields, **Publish**.
+2. Add the block to your homepage composition in the **Visual Builder** (or equivalent experience editor).
+3. Publish the **page** (`BlankExperience` at URL `/`).
+4. Confirm Graph sync by calling `/api/optimizely/homepage` and checking your block appears in the response.
+
+If the new type does not appear, wait a few minutes for Graph indexing or check Optimizely’s Graph / publish settings.
+
+### Part C — Tell the API to fetch your block’s fields
+
+Edit **`app/api/optimizely/homepage/route.ts`**.
+
+Inside the GraphQL query, find the `component { ... }` section where other blocks are listed (Hero, Heading, etc.). Add a fragment for your block:
+
+```graphql
+... on TextBanner {
+  Title
+  Body {
+    html
+  }
+}
+```
+
+The name after `... on` must match the Optimizely content type API name.
+
+Restart `npm run dev` after changing this file.
+
+### Part D — Build the React component
+
+1. Create **`components/blocks/TextBanner.tsx`**:
+
+```tsx
+'use client'
+
+interface TextBannerProps {
+  Title?: string
+  Body?: { html?: string }
+}
+
+export default function TextBanner({ Title, Body }: TextBannerProps) {
+  if (!Title) return null
+
+  return (
+    <section className="py-8 bg-gray-50">
+      <div className="container mx-auto px-4">
+        <h2 className="text-2xl font-bold">{Title}</h2>
+        {Body?.html && (
+          <div dangerouslySetInnerHTML={{ __html: Body.html }} />
+        )}
+      </div>
+    </section>
+  )
+}
+```
+
+2. Register it in **`components/blocks/BlockRenderer.tsx`**:
+
+```tsx
+import TextBanner from './TextBanner'
+
+// Inside the switch (blockType):
+case 'TextBanner':
+  return <TextBanner {...component} />
+```
+
+The `case` string must match the Optimizely type name (`TextBanner`).
+
+3. Refresh the homepage — your block should render where you placed it in the CMS.
+
+### Checklist
+
+| Step | Where | Must match |
+|------|--------|------------|
+| Content type API name | Optimizely admin | Graph `... on TypeName` |
+| Block type in switch | `BlockRenderer.tsx` | Same `TypeName` |
+| GraphQL fields | `homepage/route.ts` | Property names from CMS |
+
+**Landing pages:** If the block is on a `LandingPage` (not the homepage), also edit `app/api/optimizely/page/route.ts` and `LandingPageDisplay.tsx`. See [components/blocks/README.md](components/blocks/README.md).
+
+---
+
+## Code structure
 
 ```
 SaaSCMS/
 ├── app/
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Homepage
+│   ├── layout.tsx                  # Root shell — wraps ALL pages; theme + branding providers
+│   ├── page.tsx                    # Homepage — fetches CMS data, renders layout shell
+│   ├── [...slug]/page.tsx          # Other CMS pages by URL path
+│   ├── preview/
+│   │   ├── page.tsx                # Live preview server entry (Optimizely iframe)
+│   │   └── PreviewClient.tsx       # Live preview client — script, overlays, save refresh
+│   └── api/optimizely/
+│       ├── homepage/route.ts       # ★ GraphQL query for homepage (start here for new blocks)
+│       ├── page/route.ts           # GraphQL for pages by URL
+│       ├── menu/route.ts           # CMS menu items
+│       ├── pages/route.ts          # Page list for CMSMenu
+│       └── preview-content/route.ts
+│
 ├── components/
-│   ├── Navigation.tsx       # Navigation bar
-│   ├── HeroSection.tsx      # Hero section
-│   ├── MissionSection.tsx   # Mission cards
-│   ├── SolutionSection.tsx  # Solution steps
-│   ├── CommunitySection.tsx # Articles & community
-│   ├── TeamSection.tsx      # Team members
-│   └── Footer.tsx           # Footer
-├── tailwind.config.js       # Tailwind configuration
-├── tsconfig.json           # TypeScript configuration
-└── package.json            # Dependencies
+│   ├── CMSContent.tsx              # ★ Renders page composition (grid → row → column → block)
+│   ├── CMSMenu.tsx                 # CMS page menu (custom branding sites)
+│   ├── CustomHeader.tsx            # Branding header + CMS menu trigger
+│   ├── CustomFooter.tsx            # Site footer
+│   ├── Navigation.tsx              # Top nav (default branding)
+│   ├── LandingPageDisplay.tsx      # Landing page renderer
+│   └── blocks/
+│       ├── BlockRenderer.tsx       # ★ Maps CMS block type → React component
+│       └── ...
+│
+├── lib/optimizely/
+│   └── fetchPreviewContent.ts      # Preview / draft content from Graph
+│
+├── contexts/                       # Theme + branding
+└── .env.local                      # SDK key (not in git)
 ```
 
-## Design System
+**Files to know for the homepage POC:**
 
-### Colors
-- **Primary Blue**: `#1e40af`
-- **Light Blue**: `#3b82f6`
-- **Orange**: `#f97316`
-- **Dark Gray**: `#374151`
-- **Light Gray**: `#f3f4f6`
+| File | Role |
+|------|------|
+| `app/page.tsx` | Entry point; loads data and assembles header + CMS body + footer |
+| `app/api/optimizely/homepage/route.ts` | Server-side GraphQL — defines which fields we request from Optimizely |
+| `components/CMSContent.tsx` | Turns JSON composition into HTML structure |
+| `components/blocks/BlockRenderer.tsx` | `"Hero"` → `<Hero />`, `"Heading"` → `<Heading />`, etc. |
+| `components/blocks/*.tsx` | Presentation — how each block looks on the page |
 
-### Typography
-- **Font**: Inter (Google Fonts)
-- **Weights**: 300, 400, 500, 600, 700, 800, 900
+**Useful URLs:**
 
-## Components
+| URL | Purpose |
+|-----|---------|
+| `/` | Homepage |
+| `/graphql-viewer` | Inspect Graph queries and content types |
+| `/preview?key=...` | Live preview (open from Optimizely CMS) |
+| `/api/optimizely/homepage` | Raw homepage JSON |
 
-### Navigation
-- Fixed navigation with scroll effects
-- Mobile-responsive hamburger menu
-- Smooth scroll to sections
+**Explorer tools (for POC demos):** CMS Data nav button, SEO floating button, right-side dev menu, footer double-click explorer, [/graphql-viewer](/graphql-viewer).
 
-### Hero Section
-- Gradient background with floating animations
-- Call-to-action buttons
-- Scroll indicator
+**More docs:** [POC_START_HERE.md](POC_START_HERE.md) · [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md) · [docs/LEGACY_AND_CLEANUP.md](docs/LEGACY_AND_CLEANUP.md) · [app/api/optimizely/README.md](app/api/optimizely/README.md) · [DEPLOYMENT.md](DEPLOYMENT.md) · [OVERLAY_TROUBLESHOOTING.md](OVERLAY_TROUBLESHOOTING.md)
 
-### Mission Section
-- Three-column card layout
-- Icon-based design
-- Hover animations
+---
 
-### Solution Section
-- Numbered steps with alternating layout
-- Progressive reveal animations
-- Call-to-action buttons
+## Supported block types (homepage)
 
-### Community Section
-- Article grid with images
-- Category filters
-- Newsletter signup
+These CMS types already have React components:
 
-### Team Section
-- Advisor cards with photos
-- Regional coverage indicators
-- Contact information
+- `Hero`, `Heading`, `Divider`, `ContentBlock`
+- `FeatureGrid`, `CallToAction` / `CallToActionOutput`, `PromoBlock`
+- `Image`, `Carousel`, `Menu`, `demo_block`
 
-### Footer
-- Newsletter subscription
-- Footer links
-- Contact information
+If Optimizely returns a type not in `BlockRenderer`, that block is skipped (check the browser console for warnings).
 
-## Animations
+---
 
-The website uses Framer Motion for:
-- Scroll-triggered animations
-- Page load animations
-- Hover effects
-- Smooth transitions
-
-## Customization
-
-### Colors
-Update colors in `tailwind.config.js` under the `phamily` color palette.
-
-### Content
-Replace Lorem ipsum text in components with your actual content.
-
-### Images
-Replace Unsplash placeholder images with your own images.
-
-## Build for Production
+## Build for production
 
 ```bash
 npm run build
 npm start
 ```
 
-## Theme System
+Set the same environment variables on your host (Netlify, Vercel, etc.).
 
-### Dynamic Theme Switching
+---
 
-The website supports dynamic theme switching based on HTTP headers, similar to the [Optimizely Fullstack Demo](https://github.com/jondjones-poc/optimizely-fullstack-demo):
+## Troubleshooting
 
-- **Default Theme**: Original Phamily Pharma colors (blue, orange, light gray)
-- **Dark Theme**: Black theme activated when `clientId=test` header is present
+| Problem | What to check |
+|---------|----------------|
+| "SDK Key not configured" | `.env.local` exists with `NEXT_PUBLIC_SDK_KEY` or `OPTIMIZELY_GRAPH_SINGLE_KEY`. Restart `npm run dev` after creating/editing `.env.local`. |
+| "No CMS content found" | A `BlankExperience` page is published at URL `/` in Optimizely. Open `/api/optimizely/homepage` and look for `BlankExperience.items`. |
+| Block missing on page | Type added to GraphQL in `homepage/route.ts` **and** `case` in `BlockRenderer.tsx`. Block added to page composition in CMS. |
+| GraphQL errors in API response | Field name typo in query, or content type name wrong. Check the API JSON response for `details`. |
+| Old content after CMS publish | Hard refresh (Cmd+Shift+R). API uses `cache: 'no-store'` but browser may cache. |
+| Confused by file names or JSON shape | Read [POC_START_HERE.md](POC_START_HERE.md) and [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md) |
 
-### How to Test Theme Switching
+---
 
-1. **Using Browser Developer Tools**:
-   - Open Developer Tools (F12)
-   - Go to Network tab
-   - Add custom header `clientId: test` to requests
+## Tech stack
 
-2. **Using cURL**:
-   ```bash
-   # Test with dark theme
-   curl -H "clientId: test" http://localhost:3001/api/check-client-id
-   
-   # Test with default theme
-   curl http://localhost:3001/api/check-client-id
-   ```
+- **Next.js 14** (App Router) — React framework with API routes
+- **TypeScript** — typed JavaScript
+- **Tailwind CSS** — styling
+- **Optimizely Graph** — headless CMS content API (GraphQL)
+- **Framer Motion** — animations on some blocks
 
-3. **Using Browser Extension**:
-   - Install "ModHeader" extension
-   - Add header: `clientId: test`
-   - Refresh the page
-
-4. **Manual Testing**:
-   - Use the theme test component in the top-right corner
-   - Toggle between Default and Dark themes
-
-### Theme Context
-
-The theme system uses React Context to manage theme state across components:
-
-```typescript
-const { theme, setTheme } = useTheme()
-```
-
-### API Endpoint
-
-The `/api/check-client-id` endpoint checks for the `clientId` header and returns the appropriate theme:
-
-```json
-{
-  "clientId": "test",
-  "theme": "dark"
-}
-```
-
-## Optimizely CMS Integration
-
-This website integrates with Optimizely SaaS CMS to fetch and display dynamic content.
-
-### Features
-
-- **Homepage Content**: Dynamically pulls content from Optimizely CMS
-- **GraphQL API**: Uses Optimizely Graph for content delivery
-- **Block Rendering**: Supports Hero and Text blocks from CMS
-- **Content Viewer**: Built-in GraphQL viewer at `/graphql-viewer`
-
-### Environment Variables
-
-Create a `.env.local` file with your Optimizely credentials:
-
-```bash
-# Required: Your Optimizely Graph SDK Key
-NEXT_PUBLIC_SDK_KEY=your_sdk_key_here
-OPTIMIZELY_GRAPH_SINGLE_KEY=your_sdk_key_here
-
-# Optional: Additional Optimizely settings
-OPTIMIZELY_GRAPH_GATEWAY=https://cg.optimizely.com
-OPTIMIZELY_DAM_ENABLED=true
-```
-
-### API Endpoints
-
-- `/api/optimizely/homepage` - Fetches homepage content
-- `/api/optimizely/block` - Fetches individual block content
-- `/api/optimizely/page-types` - Lists available page types
-- `/api/optimizely/blocks` - Lists available block types
-- `/api/optimizely/page-instances` - Lists actual page instances
-
-### GraphQL Viewer
-
-Visit `/graphql-viewer` to:
-- Inspect all page types and block types
-- View GraphQL queries for content types
-- Browse actual page instances with full content
-- Copy GraphQL queries for development
-
-## Technologies Used
-
-- **Next.js 14** - React framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Utility-first CSS with dark mode support
-- **Framer Motion** - Animation library
-- **Lucide React** - Icon library
-- **React Context** - Theme state management
-- **Optimizely Graph** - Headless CMS integration
-- **GraphQL** - Content query language
+---
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+MIT License — see [LICENSE](LICENSE).

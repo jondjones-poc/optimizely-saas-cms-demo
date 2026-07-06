@@ -1,5 +1,13 @@
 'use client'
 
+/**
+ * EXAMPLE BLOCK COMPONENT — One React file per Optimizely block type.
+ *
+ * Optimizely sends field values as props with the same names as in the CMS
+ * (e.g. Heading, HeadingSize, Alignment). This component reads those props
+ * and renders HTML. See README "Adding a new block" for the full workflow.
+ */
+
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 

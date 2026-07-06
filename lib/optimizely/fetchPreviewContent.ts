@@ -1,6 +1,14 @@
 /**
- * Shared function to fetch preview content from Optimizely Graph
- * Can be used by both API routes and server components
+ * PREVIEW CONTENT FETCHER — Loads a specific content item from Optimizely Graph.
+ *
+ * Used by live preview (app/preview/page.tsx) instead of the homepage query.
+ *
+ * Differences from homepage fetch (app/api/optimizely/homepage/route.ts):
+ *   - Queries by content key + version, not by URL "/"
+ *   - Uses preview_token (Bearer auth) when provided so DRAFT content is returned
+ *   - Without preview_token, only published content is available (SDK key alone)
+ *
+ * Same GraphQL block fields as homepage — add new block types in BOTH places.
  */
 
 interface FetchPreviewContentParams {

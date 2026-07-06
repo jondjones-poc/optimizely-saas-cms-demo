@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * CMS CAROUSEL BLOCK — Renders Carousel blocks from Optimizely Graph.
+ * Registered in BlockRenderer.tsx. NOT the same as components/Carousel.tsx (static demo).
+ */
+
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'

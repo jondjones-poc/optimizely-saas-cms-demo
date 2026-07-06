@@ -161,6 +161,8 @@ const RightFloatingMenuComponent = ({ pageData }: { pageData?: any }) => {
     }
   }
 
+  const optimizelyCmsBase = 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/cms'
+
   const cmsLinks = [
     {
       label: 'Homepage',
@@ -169,12 +171,13 @@ const RightFloatingMenuComponent = ({ pageData }: { pageData?: any }) => {
     },
     {
       label: 'CMS',
-      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/cms#context=epi.cms.contentdata:///6',
+      url: `${optimizelyCmsBase}#context=epi.cms.contentdata:///6`,
       external: true
     },
     {
       label: 'Content Types',
-      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/EPiServer.Cms.UI.Admin/default#/ContentTypes',
+      // Legacy /ui/EPiServer.Cms.UI.Admin/... 404s on SaaS CMS — use Settings > Content Types in the modern UI
+      url: `${optimizelyCmsBase}#/globalsettings/contenttypes`,
       external: true
     },
     {

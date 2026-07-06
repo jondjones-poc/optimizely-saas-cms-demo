@@ -1,3 +1,14 @@
+/**
+ * PREVIEW CONTENT API — Client-side refetch endpoint for live preview.
+ *
+ * Used when preview needs to reload content after an edit (alternative to full page refresh).
+ * POST body: { key, ver, loc }
+ * Header: Authorization: Bearer {preview_token}  (for draft/unpublished content)
+ *
+ * The main preview flow uses fetchPreviewContentFromGraph directly on the server
+ * (see app/preview/page.tsx). This route is the HTTP wrapper for the same function.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchPreviewContentFromGraph } from '@/lib/optimizely/fetchPreviewContent'
 

@@ -243,7 +243,8 @@ export async function GET(request: Request) {
       }
     }
     
-    // Return data in the format expected by the page component
+    // Response shape: { success, data: <flat page object> } — NOT the same as homepage API.
+    // data is the page directly (_metadata, TopContentArea, etc.). See docs/DATA_SHAPES.md
     return NextResponse.json({
       success: true,
       data: pageData || null,

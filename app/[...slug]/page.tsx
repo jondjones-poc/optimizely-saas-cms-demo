@@ -10,6 +10,7 @@ import SEOButton from '@/components/SEOButton'
 import NewsLandingPage from '@/components/NewsLandingPage'
 import LandingPageDisplay from '@/components/LandingPageDisplay'
 import { transformPageData, transformLandingPageData } from '@/utils/seoDataTransformers'
+import type { DisplayMode } from '@/utils/landingPageComponentTree'
 
 interface PageData {
   _metadata: {
@@ -33,6 +34,7 @@ export default function DynamicPage() {
   const [pageData, setPageData] = useState<PageData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [landingDisplayMode, setLandingDisplayMode] = useState<DisplayMode>('html')
 
   // Get the slug from the URL
   const slug = Array.isArray(params.slug) ? params.slug.join('/') : params.slug || ''
@@ -146,33 +148,41 @@ export default function DynamicPage() {
 
   // Determine page type and render appropriate component
   const pageType = pageData._metadata.types?.[0]
+  const hidePageShell = pageType === 'LandingPage' && landingDisplayMode === 'components'
 
   return (
     <main className="min-h-screen">
-      <CustomHeader />
-      <Navigation 
-        optimizelyData={null} 
-        isLoading={false} 
-        error={null}
-      />
+      {!hidePageShell && <CustomHeader />}
+      {!hidePageShell && (
+        <Navigation 
+          optimizelyData={null} 
+          isLoading={false} 
+          error={null}
+        />
+      )}
       
       {/* Render based on page type */}
       {pageType === 'ArticlePage' ? (
         <ArticlePage data={pageData} />
       ) : pageType === 'LandingPage' ? (
-        <LandingPageDisplay data={pageData} />
+        <LandingPageDisplay
+          data={pageData}
+          onDisplayModeChange={setLandingDisplayMode}
+        />
       ) : pageType === 'NewsLandingPage' ? (
         <NewsLandingPage data={pageData} />
       ) : (
         <GenericPage data={pageData} />
       )}
       
-      <CustomFooter 
-        optimizelyData={pageData} 
-        isLoading={false} 
-        error={null} 
-      />
-      <RightFloatingMenuComponent pageData={pageData} />
+      {!hidePageShell && (
+        <CustomFooter 
+          optimizelyData={pageData} 
+          isLoading={false} 
+          error={null} 
+        />
+      )}
+      {!hidePageShell && <RightFloatingMenuComponent pageData={pageData} />}
       {/* Only show SEOButton for non-LandingPage types, LandingPage has its own */}
       {pageType !== 'LandingPage' && (
         <SEOButton {...transformPageData(pageData)} />
