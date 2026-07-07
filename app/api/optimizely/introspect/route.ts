@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
+import { getOptimizelySdkKey } from '@/lib/optimizely-config'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
-  const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY || process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
+  const sdkKey = getOptimizelySdkKey()
 
   if (!sdkKey) {
     return NextResponse.json(

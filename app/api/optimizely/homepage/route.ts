@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
+import { getOptimizelyHomepageUrl, getOptimizelySdkKey } from '@/lib/optimizely-config'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY || process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
+  const sdkKey = getOptimizelySdkKey()
 
   if (!sdkKey) {
     return NextResponse.json(
@@ -11,13 +12,14 @@ export async function GET() {
         success: false, 
         error: 'SDK Key not configured',
         debug: {
-          hasNextPublicKey: !!process.env.NEXT_PUBLIC_SDK_KEY,
-          hasOptimizelyKey: !!process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
+          hasNextPublicKey: !!process.env.NEXT_PUBLIC_SDK_KEY
         }
       },
       { status: 500 }
     )
   }
+
+  const homepageUrl = getOptimizelyHomepageUrl()
 
   const query = `
     query GetHomepage {
@@ -26,7 +28,7 @@ export async function GET() {
           _metadata: {
             url: {
               default: {
-                eq: "/"
+                eq: "${homepageUrl}"
               }
             }
           }

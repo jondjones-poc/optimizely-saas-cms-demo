@@ -1,9 +1,12 @@
 'use client'
 
 import { useTheme } from '@/contexts/ThemeContext'
+import { getOptimizelyCmsRootNodeId, getOptimizelyCmsUrl } from '@/lib/optimizely-config'
 
 const ThemeTest = () => {
   const { theme, setTheme } = useTheme()
+  const cmsUrl = getOptimizelyCmsUrl()
+  const rootNodeId = getOptimizelyCmsRootNodeId()
 
   const cmsLinks = [
     {
@@ -13,17 +16,17 @@ const ThemeTest = () => {
     },
     {
       label: 'CMS',
-      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/cms#context=epi.cms.contentdata:///6',
+      url: `${cmsUrl}/ui/cms#context=epi.cms.contentdata:///${rootNodeId}`,
       external: true
     },
     {
       label: 'GraphQL',
-      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/Optimizely.Graph.Cms/EditGraphiQL',
+      url: `${cmsUrl}/ui/Optimizely.Graph.Cms/EditGraphiQL`,
       external: true
     },
     {
       label: 'Content Types',
-      url: 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/EPiServer.Cms.UI.Admin/default#/ContentTypes',
+      url: `${cmsUrl}/ui/EPiServer.Cms.UI.Admin/default#/ContentTypes`,
       external: true
     },
     {

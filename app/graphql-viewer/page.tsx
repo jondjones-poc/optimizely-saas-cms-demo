@@ -196,7 +196,7 @@ export default function GraphQLViewer() {
     setSelectedPageInstance(pageInstance)
     
     // If this is the homepage, fetch fresh data
-    if (pageInstance.url === '/' || pageInstance.displayName.toLowerCase().includes('home')) {
+    if (pageInstance.url === '/' || pageInstance.url === '/en/' || pageInstance.displayName.toLowerCase().includes('home')) {
       await fetchHomepageData()
     }
   }

@@ -1,39 +1,43 @@
 # Deployment Instructions
 
-## Environment Variables Required
+## Environment Variables
 
-For this application to work properly, you need to set the following environment variables in your deployment platform:
+This app loads published CMS content from Optimizely Graph (`https://cg.optimizely.com/content/v2`).
 
-### Required Environment Variables:
-- `NEXT_PUBLIC_SDK_KEY` - Your Optimizely Graph SDK key
-- `OPTIMIZELY_GRAPH_SINGLE_KEY` - Alternative name for the SDK key (fallback)
+### Required
 
-### Setting Environment Variables:
+| Env variable | Where to find it in Optimizely CMS Admin | Notes |
+|---|---|---|
+| `NEXT_PUBLIC_SDK_KEY` | **Settings → Optimizely Graph → Render Content → Single Key** | GraphQL content API auth. Available on server and client via Next.js `NEXT_PUBLIC_` prefix. |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` | CMS admin URL in browser address bar | Dev menu CMS shortcut links. No trailing slash. |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` | Content tree → Main Website → ID in `contentdata:///` link | Dev menu CMS link target (e.g. `7`). |
+| `OPTIMIZELY_HOMEPAGE_URL` | Content tree → Main Website → **URL** path | Homepage Graph query path (e.g. `/en/`). |
 
-#### Netlify:
-1. Go to Site settings > Environment variables
-2. Add `NEXT_PUBLIC_SDK_KEY` with your Optimizely SDK key value
-3. Add `OPTIMIZELY_GRAPH_SINGLE_KEY` with the same value (as fallback)
+### Not used by this app
 
-#### Vercel:
-1. Go to Project settings > Environment Variables
-2. Add `NEXT_PUBLIC_SDK_KEY` with your Optimizely SDK key value
-3. Add `OPTIMIZELY_GRAPH_SINGLE_KEY` with the same value (as fallback)
+Do **not** deploy these—they are not read anywhere:
 
-#### Other Platforms:
-Set both environment variables with your Optimizely Graph SDK key.
+| Optimizely CMS Admin setting | Why it is not needed |
+|---|---|
+| **Render Content → App key** | Different credential type; content fetch uses the Single Key only. |
+| **Render Content → Graph secret** | Graph management/auth secret, not content rendering. |
+| **Manage Content → API key** (name + ID) | CMS API identity; routes use the Single Key instead. |
+| **Manage Content → Client secret** | OAuth for CMS API; preview auth is per-request. |
 
-## Build Process
+## Platform setup
 
-The application uses Next.js and should build without issues once the environment variables are set correctly.
+Set all four required variables in your deployment platform (Netlify, Vercel, etc.).
 
-## GraphQL Code Generation
+## Build process
 
-If you encounter GraphQL code generation errors during build, ensure that:
-1. Environment variables are properly set
-2. The Optimizely Graph endpoint is accessible
-3. The SDK key has the correct permissions
+The application uses Next.js and should build once all required env variables are set.
 
 ## Troubleshooting
 
-If you see errors like "undefined/content/v2?auth=undefined", it means the environment variables are not set in your deployment environment.
+| Symptom | Likely cause |
+|---|---|
+| `SDK Key not configured` on homepage | `NEXT_PUBLIC_SDK_KEY` is missing or empty |
+| `undefined/content/v2?auth=undefined` | Env vars not set in the deployment environment |
+| Content loads in CMS but not on site | Wrong key type used, or `OPTIMIZELY_HOMEPAGE_URL` does not match Main Website URL in CMS |
+| CMS dev menu link opens wrong page | `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` does not match Main Website node ID |
+| Auth errors from Graph | Single Key copied incorrectly, or Graph sync not complete |

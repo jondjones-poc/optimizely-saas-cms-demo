@@ -1,8 +1,9 @@
 import { createClient } from '@remkoj/optimizely-graph-client'
+import { getOptimizelySdkKey } from '@/lib/optimizely-config'
 
 // Initialize Optimizely Graph Client
 const client = createClient({
-  single_key: process.env.NEXT_PUBLIC_SDK_KEY || '',
+  single_key: getOptimizelySdkKey(),
 })
 
 // GraphQL query to fetch homepage content
@@ -68,7 +69,7 @@ export async function getHomepageContent() {
 
 // Alternative fetch using direct API call
 export async function getHomepageContentDirect() {
-  const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY
+  const sdkKey = getOptimizelySdkKey()
   
   if (!sdkKey) {
     return {

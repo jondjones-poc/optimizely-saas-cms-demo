@@ -41,13 +41,26 @@ yarn install
 
 3. Set up environment variables:
 ```bash
-# Create .env.local file
 cp .env.example .env.local
-
-# Edit .env.local and add your Optimizely SDK key
-NEXT_PUBLIC_SDK_KEY=your_actual_sdk_key_here
-OPTIMIZELY_GRAPH_SINGLE_KEY=your_actual_sdk_key_here
 ```
+
+Fill in `.env.local` from Optimizely CMS admin:
+
+| Env variable | Optimizely CMS Admin path | Example |
+|---|---|---|
+| `NEXT_PUBLIC_SDK_KEY` | Settings → Optimizely Graph → Render Content → **Single Key** | `KH1AIT5MfN2n...` |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` | Browser address bar when logged into CMS admin | `https://app-joma01saas0yi0ct001.cms.optimizely.com` |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` | Content tree → **Main Website** → ID in CMS link | `7` (from `contentdata:///7`) |
+| `OPTIMIZELY_HOMEPAGE_URL` | Content tree → **Main Website** → **URL** field | `/en/` |
+
+This app calls `https://cg.optimizely.com/content/v2?auth=<Single Key>` to load content.
+
+**Do not add these to `.env.local`** (not read by this app):
+
+| Optimizely CMS Admin path | UI label |
+|---|---|
+| Settings → Optimizely Graph → Render Content | **App key**, **Graph secret** |
+| Settings → Optimizely Graph → Manage Content | **API key**, **Client secret** |
 
 4. Run the development server:
 ```bash
@@ -221,17 +234,7 @@ This website integrates with Optimizely SaaS CMS to fetch and display dynamic co
 
 ### Environment Variables
 
-Create a `.env.local` file with your Optimizely credentials:
-
-```bash
-# Required: Your Optimizely Graph SDK Key
-NEXT_PUBLIC_SDK_KEY=your_sdk_key_here
-OPTIMIZELY_GRAPH_SINGLE_KEY=your_sdk_key_here
-
-# Optional: Additional Optimizely settings
-OPTIMIZELY_GRAPH_GATEWAY=https://cg.optimizely.com
-OPTIMIZELY_DAM_ENABLED=true
-```
+Create a `.env.local` from `.env.example`. Four variables are required — see the table in [Getting Started](#getting-started) and [DEPLOYMENT.md](./DEPLOYMENT.md) for the full Optimizely CMS Admin mapping.
 
 ### API Endpoints
 

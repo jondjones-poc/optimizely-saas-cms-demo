@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getOptimizelySdkKey } from '@/lib/optimizely-config'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY || process.env.OPTIMIZELY_GRAPH_SINGLE_KEY
+  const sdkKey = getOptimizelySdkKey()
   const searchParams = request.nextUrl.searchParams
   const contentKey = searchParams.get('key')
 
