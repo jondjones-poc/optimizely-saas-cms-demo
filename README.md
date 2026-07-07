@@ -32,7 +32,9 @@ Create a file called `.env.local` in the project root (same folder as `package.j
 cp .env.example .env.local
 ```
 
-Open `.env.local` and paste your Graph key:
+Open `.env.local` and add your Graph keys (see **[Environment variables](#environment-variables)** for the full list, where to get each value, and which ones you can remove).
+
+At minimum you need:
 
 ```bash
 NEXT_PUBLIC_SDK_KEY=your_actual_key_here
@@ -54,6 +56,81 @@ You should see the homepage with content from Optimizely. If you see "Loading CM
 ### Step 4: Verify the API (optional)
 
 Visit [http://localhost:3000/api/optimizely/homepage](http://localhost:3000/api/optimizely/homepage) in your browser. You should see JSON with `"success": true` and homepage data. If `"success": false`, check your SDK key and that a page exists at URL `/` in Optimizely.
+
+---
+
+## Environment variables
+
+All configuration lives in **`.env.local`** at the project root (same folder as `package.json`). This file is gitignored — never commit secrets.
+
+```bash
+cp .env.example .env.local
+```
+
+Restart `npm run dev` after any change to `.env.local`.
+
+### Required
+
+| Variable | Where to get it | Why it is needed | Used in |
+|----------|-----------------|------------------|---------|
+| `NEXT_PUBLIC_SDK_KEY` | Optimizely CMS admin → **Settings** → **Optimizely Graph** → copy the **Single Key** (sometimes labelled SDK key or Graph single key) | Authenticates GraphQL requests to Optimizely Graph. The `NEXT_PUBLIC_` prefix exposes it to the browser, which some client components need (e.g. Menu, Carousel fetching Graph directly). | All `/api/optimizely/*` routes, `lib/optimizely/fetchPreviewContent.ts`, `components/blocks/Menu.tsx`, `components/blocks/Carousel.tsx` |
+| `OPTIMIZELY_GRAPH_SINGLE_KEY` | Same Single Key as above — paste the **identical value** | Server-side fallback if `NEXT_PUBLIC_SDK_KEY` is missing. Keeps API routes working when only the server key is set (e.g. some deployment setups). | Same API routes and preview fetch as above |
+
+You only need **one** of these for local dev, but setting **both to the same key** is recommended so server routes and client-side Graph calls both work.
+
+| Variable | Where to get it | Why it is needed | Used in |
+|----------|-----------------|------------------|---------|
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` | Your CMS login URL, e.g. `https://app-epsajjcmson91rm1p001.cms.optimizely.com` (no trailing slash) | Base URL for CMS admin deep links in the dev floating menu and live preview script. | `components/RightFloatingMenuComponent.tsx`, `app/preview/PreviewClient.tsx` |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID` | The UUID in your CMS URL — the part after `app-` and before `.cms.optimizely.com`, e.g. `epsajjcmson91rm1p001` | Builds CMS/preview URLs when `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` is omitted. Set both for clarity. | `lib/optimizely/env.ts` |
+
+**How to find the Single Key in Optimizely:**
+
+1. Log in to your CMS instance (e.g. `https://app-<instance-id>.cms.optimizely.com`)
+2. Open **Settings** in the left menu
+3. Go to **Optimizely Graph**
+4. Copy the **Single Key** value
+
+### Optional
+
+| Variable | Where to get it | Why it is needed | Used in |
+|----------|-----------------|------------------|---------|
+| `NEXT_PUBLIC_BASE_URL` | Your site URL — `http://localhost:3000` locally, or your production URL when deployed | When the server fetches its own API to merge menu data into a page, it needs the full base URL. Defaults to `http://localhost:3000` if omitted. | `app/api/optimizely/page/route.ts` |
+
+### Not used by this app — safe to delete
+
+These variables appear in some `.env.local` files (including templates from other Optimizely projects) but **nothing in this codebase reads them**. The Graph endpoint is still hardcoded as `https://cg.optimizely.com/content/v2`.
+
+**To test safely:** rename them with an `OLD_` prefix and move them to a separate section at the bottom of `.env.local`. If the site still works after restarting `npm run dev`, delete that whole section.
+
+| Original name | Status | Notes |
+|---------------|--------|-------|
+| `OPTIMIZELY_GRAPH_SECRET` | **Unused — delete** | Graph Secret is for server-to-server / management APIs. This POC only uses the public Single Key. |
+| `OPTIMIZELY_GRAPH_GATEWAY` | **Unused — delete** | Gateway URL is hardcoded to `https://cg.optimizely.com` in every API route. |
+| `OPTIMIZELY_GRAPH_APP_KEY` | **Unused — delete** | App key is not referenced anywhere in this repo. |
+| `OPTIMIZELY_DAM_ENABLED` | **Unused — delete** | No DAM integration is implemented in this POC. |
+| `OPTIMIZELY_CLIENT_SECRET` | **Unused — delete** | Not referenced in code. If you did need OAuth client credentials, the value should be a secret string — not a CMS URL. |
+
+### Recommended `.env.local` for this POC
+
+```bash
+# Required — same Single Key from Optimizely Graph settings
+NEXT_PUBLIC_SDK_KEY=your_optimizely_graph_single_key_here
+OPTIMIZELY_GRAPH_SINGLE_KEY=your_optimizely_graph_single_key_here
+
+# CMS instance — from your Optimizely login URL
+NEXT_PUBLIC_OPTIMIZELY_CMS_URL=https://app-your-instance-id.cms.optimizely.com
+NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID=your-instance-id
+
+# Optional — only needed if server-side self-fetch fails in production
+# NEXT_PUBLIC_BASE_URL=http://localhost:3000
+```
+
+### Still hardcoded (optional future env vars)
+
+| What | Where | Notes |
+|------|-------|-------|
+| Graph gateway `cg.optimizely.com` | All API routes, `Menu.tsx`, `Carousel.tsx` | Could use `OPTIMIZELY_GRAPH_GATEWAY` |
+| CMS root content ID `6` | `RightFloatingMenuComponent.tsx` CMS deep link | Could use `OPTIMIZELY_CMS_ROOT_CONTENT_ID` |
 
 ---
 

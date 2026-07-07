@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Database, X, CheckCircle, XCircle, Code, Layers, Copy, Check } from 'lucide-react'
 import { fetchHomepageData } from '@/services/homepage'
 import { usePathname } from 'next/navigation'
+import { getOptimizelyCmsUiBase } from '@/lib/optimizely/env'
 
 const RightFloatingMenuComponent = ({ pageData }: { pageData?: any }) => {
   const { theme, setTheme } = useTheme()
@@ -161,7 +162,7 @@ const RightFloatingMenuComponent = ({ pageData }: { pageData?: any }) => {
     }
   }
 
-  const optimizelyCmsBase = 'https://app-epsajjcmson91rm1p001.cms.optimizely.com/ui/cms'
+  const optimizelyCmsBase = getOptimizelyCmsUiBase()
 
   const cmsLinks = [
     {
@@ -169,17 +170,20 @@ const RightFloatingMenuComponent = ({ pageData }: { pageData?: any }) => {
       url: '/',
       external: false
     },
-    {
-      label: 'CMS',
-      url: `${optimizelyCmsBase}#context=epi.cms.contentdata:///6`,
-      external: true
-    },
-    {
-      label: 'Content Types',
-      // Legacy /ui/EPiServer.Cms.UI.Admin/... 404s on SaaS CMS — use Settings > Content Types in the modern UI
-      url: `${optimizelyCmsBase}#/globalsettings/contenttypes`,
-      external: true
-    },
+    ...(optimizelyCmsBase
+      ? [
+          {
+            label: 'CMS',
+            url: `${optimizelyCmsBase}#context=epi.cms.contentdata:///6`,
+            external: true
+          },
+          {
+            label: 'Content Types',
+            url: `${optimizelyCmsBase}#/globalsettings/contenttypes`,
+            external: true
+          },
+        ]
+      : []),
     {
       label: 'Graph Explorer',
       url: '/graphql-viewer',

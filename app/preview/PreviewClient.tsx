@@ -8,6 +8,7 @@ import CustomHeaderClient from '@/components/CustomHeaderClient'
 import CustomFooterClient from '@/components/CustomFooterClient'
 import Navigation from '@/components/Navigation'
 import type { BrandingConfig } from '@/lib/branding'
+import { getOptimizelyPreviewScriptUrl } from '@/lib/optimizely/env'
 
 interface PreviewClientProps {
   initialData: any
@@ -106,8 +107,13 @@ export default function PreviewClient({
     // Replace [UUID] with your instance ID
     scriptLoadAttempted.current = true
     console.log('📥 Loading Optimizely communication script...')
-    const cmsInstanceId = 'epsajjcmson91rm1p001' // Your Optimizely CMS instance UUID
-    const scriptUrl = `https://app-${cmsInstanceId}.cms.optimizely.com/util/javascript/communicationinjector.js`
+    const scriptUrl = getOptimizelyPreviewScriptUrl()
+    if (!scriptUrl) {
+      console.warn(
+        'Optimizely preview script URL not configured. Set NEXT_PUBLIC_OPTIMIZELY_CMS_URL or NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID in .env.local'
+      )
+      return
+    }
     console.log('🔗 Script URL:', scriptUrl)
     const script = document.createElement('script')
     script.src = scriptUrl
