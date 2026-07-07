@@ -35,11 +35,11 @@ interface PageTypesListProps {
   pageInstances: PageInstance[]
   blocks: PageType[]
   selectedPageType: PageType | null
-  selectedPage: PageType | null
+  selectedPage: Page | null
   selectedPageInstance: PageInstance | null
   selectedBlock: PageType | null
   onSelectPageType: (pageType: PageType) => void
-  onSelectPage: (page: PageType) => void
+  onSelectPage: (page: Page) => void
   onSelectPageInstance: (pageInstance: PageInstance) => void
   onSelectBlock: (block: PageType) => void
   viewMode: 'types' | 'pages' | 'instances' | 'blocks'

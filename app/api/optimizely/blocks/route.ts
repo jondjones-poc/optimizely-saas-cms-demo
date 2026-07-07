@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getOptimizelySdkKey } from '@/lib/optimizely-config'
+import { getOptimizelySdkKey } from '@/lib/optimizely/env'
 
 export const dynamic = 'force-dynamic'
 

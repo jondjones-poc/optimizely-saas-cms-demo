@@ -1,73 +1,118 @@
 'use client'
 
+import { useEffect } from 'react'
 import Image from 'next/image'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useBranding } from '@/contexts/BrandingContext'
 
 interface DemoBlockProps {
   ImageNumber?: number
+  MarginTopAndBottom?: string
   _metadata?: {
     key?: string
     displayName?: string
   }
+  _componentKey?: string // Passed from BlockRenderer for data-epi-block-id
   isPreview?: boolean
   contextMode?: string | null
+  cmsDemo?: string | null  // cms_demo header value from server (takes precedence over context)
 }
 
-const DemoBlock = ({ ImageNumber, _metadata, isPreview = false, contextMode = null }: DemoBlockProps) => {
+const DemoBlock = ({ ImageNumber, MarginTopAndBottom, _metadata, _componentKey, isPreview = false, contextMode = null, cmsDemo = null }: DemoBlockProps) => {
   const { theme } = useTheme()
-  const { branding } = useBranding()
   
-  // Debug: Log the branding context values
-  console.log('DemoBlock branding context:', branding)
-  console.log('DemoBlock cms_demo value:', branding.cms_demo)
+  // Priority: 1) cmsDemo prop (from server-side header), 2) branding context, 3) default
+  let folderName = 'default'
+  
+  // First try the prop (from server-side header) - this works in SSR
+  if (cmsDemo) {
+    folderName = cmsDemo.toLowerCase() // Normalize to lowercase
+    console.log('✅ DemoBlock: Using cmsDemo from server-side header:', cmsDemo, '→ folder:', folderName)
+  } else {
+    // Fallback to branding context (client-side only)
+    try {
+      const { branding } = useBranding()
+      folderName = branding.cms_demo || 'default'
+      console.log('⚠️ DemoBlock: Using branding context (cmsDemo prop not provided):', folderName)
+    } catch (e) {
+      console.warn('⚠️ DemoBlock: BrandingContext not available, using default folder:', e)
+      folderName = 'default'
+    }
+  }
   
   // Default to image 1 if no ImageNumber is provided
   const imageNumber = ImageNumber || 1
-  
-  // Use cms_demo header value as folder name, default to 'default' if not present
-  const folderName = branding.cms_demo || 'default'
   const imagePath = `/${folderName}/${imageNumber}.png`
   
-  console.log('DemoBlock imagePath:', imagePath)
+  // Debug logging - always log to help diagnose production issues
+  useEffect(() => {
+    console.log('🎨 DemoBlock render:', {
+      ImageNumber: imageNumber,
+      folderName,
+      imagePath,
+      fullPath: imagePath,
+      ImageNumberProp: ImageNumber,
+      cmsDemoProp: cmsDemo,
+      folderNameSource: cmsDemo ? 'server-side header' : 'branding context',
+      imageExists: false // Will be checked by onError handler
+    })
+  }, [imageNumber, folderName, imagePath, ImageNumber, cmsDemo])
 
+  // Parse MarginTopAndBottom value and convert to pixels
+  const marginValue = MarginTopAndBottom ? parseInt(MarginTopAndBottom) : 0
+  const marginStyle = marginValue > 0 ? { marginTop: `${marginValue}px`, marginBottom: `${marginValue}px` } : {}
+
+  // Use _componentKey if provided (from BlockRenderer), otherwise fall back to _metadata.key
+  const componentKey = _componentKey || _metadata?.key || ''
+  
   return (
-    <section className="w-full">
+    <>
+      {/* DemoBlock */}
+      <section 
+        className="w-full" 
+        style={marginStyle}
+        // NOTE: data-epi-block-id is now on wrapper div in CMSContent.tsx (matching example structure)
+        // {...(contextMode === 'edit' && componentKey && { 'data-epi-block-id': componentKey })}
+        {...(contextMode === 'edit' && { 'data-epi-edit': 'MarginTopAndBottom' })}
+      >
       {/* Full-width banner image */}
-      <div className="relative w-screen h-[400px] md:h-[600px] left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
-        <Image
+      <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+        <img
           src={imagePath}
           alt={`Demo Image ${imageNumber}`}
-          fill
-          className="object-cover"
-          priority
+          className="w-full h-auto"
+          style={{ width: '100%', height: 'auto', display: 'block' }}
           onError={(e) => {
             // Fallback to a placeholder if the specified image doesn't exist
-            console.warn(`Image ${imagePath} not found, using placeholder`)
+            console.error(`❌ DemoBlock: Image not found at ${imagePath}`, {
+              folderName,
+              imageNumber,
+              imagePath,
+              cmsDemoProp: cmsDemo,
+              folderNameSource: cmsDemo ? 'server-side header' : 'branding context',
+              availableFolders: ['metrobank', 'easyjet', 'default'],
+              suggestion: `Check if ${imageNumber}.png exists in public/${folderName}/`
+            })
             const target = e.target as HTMLImageElement
-            target.src = `data:image/svg+xml;base64,${btoa(`
-              <svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
-                <rect width="800" height="400" fill="#4F46E5"/>
-                <text x="400" y="180" text-anchor="middle" fill="white" font-size="32" font-family="Arial">Demo Image ${imageNumber}</text>
-                <text x="400" y="220" text-anchor="middle" fill="white" font-size="16" font-family="Arial">Placeholder - Add ${imageNumber}.png to public/${folderName}/</text>
-              </svg>
-            `)}`
+            // Only show placeholder in development/preview, not in production
+            if (isPreview || process.env.NODE_ENV === 'development') {
+              target.src = `data:image/svg+xml;base64,${btoa(`
+                <svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="800" height="400" fill="#4F46E5"/>
+                  <text x="400" y="180" text-anchor="middle" fill="white" font-size="32" font-family="Arial">Demo Image ${imageNumber}</text>
+                  <text x="400" y="220" text-anchor="middle" fill="white" font-size="16" font-family="Arial">Placeholder - Add ${imageNumber}.png to public/${folderName}/</text>
+                </svg>
+              `)}`
+            } else {
+              // In production, hide the broken image instead of showing placeholder
+              target.style.display = 'none'
+            }
           }}
           {...(contextMode === 'edit' && { 'data-epi-edit': 'ImageNumber' })}
         />
-        
-        {/* Only show overlay content in edit mode */}
-        {isPreview && contextMode === 'edit' && (
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-            <div className="text-center text-white">
-              <p className="text-sm text-gray-300 mt-2">
-                Edit 'ImageNumber' property in CMS to change image.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </section>
+    </>
   )
 }
 

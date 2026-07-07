@@ -1,24 +1,33 @@
+/**
+ * PREVIEW CONTENT API — Client-side refetch endpoint for live preview.
+ *
+ * Used when preview needs to reload content after an edit (alternative to full page refresh).
+ * POST body: { key, ver, loc }
+ * Header: Authorization: Bearer {preview_token}  (for draft/unpublished content)
+ *
+ * The main preview flow uses fetchPreviewContentFromGraph directly on the server
+ * (see app/preview/page.tsx). This route is the HTTP wrapper for the same function.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { getOptimizelySdkKey } from '@/lib/optimizely-config'
+import { fetchPreviewContentFromGraph } from '@/lib/optimizely/fetchPreviewContent'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const sdkKey = getOptimizelySdkKey()
-
-  if (!sdkKey) {
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'SDK Key not configured'
-      },
-      { status: 500 }
-    )
-  }
-
   try {
     const body = await request.json()
     const { key, ver, loc } = body
+    
+    // Log each parameter separately as received from client
+    console.log('📥 API Route - Received Parameters from Client:', {
+      '{key}': key || 'MISSING',
+      '{version}': ver || 'MISSING',
+      '{locale}': loc || 'MISSING',
+      'version_type': typeof ver,
+      'version_parsed': ver ? parseInt(ver, 10) : null,
+      'note': 'Version parameter is REQUIRED per Optimizely docs for preview URLs'
+    })
     
     if (!key) {
       return NextResponse.json(
@@ -28,132 +37,55 @@ export async function POST(request: NextRequest) {
     }
 
     // Get authorization header for preview token
-    const authorization = request.headers.get('authorization')
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization')
     
-    // Build GraphQL query for content by key
-    const query = `
-      query GetContentByKey($key: String!) {
-        _Content(
-          where: {
-            _metadata: {
-              contentKey: {
-                eq: $key
-              }
-            }
-          }
-          limit: 1
-        ) {
-          total
-          items {
-            _metadata {
-              key
-              version
-              types
-              displayName
-              url {
-                default
-              }
-              published
-              status
-            }
-            composition {
-              grids: nodes {
-                ... on ICompositionStructureNode {
-                  key
-                  displayName
-                  rows: nodes {
-                    ... on ICompositionStructureNode {
-                      key
-                      displayName
-                      columns: nodes {
-                        ... on ICompositionStructureNode {
-                          key
-                          displayName
-                          elements: nodes {
-                            ... on ICompositionComponentNode {
-                              key
-                              displayName
-                              component {
-                                _metadata {
-                                  key
-                                  types
-                                  displayName
-                                }
-                                # Include content fields for inline components
-                                ... on Hero {
-                                  Heading
-                                  Subheading
-                                  Image {
-                                    url
-                                  }
-                                }
-                                ... on Text {
-                                  MainBody {
-                                    html
-                                  }
-                                }
-                                ... on DemoBlock {
-                                  ImageNumber
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+    // Normalize the authorization header - ensure it has Bearer prefix
+    let previewToken: string | null = null
+    if (authHeader) {
+      let headerValue = authHeader.split(',')[0].trim()
+      let token = headerValue.replace(/^Bearer\s+/i, '').trim()
+      if (token && token.length > 0) {
+        previewToken = token
       }
-    `
-
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
     }
-
-    // Add authorization header if preview token is provided
-    if (authorization) {
-      headers['Authorization'] = authorization
-    }
-
-    const response = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ 
-        query,
-        variables: { key }
-      }),
-      cache: 'no-store'
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const data = await response.json()
     
-    if (data.errors) {
-      return NextResponse.json({
-        success: false,
-        error: 'GraphQL errors',
-        details: data.errors
-      }, { status: 400 })
+    // Log authorization status
+    if (previewToken) {
+      console.log('✅ API Route - Using preview token for draft content:', {
+        hasToken: true,
+        tokenLength: previewToken.length,
+        version: ver || 'not provided'
+      })
+    } else {
+      console.log('⚠️ API Route - Using SDK key for published content (no preview token)')
     }
-
-    return NextResponse.json({
-      success: true,
-      data,
-      timestamp: new Date().toISOString()
+    
+    // Use the shared function
+    const result = await fetchPreviewContentFromGraph({
+      key,
+      ver: ver || null,
+      loc: loc || null,
+      previewToken: previewToken || null
     })
-  } catch (error: any) {
-    console.error('Error fetching preview content:', error)
+    
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
+  } catch (error) {
+    console.error('❌ API Route - Error fetching preview content:', {
+      error: error instanceof Error ? error.message : String(error),
+      errorName: error instanceof Error ? error.name : 'Unknown'
+    })
+    
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     )

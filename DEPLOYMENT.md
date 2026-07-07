@@ -13,6 +13,8 @@ This app loads published CMS content from Optimizely Graph (`https://cg.optimize
 | `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` | Content tree → Main Website → ID in `contentdata:///` link | Dev menu CMS link target (e.g. `7`). |
 | `OPTIMIZELY_HOMEPAGE_URL` | Content tree → Main Website → **URL** path | Homepage Graph query path (e.g. `/en/`). |
 
+Optional: `NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID` — builds CMS URL when `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` is omitted.
+
 ### Not used by this app
 
 Do **not** deploy these—they are not read anywhere:
@@ -23,6 +25,7 @@ Do **not** deploy these—they are not read anywhere:
 | **Render Content → Graph secret** | Graph management/auth secret, not content rendering. |
 | **Manage Content → API key** (name + ID) | CMS API identity; routes use the Single Key instead. |
 | **Manage Content → Client secret** | OAuth for CMS API; preview auth is per-request. |
+| **`OPTIMIZELY_GRAPH_SINGLE_KEY`** | Removed — use `NEXT_PUBLIC_SDK_KEY` only (available on server and client in Next.js). |
 
 ## Platform setup
 

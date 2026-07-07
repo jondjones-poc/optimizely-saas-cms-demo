@@ -7,9 +7,10 @@ import CustomHeader from '@/components/CustomHeader'
 import Navigation from '@/components/Navigation'
 import CustomFooter from '@/components/CustomFooter'
 import Footer from '@/components/Footer'
-import ThemeTest from '@/components/ThemeTest'
+import RightFloatingMenuComponent from '@/components/RightFloatingMenuComponent'
 import PageTypesList from '@/components/PageTypesList'
 import GraphQLQueryViewer from '@/components/GraphQLQueryViewer'
+import { fetchHomepageData } from '@/services/homepage'
 
 interface PageType {
   name: string
@@ -43,24 +44,23 @@ export default function GraphQLViewer() {
   const { branding } = useBranding()
   const [viewMode, setViewMode] = useState<'types' | 'pages' | 'instances' | 'blocks'>('instances')
   const [pageTypes, setPageTypes] = useState<PageType[]>([])
-  const [pages, setPages] = useState<PageType[]>([])
+  const [pages, setPages] = useState<Page[]>([])
   const [pageInstances, setPageInstances] = useState<PageInstance[]>([])
   const [blocks, setBlocks] = useState<PageType[]>([])
   const [selectedPageType, setSelectedPageType] = useState<PageType | null>(null)
-  const [selectedPage, setSelectedPage] = useState<PageType | null>(null)
+  const [selectedPage, setSelectedPage] = useState<Page | null>(null)
   const [selectedPageInstance, setSelectedPageInstance] = useState<PageInstance | null>(null)
   const [selectedBlock, setSelectedBlock] = useState<PageType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Function to fetch homepage data specifically
-  const fetchHomepageData = async () => {
+  const fetchHomepageDataInstance = async () => {
     try {
-      const response = await fetch('/api/optimizely/homepage')
-      const result = await response.json()
+      const result = await fetchHomepageData()
 
-      if (result.success && result.data?.BlankExperience?.items?.length > 0) {
-        const homepageItem = result.data.BlankExperience.items[0]
+      if (result.success && result.data?.data?.BlankExperience?.items?.length > 0) {
+        const homepageItem = result.data.data.BlankExperience.items[0]
         const homepageInstance = {
           key: homepageItem._metadata.key,
           displayName: homepageItem._metadata.displayName || 'Homepage',
@@ -153,9 +153,9 @@ export default function GraphQLViewer() {
   const generateGraphQLQuery = (pageType: PageType) => {
     // Generate fields list from the page type fields
     const customFields = pageType.fields
-      .filter(field => field.name !== '_metadata') // Skip _metadata as it's already included
-      .map(field => `        ${field.name}`)
-      .join('\n')
+      ?.filter(field => field.name !== '_metadata') // Skip _metadata as it's already included
+      ?.map(field => `        ${field.name}`)
+      ?.join('\n')
 
     const fragmentContent = customFields ? `\n${customFields}` : '\n        # No additional fields available'
 
@@ -197,7 +197,7 @@ export default function GraphQLViewer() {
     
     // If this is the homepage, fetch fresh data
     if (pageInstance.url === '/' || pageInstance.url === '/en/' || pageInstance.displayName.toLowerCase().includes('home')) {
-      await fetchHomepageData()
+      await fetchHomepageDataInstance()
     }
   }
 
@@ -205,7 +205,7 @@ export default function GraphQLViewer() {
     <main className="min-h-screen flex flex-col">
       <CustomHeader />
       <Navigation />
-      <ThemeTest />
+      <RightFloatingMenuComponent />
       
       <div className="container mx-auto px-4 py-8 flex-1 pt-24">
         <div className="mb-8">
@@ -251,7 +251,7 @@ export default function GraphQLViewer() {
                   </select>
                   {viewMode === 'instances' && selectedPageInstance && (
                     <button
-                      onClick={fetchHomepageData}
+                      onClick={fetchHomepageDataInstance}
                       className="px-4 py-2 bg-phamily-blue text-white rounded-lg hover:bg-phamily-lightBlue transition-colors duration-200 text-sm whitespace-nowrap"
                       title="Refresh homepage data"
                     >
@@ -302,7 +302,7 @@ export default function GraphQLViewer() {
                   viewMode === 'types' 
                     ? (selectedPageType ? generateGraphQLQuery(selectedPageType) : '')
                     : viewMode === 'pages'
-                    ? (selectedPage ? generateGraphQLQuery(selectedPage) : '')
+                    ? (selectedPage ? generateGraphQLQuery(selectedPage as any) : '')
                     : viewMode === 'instances'
                     ? (selectedPageInstance ? JSON.stringify(selectedPageInstance.fullData, null, 2) : '')
                     : (selectedBlock ? generateGraphQLQuery(selectedBlock) : '')
@@ -311,7 +311,7 @@ export default function GraphQLViewer() {
                   viewMode === 'types' 
                     ? selectedPageType?.name 
                     : viewMode === 'pages'
-                    ? selectedPage?.name
+                    ? selectedPage?.displayName
                     : viewMode === 'instances'
                     ? selectedPageInstance?.displayName
                     : selectedBlock?.name
@@ -326,7 +326,11 @@ export default function GraphQLViewer() {
       </div>
 
       <Footer />
-      <CustomFooter />
+      <CustomFooter 
+        optimizelyData={null} 
+        isLoading={false} 
+        error={null} 
+      />
     </main>
   )
 }
