@@ -103,7 +103,7 @@ CMS page links in the menu come from `/api/optimizely/pages`.
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | **SDK Key not configured** | Missing or empty `NEXT_PUBLIC_SDK_KEY` | Use Graph **Single Key** only (not App key, Graph secret, or Manage Content API key). Run `npm run setup`. Restart `npm run dev`. |
-| **No CMS content found** | Homepage Graph URL mismatch | Set `OPTIMIZELY_HOMEPAGE_URL` to Main Website → **URL** in CMS (often `/en/`, not `/`). |
+| **No CMS content found** | Homepage Graph URL mismatch | Set `OPTIMIZELY_HOMEPAGE_URL` to Main Website → **URL** in CMS exactly (e.g. `/` or `/en/`). After moving the homepage in CMS, re-check the URL. Run `npm run debug:homepage`. |
 | **Graph API `success: true` but empty items** | Same as above | Open `/api/optimizely/homepage` — if `BlankExperience.total` is `0`, fix `OPTIMIZELY_HOMEPAGE_URL`. |
 | **CMS dev menu link opens wrong page** | Wrong root node ID | Set `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` to the ID in `contentdata:///7` for Main Website. |
 | **Confused by `data.data.data`** | Different API response shapes | Read [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md). |

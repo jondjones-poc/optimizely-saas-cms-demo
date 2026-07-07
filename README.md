@@ -45,7 +45,7 @@ Fill in `.env.local` from Optimizely CMS admin (full details in **[Environment v
 | `NEXT_PUBLIC_SDK_KEY` | Settings → Optimizely Graph → Render Content → **Single Key** | `KH1AIT5MfN2n...` |
 | `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` | Browser address bar when logged into CMS admin | `https://app-joma01saas0yi0ct001.cms.optimizely.com` |
 | `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` | Content tree → **Main Website** → ID in CMS link | `7` (from `contentdata:///7`) |
-| `OPTIMIZELY_HOMEPAGE_URL` | Content tree → **Main Website** → **URL** field | `/en/` |
+| `OPTIMIZELY_HOMEPAGE_URL` | Content tree → **Main Website** → **URL** field | `/` or `/en/` (must match CMS exactly) |
 
 This app calls `https://cg.optimizely.com/content/v2?auth=<Single Key>` to load content.
 
@@ -114,7 +114,7 @@ NEXT_PUBLIC_OPTIMIZELY_CMS_URL=https://app-your-instance-id.cms.optimizely.com
 
 # Main Website — content tree root ID and Graph URL path
 NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID=7
-OPTIMIZELY_HOMEPAGE_URL=/en/
+OPTIMIZELY_HOMEPAGE_URL=/
 
 # Optional — build CMS URL from instance ID instead of full URL above
 # NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID=your-instance-id
