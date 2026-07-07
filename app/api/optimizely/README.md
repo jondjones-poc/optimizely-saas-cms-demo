@@ -4,6 +4,8 @@ Server-side routes under `app/api/optimizely/`.
 
 Homepage URL is configured via **`OPTIMIZELY_HOMEPAGE_URL`** in `.env.local` (e.g. `/en/`), not hardcoded to `/`.
 
+Block GraphQL fields are defined in **`lib/optimizely/graphql/blockFragments.ts`** and imported by homepage, page, and preview queries.
+
 ## Production / site
 
 | Route | Method | Purpose |

@@ -1,6 +1,6 @@
 # SaaSCMS — Optimizely + Next.js POC
 
-> **New to this repo?** Start with **[POC_START_HERE.md](POC_START_HERE.md)** — a map of what matters, what to ignore, and common confusion points.
+> **New to this repo?** Start with **[POC_START_HERE.md](POC_START_HERE.md)** or the **[Demo Site Overview](/learn)**.
 
 A proof-of-concept website that loads its homepage from **Optimizely SaaS CMS** and renders it with **Next.js** and **React**. Content editors work in Optimizely; developers map CMS block types to React components in this repo.
 
@@ -301,9 +301,9 @@ If the new type does not appear, wait a few minutes for Graph indexing or check 
 
 ### Part C — Tell the API to fetch your block’s fields
 
-Edit **`app/api/optimizely/homepage/route.ts`**.
+Edit **`lib/optimizely/graphql/blockFragments.ts`**.
 
-Inside the GraphQL query, find the `component { ... }` section where other blocks are listed (Hero, Heading, etc.). Add a fragment for your block:
+Inside `compositionBlockFields` (homepage / BlankExperience blocks), add a fragment for your block:
 
 ```graphql
 ... on TextBanner {
@@ -316,11 +316,11 @@ Inside the GraphQL query, find the `component { ... }` section where other block
 
 The name after `... on` must match the Optimizely content type API name.
 
-Restart `npm run dev` after changing this file.
+Restart `npm run dev` after changing this file. Homepage, preview, and page APIs all import from here — you only edit GraphQL once.
 
 ### Part D — Build the React component
 
-1. Create **`components/blocks/TextBanner.tsx`**:
+1. Create **`components/blocks/TextBanner.tsx`** (or copy **`components/blocks/_examples/SimpleBlock.example.tsx`**):
 
 ```tsx
 'use client'
@@ -366,9 +366,9 @@ The `case` string must match the Optimizely type name (`TextBanner`).
 |------|--------|------------|
 | Content type API name | Optimizely admin | Graph `... on TypeName` |
 | Block type in switch | `BlockRenderer.tsx` | Same `TypeName` |
-| GraphQL fields | `homepage/route.ts` | Property names from CMS |
+| GraphQL fields | `lib/optimizely/graphql/blockFragments.ts` | Property names from CMS |
 
-**Landing pages:** If the block is on a `LandingPage` (not the homepage), also edit `app/api/optimizely/page/route.ts` and `LandingPageDisplay.tsx`. See [components/blocks/README.md](components/blocks/README.md).
+**Landing pages:** If the block is on a `LandingPage` (not the homepage), add to `landingPageTopContentFields` or `landingPageMainContentFields` in `blockFragments.ts` and update `LandingPageDisplay.tsx`. See [components/blocks/README.md](components/blocks/README.md).
 
 ---
 
@@ -384,7 +384,7 @@ SaaSCMS/
 │   │   ├── page.tsx                # Live preview server entry (Optimizely iframe)
 │   │   └── PreviewClient.tsx       # Live preview client — script, overlays, save refresh
 │   └── api/optimizely/
-│       ├── homepage/route.ts       # ★ GraphQL query for homepage (start here for new blocks)
+│       ├── homepage/route.ts       # GraphQL query for homepage (uses blockFragments.ts)
 │       ├── page/route.ts           # GraphQL for pages by URL
 │       ├── menu/route.ts           # CMS menu items
 │       ├── pages/route.ts          # Page list for CMSMenu
@@ -402,6 +402,7 @@ SaaSCMS/
 │       └── ...
 │
 ├── lib/optimizely/
+│   ├── graphql/blockFragments.ts   # ★ GraphQL fields for all block types (edit when adding blocks)
 │   └── fetchPreviewContent.ts      # Preview / draft content from Graph
 │
 ├── contexts/                       # Theme + branding
@@ -413,7 +414,8 @@ SaaSCMS/
 | File | Role |
 |------|------|
 | `app/page.tsx` | Entry point; loads data and assembles header + CMS body + footer |
-| `app/api/optimizely/homepage/route.ts` | Server-side GraphQL — defines which fields we request from Optimizely |
+| `app/api/optimizely/homepage/route.ts` | Server-side GraphQL — fetches page using blockFragments.ts |
+| `lib/optimizely/graphql/blockFragments.ts` | Which CMS fields we request from Optimizely Graph |
 | `components/CMSContent.tsx` | Turns JSON composition into HTML structure |
 | `components/blocks/BlockRenderer.tsx` | `"Hero"` → `<Hero />`, `"Heading"` → `<Heading />`, etc. |
 | `components/blocks/*.tsx` | Presentation — how each block looks on the page |
@@ -423,6 +425,7 @@ SaaSCMS/
 | URL | Purpose |
 |-----|---------|
 | `/` | Homepage |
+| `/learn` | Demo Site Overview — how content flows |
 | `/graphql-viewer` | Inspect Graph queries and content types |
 | `/preview?key=...` | Live preview (open from Optimizely CMS) |
 | `/api/optimizely/homepage` | Raw homepage JSON |
@@ -462,7 +465,7 @@ Set the same environment variables on your host (Netlify, Vercel, etc.).
 |---------|----------------|
 | "SDK Key not configured" | `.env.local` exists with `NEXT_PUBLIC_SDK_KEY`. Restart `npm run dev` after creating/editing `.env.local`. |
 | "No CMS content found" | `OPTIMIZELY_HOMEPAGE_URL` matches Main Website → URL in CMS (often `/en/`). Open `/api/optimizely/homepage` — `BlankExperience.items` should not be empty. |
-| Block missing on page | Type added to GraphQL in `homepage/route.ts` **and** `case` in `BlockRenderer.tsx`. Block added to page composition in CMS. |
+| Block missing on page | Type added to `blockFragments.ts` **and** `case` in `BlockRenderer.tsx`. Block added to page composition in CMS. |
 | GraphQL errors in API response | Field name typo in query, or content type name wrong. Check the API JSON response for `details`. |
 | Old content after CMS publish | Hard refresh (Cmd+Shift+R). API uses `cache: 'no-store'` but browser may cache. |
 | Confused by file names or JSON shape | Read [POC_START_HERE.md](POC_START_HERE.md) and [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md) |

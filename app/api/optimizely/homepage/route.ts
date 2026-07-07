@@ -7,12 +7,13 @@
  *   2. Sends a GraphQL query to https://cg.optimizely.com/content/v2
  *   3. Returns JSON to app/page.tsx
  *
- * When you add a NEW block type in Optimizely, add its fields here inside
- * the `component { ... }` section (see ... on Hero, ... on Heading, etc.).
+ * When you add a NEW block type in Optimizely, add its GraphQL fields in
+ * lib/optimizely/graphql/blockFragments.ts (compositionBlockFields).
  */
 
 import { NextResponse } from 'next/server'
 import { getOptimizelyHomepageUrl, getOptimizelySdkKey } from '@/lib/optimizely/env'
+import { compositionBlockFields } from '@/lib/optimizely/graphql/blockFragments'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,106 +93,7 @@ export async function GET() {
                                 types
                                 displayName
                               }
-                              ... on demo_block {
-                                ImageNumber
-                                MarginTopAndBottom
-                              }
-                              ... on Hero {
-                                Heading
-                                SubHeading
-                                Body {
-                                  html
-                                  json
-                                }
-                                Image {
-                                  key
-                                  url {
-                                    base
-                                    default
-                                  }
-                                }
-                                Links {
-                                  target
-                                  text
-                                  title
-                                  url {
-                                    type
-                                    default
-                                    hierarchical
-                                    internal
-                                    graph
-                                    base
-                                  }
-                                }
-                              }
-                              ... on FeatureGrid {
-                                Heading
-                                SubHeading
-                                Cards {
-                                  key
-                                  url {
-                                    base
-                                    default
-                                    graph
-                                    hierarchical
-                                    internal
-                                    type
-                                  }
-                                }
-                              }
-                              ... on CallToActionOutput {
-                                Header
-                                Links {
-                                  target
-                                  text
-                                  title
-                                  url {
-                                    base
-                                    default
-                                  }
-                                }
-                              }
-                              ... on PromoBlock {
-                                BackgroundStyle
-                                CTA {
-                                  base
-                                  default
-                                }
-                                CTAColour
-                                Description {
-                                  html
-                                }
-                                Image {
-                                  base
-                                  default
-                                }
-                                Title
-                              }
-                              ... on Image {
-                                Image {
-                                  url {
-                                    base
-                                    default
-                                  }
-                                }
-                              }
-                              ... on ContentBlock {
-                                Content {
-                                  html
-                                }
-                                Position
-                              }
-                              ... on Heading {
-                                Heading
-                                HeadingSize
-                                Alignment
-                              }
-                              ... on Divider {
-                                _metadata {
-                                  key
-                                }
-                                DividerSize
-                              }
+                              ${compositionBlockFields}
                             }
                           }
                         }

@@ -8,6 +8,8 @@ Each file maps to an **Optimizely block content type**. `BlockRenderer.tsx` pick
 - Live preview (`/preview`)
 - Landing pages partially via `LandingPageDisplay.tsx`
 
+**New to blocks?** Copy from [`_examples/SimpleBlock.example.tsx`](_examples/SimpleBlock.example.tsx) or read the [Demo Site Overview](/learn).
+
 ---
 
 ## Add a new block — full recipe
@@ -26,11 +28,13 @@ Each file maps to an **Optimizely block content type**. `BlockRenderer.tsx` pick
 3. **Publish** the page.
 4. Confirm Graph sync: open `/api/optimizely/homepage` and search for your block fields in the JSON.
 
-### 3. Add GraphQL fields (two files)
+### 3. Add GraphQL fields (one file)
 
-Add a fragment inside the `component { ... }` section:
+Add a fragment in **`lib/optimizely/graphql/blockFragments.ts`**:
 
-**`app/api/optimizely/homepage/route.ts`**
+- Homepage / BlankExperience blocks → `compositionBlockFields`
+- LandingPage top area → `landingPageTopContentFields`
+- LandingPage main area → `landingPageMainContentFields`
 
 ```graphql
 ... on TextBanner {
@@ -39,15 +43,13 @@ Add a fragment inside the `component { ... }` section:
 }
 ```
 
-**`lib/optimizely/fetchPreviewContent.ts`** — add the same fragment (required for live preview).
-
-The type name after `... on` must match the Optimizely API name exactly.
+The type name after `... on` must match the Optimizely API name exactly. Homepage, preview, and page APIs all import from this file — no copy-paste across routes.
 
 ### 4. Create the React component
 
-Create `components/blocks/TextBanner.tsx`. Copy an existing block (e.g. `Heading.tsx`) as a template.
+Create `components/blocks/TextBanner.tsx`. Start from [`_examples/SimpleBlock.example.tsx`](_examples/SimpleBlock.example.tsx) or copy `Heading.tsx`.
 
-For live preview overlays, add `data-epi-block-id` and `data-epi-edit="FieldName"` attributes matching Optimizely property names.
+For live preview overlays, add `data-epi-edit="FieldName"` attributes matching Optimizely property names (`data-epi-block-id` is set in `CMSContent.tsx`).
 
 ### 5. Register in BlockRenderer
 
@@ -70,17 +72,14 @@ case 'TextBanner':
 
 ## LandingPage blocks
 
-Homepage blocks use the recipe above. For **LandingPage** content areas, also edit:
-
-- `app/api/optimizely/page/route.ts` — GraphQL query
-- `components/LandingPageDisplay.tsx` — render logic
+Add fragments to `landingPageTopContentFields` or `landingPageMainContentFields` in `blockFragments.ts`, then update `components/LandingPageDisplay.tsx` for render logic.
 
 ---
 
 ## Quick reference (homepage only)
 
-1. GraphQL in `homepage/route.ts` + `fetchPreviewContent.ts`
-2. `components/blocks/YourBlock.tsx`
+1. GraphQL in `lib/optimizely/graphql/blockFragments.ts`
+2. `components/blocks/YourBlock.tsx` (template: `_examples/SimpleBlock.example.tsx`)
 3. `case` in `BlockRenderer.tsx`
 
-See also [README.md → Adding a new block](../../README.md#adding-a-new-block-optimizely--graph--react) and [POC_START_HERE.md](../../POC_START_HERE.md).
+See also [README.md → Adding a new block](../../README.md#adding-a-new-block-optimizely--graph--react), [POC_START_HERE.md](../../POC_START_HERE.md), and [/learn](../../app/learn/page.tsx) (dev tour).

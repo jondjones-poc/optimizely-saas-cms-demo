@@ -43,6 +43,8 @@ This writes `.env.local` and optionally tests the Graph connection.
 
 The application uses Next.js and should build once all required env variables are set.
 
+Overview diagrams for `/learn` are static PNGs in `public/learn/` and are deployed with the site (no external image host required).
+
 ## Troubleshooting
 
 | Symptom | Likely cause |

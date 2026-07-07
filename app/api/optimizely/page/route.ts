@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getOptimizelySdkKey } from '@/lib/optimizely/env'
+import {
+  articlePageFields,
+  landingPageMainContentFields,
+  landingPageSeoFields,
+  landingPageTopContentFields,
+  newsLandingPageFields,
+} from '@/lib/optimizely/graphql/blockFragments'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,14 +83,7 @@ export async function GET(request: Request) {
             published
             status
           }
-          ... on ArticlePage {
-            Heading
-            SubHeading
-            Author
-            Body {
-              html
-            }
-          }
+          ${articlePageFields}
           ... on LandingPage {
             TopContentArea {
               _metadata {
@@ -91,47 +91,7 @@ export async function GET(request: Request) {
                 displayName
                 types
               }
-              ... on Hero {
-                Heading
-                SubHeading
-                Body {
-                  html
-                }
-                Image {
-                  key
-                  url {
-                    base
-                    default
-                  }
-                }
-                Links {
-                  target
-                  text
-                  title
-                  url {
-                    base
-                    default
-                  }
-                }
-                Video {
-                  key
-                  url {
-                    base
-                    default
-                  }
-                }
-              }
-              ... on Carousel {
-                Cards {
-                  key
-                  url {
-                    base
-                    default
-                    hierarchical
-                    internal
-                  }
-                }
-              }
+              ${landingPageTopContentFields}
             }
             MainContentArea {
               _metadata {
@@ -139,51 +99,11 @@ export async function GET(request: Request) {
                 displayName
                 types
               }
-              ... on ContentBlock {
-                Content {
-                  html
-                }
-                Position
-              }
-              ... on Heading {
-                Heading
-                HeadingSize
-                Alignment
-              }
-              ... on Divider {
-                _metadata {
-                  key
-                }
-                DividerSize
-              }
-              ... on Image {
-                AltText
-                Image {
-                  url {
-                    base
-                    default
-                    graph
-                  }
-                }
-              }
-              ... on Menu {
-                _metadata {
-                  key
-                  displayName
-                }
-              }
+              ${landingPageMainContentFields}
             }
-            SeoSettings {
-              DisplayInMenu
-              GraphType
-              Indexing
-              MetaDescription
-              MetaTitle
-            }
+            ${landingPageSeoFields}
           }
-          ... on NewsLandingPage {
-            Title
-          }
+          ${newsLandingPageFields}
         }
       }
     }

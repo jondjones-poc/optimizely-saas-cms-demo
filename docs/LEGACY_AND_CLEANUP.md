@@ -27,6 +27,6 @@ These were briefly removed by mistake during a “simplify” pass and are **bac
 ## Optional future refactors
 
 - Merge `CustomHeader` / `CustomHeaderClient`
-- Shared GraphQL block fragments (one file for homepage + page + preview)
+- ~~Shared GraphQL block fragments (one file for homepage + page + preview)~~ — done: `lib/optimizely/graphql/blockFragments.ts`
 - `normalizeHomepageResponse()` to replace `data.data.data`
 - Remove dead `LandingPage()` wireframe function inside `[...slug]/page.tsx` (~400 lines, never called)

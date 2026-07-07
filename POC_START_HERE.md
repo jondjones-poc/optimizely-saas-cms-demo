@@ -16,9 +16,10 @@ The main [README.md](README.md) covers setup and how to add blocks.
    - Main Website **root node ID** (from `contentdata:///7` in CMS)
    - Main Website **URL path** (e.g. `/en/`)
 4. **Run:** `npm run dev`
-5. **Homepage:** open [http://localhost:3000](http://localhost:3000) — CMS blocks should render
-6. **API check:** open [http://localhost:3000/api/optimizely/homepage](http://localhost:3000/api/optimizely/homepage) — expect `"success": true` and `BlankExperience.items`
-7. **CMS link:** use the floating dev menu (bottom-right) → **CMS** — should open Main Website in Optimizely admin
+5. **Site overview (optional):** open [http://localhost:3000/learn](http://localhost:3000/learn) — how CMS content reaches the page
+6. **Homepage:** open [http://localhost:3000](http://localhost:3000) — CMS blocks should render
+7. **API check:** open [http://localhost:3000/api/optimizely/homepage](http://localhost:3000/api/optimizely/homepage) — expect `"success": true` and `BlankExperience.items`
+8. **CMS link:** use the floating dev menu (bottom-right) → **CMS** — should open Main Website in Optimizely admin
 
 If anything fails, see [Common gotchas](#common-gotchas) below.
 
@@ -27,11 +28,13 @@ If anything fails, see [Common gotchas](#common-gotchas) below.
 ## Recommended reading order
 
 1. [README.md](README.md) — install, env vars, add a block
-2. This file — map of the codebase
-3. [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md) — why JSON sometimes looks like `data.data.data`
-4. `app/page.tsx` — homepage entry (has comments)
-5. `components/CMSContent.tsx` — how blocks appear on screen
-6. `components/blocks/BlockRenderer.tsx` — CMS type → React component
+2. [/learn](http://localhost:3000/learn) — Demo Site Overview
+3. This file — map of the codebase
+4. [docs/DATA_SHAPES.md](docs/DATA_SHAPES.md) — why JSON sometimes looks like `data.data.data`
+5. `app/page.tsx` — homepage entry
+6. `components/CMSContent.tsx` — how blocks appear on screen
+7. `components/blocks/BlockRenderer.tsx` — CMS type → React component
+8. `lib/optimizely/graphql/blockFragments.ts` — GraphQL fields for all blocks
 
 ---
 
@@ -73,6 +76,7 @@ Live preview (/preview?key=…)
 | Render blocks | `components/CMSContent.tsx` → `components/blocks/BlockRenderer.tsx` |
 | Live preview | `app/preview/page.tsx` + `lib/optimizely/fetchPreviewContent.ts` |
 | Env config | `lib/optimizely/env.ts` + `.env.local` |
+| Block GraphQL fields | `lib/optimizely/graphql/blockFragments.ts` |
 
 ### Debug / demo tools (POC only — safe to ignore at first)
 
@@ -116,16 +120,14 @@ Full detail in [README.md → Adding a new block](README.md#adding-a-new-block-o
 
 1. **Optimizely CMS** — create a **Block** content type; note the exact **API name** (e.g. `TextBanner`).
 2. **Publish** — create a block instance, add it to Main Website in Visual Builder, publish the page.
-3. **GraphQL** — add a `... on YourBlock { Field1 Field2 }` fragment in:
-   - `app/api/optimizely/homepage/route.ts`
-   - `lib/optimizely/fetchPreviewContent.ts` (for live preview)
-4. **React** — create `components/blocks/YourBlock.tsx`.
+3. **GraphQL** — add a `... on YourBlock { Field1 Field2 }` fragment in `lib/optimizely/graphql/blockFragments.ts` (`compositionBlockFields` for homepage).
+4. **React** — create `components/blocks/YourBlock.tsx` (copy `_examples/SimpleBlock.example.tsx`).
 5. **Register** — add `case 'YourBlock':` in `components/blocks/BlockRenderer.tsx`.
 6. **Verify** — `/api/optimizely/homepage` shows your fields; refresh `/`.
 
 ### LandingPage blocks
 
-Also update `app/api/optimizely/page/route.ts` and `components/LandingPageDisplay.tsx`.
+Also add to `landingPageTopContentFields` or `landingPageMainContentFields` in `blockFragments.ts`, and update `components/LandingPageDisplay.tsx`.
 
 ---
 
@@ -145,6 +147,7 @@ Also update `app/api/optimizely/page/route.ts` and `components/LandingPageDispla
 |------|------|
 | Env vars | `.env.local` — use `npm run setup` |
 | Fetch homepage | `app/api/optimizely/homepage/route.ts` |
+| Block GraphQL | `lib/optimizely/graphql/blockFragments.ts` |
 | Fetch pages by URL | `app/api/optimizely/page/route.ts` |
 | Render blocks | `components/CMSContent.tsx` + `components/blocks/*` |
 | Landing pages | `components/LandingPageDisplay.tsx` |

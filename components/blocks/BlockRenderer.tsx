@@ -8,12 +8,11 @@
  * read the type name → render the matching component file.
  *
  * TO ADD A NEW BLOCK (homepage / BlankExperience):
- *   1. Add GraphQL fields in app/api/optimizely/homepage/route.ts
- *   2. Also add to lib/optimizely/fetchPreviewContent.ts (for live preview)
- *   3. Create components/blocks/YourBlock.tsx
- *   4. Register in BlockRenderer.tsx — case 'YourBlockType':
+ *   1. Add GraphQL in lib/optimizely/graphql/blockFragments.ts (compositionBlockFields)
+ *   2. Create components/blocks/YourBlock.tsx (see _examples/SimpleBlock.example.tsx)
+ *   3. Register here — case 'YourBlockType':
  *
- * For LandingPage blocks, also edit app/api/optimizely/page/route.ts and
+ * For LandingPage blocks, also add to landingPage* fields in blockFragments.ts and
  * LandingPageDisplay.tsx — see components/blocks/README.md
  */
 

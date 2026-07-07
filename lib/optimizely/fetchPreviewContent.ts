@@ -8,10 +8,18 @@
  *   - Uses preview_token (Bearer auth) when provided so DRAFT content is returned
  *   - Without preview_token, only published content is available (SDK key alone)
  *
- * Same GraphQL block fields as homepage — add new block types in BOTH places.
+ * Block GraphQL fields live in lib/optimizely/graphql/blockFragments.ts.
  */
 
 import { getOptimizelySdkKey } from '@/lib/optimizely/env'
+import {
+  articlePageFields,
+  compositionBlockFields,
+  landingPageMainContentFields,
+  landingPageSeoFields,
+  landingPageTopContentFields,
+  newsLandingPageFields,
+} from '@/lib/optimizely/graphql/blockFragments'
 
 interface FetchPreviewContentParams {
   key: string
@@ -104,132 +112,7 @@ export async function fetchPreviewContentFromGraph({
                                   types
                                   displayName
                                 }
-                                ... on Hero {
-                                  Heading
-                                  SubHeading
-                                  Body {
-                                    html
-                                  }
-                                  Image {
-                                    key
-                                    url {
-                                      base
-                                      default
-                                    }
-                                  }
-                                  Links {
-                                    target
-                                    text
-                                    title
-                                    url {
-                                      base
-                                      default
-                                    }
-                                  }
-                                }
-                                ... on ContentBlock {
-                                  _metadata {
-                                    key
-                                  }
-                                  Content {
-                                    html
-                                  }
-                                  Position
-                                }
-                                ... on Heading {
-                                  _metadata {
-                                    key
-                                  }
-                                  Heading
-                                  HeadingSize
-                                  Alignment
-                                }
-                                ... on Divider {
-                                  _metadata {
-                                    key
-                                  }
-                                  DividerSize
-                                }
-                                ... on Image {
-                                  AltText
-                                  Image {
-                                    url {
-                                      base
-                                      default
-                                    }
-                                  }
-                                }
-                                ... on Menu {
-                                  _metadata {
-                                    key
-                                    displayName
-                                  }
-                                }
-                                ... on Carousel {
-                                  Cards {
-                                    key
-                                    url {
-                                      base
-                                      default
-                                    }
-                                  }
-                                }
-                                ... on FeatureGrid {
-                                  _metadata {
-                                    key
-                                  }
-                                  Heading
-                                  SubHeading
-                                  Cards {
-                                    key
-                                    url {
-                                      base
-                                      default
-                                      graph
-                                    }
-                                  }
-                                }
-                                ... on PromoBlock {
-                                  _metadata {
-                                    key
-                                  }
-                                  BackgroundStyle
-                                  CTA {
-                                    base
-                                    default
-                                  }
-                                  CTAColour
-                                  Description {
-                                    html
-                                  }
-                                  Image {
-                                    base
-                                    default
-                                  }
-                                  Title
-                                }
-                                ... on CallToActionOutput {
-                                  _metadata {
-                                    key
-                                  }
-                                  Header
-                                  Links {
-                                    target
-                                    text
-                                    title
-                                    url {
-                                      base
-                                      default
-                                    }
-                                  }
-                                }
-                                ... on demo_block {
-                                  _metadata {
-                                    key
-                                  }
-                                  ImageNumber
-                                  MarginTopAndBottom
-                                }
+                                ${compositionBlockFields}
                               }
                             }
                           }
@@ -248,45 +131,7 @@ export async function fetchPreviewContentFromGraph({
                 displayName
                 types
               }
-              ... on Hero {
-                _metadata {
-                  key
-                  displayName
-                  types
-                }
-                Heading
-                SubHeading
-                Body {
-                  html
-                }
-                Image {
-                  key
-                  url {
-                    base
-                    default
-                  }
-                }
-                Links {
-                  target
-                  text
-                  title
-                  url {
-                    base
-                    default
-                  }
-                }
-              }
-              ... on Carousel {
-                Cards {
-                  key
-                  url {
-                    base
-                    default
-                    hierarchical
-                    internal
-                  }
-                }
-              }
+              ${landingPageTopContentFields}
             }
             MainContentArea {
               _metadata {
@@ -294,59 +139,12 @@ export async function fetchPreviewContentFromGraph({
                 displayName
                 types
               }
-              ... on ContentBlock {
-                Content {
-                  html
-                }
-                Position
-              }
-              ... on Heading {
-                Heading
-                HeadingSize
-                Alignment
-              }
-              ... on Divider {
-                _metadata {
-                  key
-                }
-                DividerSize
-              }
-              ... on Image {
-                AltText
-                Image {
-                  url {
-                    base
-                    default
-                    graph
-                  }
-                }
-              }
-              ... on Menu {
-                _metadata {
-                  key
-                  displayName
-                }
-              }
+              ${landingPageMainContentFields}
             }
-            SeoSettings {
-              DisplayInMenu
-              GraphType
-              Indexing
-              MetaDescription
-              MetaTitle
-            }
+            ${landingPageSeoFields}
           }
-          ... on ArticlePage {
-            Heading
-            SubHeading
-            Author
-            Body {
-              html
-            }
-          }
-          ... on NewsLandingPage {
-            Title
-          }
+          ${articlePageFields}
+          ${newsLandingPageFields}
         }
       }
     }

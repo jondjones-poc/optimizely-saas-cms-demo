@@ -191,6 +191,11 @@ const RightFloatingMenuComponent = ({ pageData }: { pageData?: any }) => {
       external: false
     },
     {
+      label: 'Site Overview',
+      url: '/learn',
+      external: false
+    },
+    {
       label: 'Data Explorer',
       url: '#',
       external: false,
