@@ -26,7 +26,13 @@ npm install
 
 ### Step 2: Connect to Optimizely
 
-Create a file called `.env.local` in the project root (same folder as `package.json`):
+Run the interactive setup (recommended):
+
+```bash
+npm run setup
+```
+
+Or create `.env.local` manually:
 
 ```bash
 cp .env.example .env.local
@@ -57,7 +63,7 @@ You should see the homepage with content from Optimizely. If you see "Loading CM
 
 ### Step 4: Verify the API (optional)
 
-Visit [http://localhost:3000/api/optimizely/homepage](http://localhost:3000/api/optimizely/homepage) in your browser. You should see JSON with `"success": true` and homepage data. If `"success": false`, check your SDK key and that a page exists at URL `/` in Optimizely.
+Visit [http://localhost:3000/api/optimizely/homepage](http://localhost:3000/api/optimizely/homepage) in your browser. You should see JSON with `"success": true` and homepage data. If `"success": false`, check your SDK key and that Main Website is published at the URL in `OPTIMIZELY_HOMEPAGE_URL` (e.g. `/en/`).
 
 ---
 
@@ -70,6 +76,8 @@ cp .env.example .env.local
 ```
 
 Restart `npm run dev` after any change to `.env.local`.
+
+Run `npm run setup` anytime to recreate or validate `.env.local` interactively (includes an optional Graph connection test).
 
 ### Required
 
@@ -94,21 +102,6 @@ Optional: set `NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID` (UUID from CMS URL) inste
 | Variable | Where to get it | Why it is needed | Used in |
 |----------|-----------------|------------------|---------|
 | `NEXT_PUBLIC_BASE_URL` | Your site URL — `http://localhost:3000` locally, or your production URL when deployed | When the server fetches its own API to merge menu data into a page, it needs the full base URL. Defaults to `http://localhost:3000` if omitted. | `app/api/optimizely/page/route.ts` |
-
-### Not used by this app — safe to delete
-
-These variables appear in some `.env.local` files (including templates from other Optimizely projects) but **nothing in this codebase reads them**. The Graph endpoint is still hardcoded as `https://cg.optimizely.com/content/v2`.
-
-**To test safely:** rename them with an `OLD_` prefix and move them to a separate section at the bottom of `.env.local`. If the site still works after restarting `npm run dev`, delete that whole section.
-
-| Original name | Status | Notes |
-|---------------|--------|-------|
-| `OPTIMIZELY_GRAPH_SINGLE_KEY` | **Unused — delete** | Duplicate of `NEXT_PUBLIC_SDK_KEY`. All routes now use `NEXT_PUBLIC_SDK_KEY` via `lib/optimizely/env.ts`. |
-| `OPTIMIZELY_GRAPH_SECRET` | **Unused — delete** | Graph Secret is for server-to-server / management APIs. This POC only uses the public Single Key. |
-| `OPTIMIZELY_GRAPH_GATEWAY` | **Unused — delete** | Gateway URL is hardcoded to `https://cg.optimizely.com` in every API route. |
-| `OPTIMIZELY_GRAPH_APP_KEY` | **Unused — delete** | App key is not referenced anywhere in this repo. |
-| `OPTIMIZELY_DAM_ENABLED` | **Unused — delete** | No DAM integration is implemented in this POC. |
-| `OPTIMIZELY_CLIENT_SECRET` | **Unused — delete** | Not referenced in code. If you did need OAuth client credentials, the value should be a secret string — not a CMS URL. |
 
 ### Recommended `.env.local` for this POC
 
@@ -273,7 +266,7 @@ The field name must match the property API name in Optimizely exactly.
 
 | | Homepage (`/`) | Live preview (`/preview`) |
 |--|----------------|---------------------------|
-| Content source | Published page at URL `/` | Specific item by `key` + `ver` |
+| Content source | Published `BlankExperience` at `OPTIMIZELY_HOMEPAGE_URL` | Specific item by `key` + `ver` |
 | Auth | SDK key only | SDK key + `preview_token` for drafts |
 | Optimizely script | Not loaded | `communicationinjector.js` loaded |
 | Edit overlays | No | Yes, when `ctx=edit` |
@@ -301,7 +294,7 @@ Content must be **published** and **available in Optimizely Graph** before the w
 
 1. Create a block instance: **Content → Create → your new block type**, fill in fields, **Publish**.
 2. Add the block to your homepage composition in the **Visual Builder** (or equivalent experience editor).
-3. Publish the **page** (`BlankExperience` at URL `/`).
+3. Publish the **page** (`BlankExperience` at your `OPTIMIZELY_HOMEPAGE_URL`, e.g. `/en/`).
 4. Confirm Graph sync by calling `/api/optimizely/homepage` and checking your block appears in the response.
 
 If the new type does not appear, wait a few minutes for Graph indexing or check Optimizely’s Graph / publish settings.
@@ -468,7 +461,7 @@ Set the same environment variables on your host (Netlify, Vercel, etc.).
 | Problem | What to check |
 |---------|----------------|
 | "SDK Key not configured" | `.env.local` exists with `NEXT_PUBLIC_SDK_KEY`. Restart `npm run dev` after creating/editing `.env.local`. |
-| "No CMS content found" | A `BlankExperience` page is published at URL `/` in Optimizely. Open `/api/optimizely/homepage` and look for `BlankExperience.items`. |
+| "No CMS content found" | `OPTIMIZELY_HOMEPAGE_URL` matches Main Website → URL in CMS (often `/en/`). Open `/api/optimizely/homepage` — `BlankExperience.items` should not be empty. |
 | Block missing on page | Type added to GraphQL in `homepage/route.ts` **and** `case` in `BlockRenderer.tsx`. Block added to page composition in CMS. |
 | GraphQL errors in API response | Field name typo in query, or content type name wrong. Check the API JSON response for `details`. |
 | Old content after CMS publish | Hard refresh (Cmd+Shift+R). API uses `cache: 'no-store'` but browser may cache. |

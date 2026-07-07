@@ -31,6 +31,14 @@ Do **not** deploy these—they are not read anywhere:
 
 Set all four required variables in your deployment platform (Netlify, Vercel, etc.).
 
+For local setup, run:
+
+```bash
+npm run setup
+```
+
+This writes `.env.local` and optionally tests the Graph connection.
+
 ## Build process
 
 The application uses Next.js and should build once all required env variables are set.
