@@ -1162,24 +1162,30 @@ function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: stri
 }
 
 // HTML Carousel Component - uses actual CMS data
+type CarouselSlideData = {
+  id: number
+  title: string
+  image: string
+  cta: string
+  url: string
+}
+
 function HTMLCarousel({ component, theme }: { component: any, theme: string }) {
   const [currentSlide, setCurrentSlide] = useState(0)
   
   const cards = component?.Cards || []
   
-  const slides = cards
-    .map((card: any, index: number) => {
-      const image = card.BackgroundImage?.Image?.url?.default
-      if (!image) return null
-      return {
-        id: index + 1,
-        title: card.Title || card._metadata?.displayName || '',
-        image,
-        cta: card.CTAText || 'Learn More',
-        url: card.Link?.default || '#',
-      }
-    })
-    .filter((slide): slide is NonNullable<typeof slide> => slide !== null)
+  const slides: CarouselSlideData[] = cards.flatMap((card: any, index: number) => {
+    const image = card.BackgroundImage?.Image?.url?.default
+    if (!image) return []
+    return [{
+      id: index + 1,
+      title: card.Title || card._metadata?.displayName || '',
+      image,
+      cta: card.CTAText || 'Learn More',
+      url: card.Link?.default || '#',
+    }]
+  })
 
   useEffect(() => {
     if (slides.length <= 1) return
