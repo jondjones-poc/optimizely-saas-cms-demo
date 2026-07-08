@@ -483,6 +483,57 @@ Set the same environment variables on your host (Netlify, Vercel, etc.).
 
 ---
 
+## Import demo content (Optimizely CMS)
+
+This repo includes a pre-built content package you can import into your own Optimizely SaaS CMS instance:
+
+```
+content_import/ExportedFile.episerverdata
+```
+
+Use this when you want the demo site (homepage, pages, blocks) without creating everything manually in CMS.
+
+### Import in Optimizely CMS admin
+
+1. Log in to your CMS instance (e.g. `https://app-<instance-id>.cms.optimizely.com`).
+2. Go to **Settings → Import Data**.
+3. Click **Choose File** and select `content_import/ExportedFile.episerverdata` from this repo.
+4. Click **Select Content** and choose where to import (e.g. the site root / Main Website).
+5. **Update existing content items with matching ID** — check this if re-importing into the same instance and you want to overwrite matching pages/blocks. Clear it if you want copies with new IDs.
+6. Click **Upload and Verify File** — review the verification report for errors.
+7. Click **Begin Import** and wait for it to finish.
+
+See [Optimizely docs: Import data into CMS (SaaS)](https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/import-data-into-cms-saas).
+
+### After import — connect this app
+
+Content must be published and available in **Optimizely Graph** before the site can load it. Then update `.env.local`:
+
+| Variable | Where to check after import |
+|----------|----------------------------|
+| `NEXT_PUBLIC_SDK_KEY` | Settings → Optimizely Graph → Render Content → **Single Key** |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` | Your CMS login URL |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` | Content tree → **Main Website** → ID in `contentdata:///` link |
+| `OPTIMIZELY_HOMEPAGE_URL` | Content tree → **Main Website** → **URL** field (must match exactly, e.g. `/` or `/en/`) |
+
+Run:
+
+```bash
+npm run setup -- --validate
+```
+
+Or:
+
+```bash
+npm run debug:homepage
+```
+
+Restart `npm run dev` after changing `.env.local`. Open `/api/optimizely/homepage` — expect `"success": true` and `BlankExperience.items` not empty.
+
+**Note:** If you move the homepage in CMS after import, the **URL** field may change — update `OPTIMIZELY_HOMEPAGE_URL` to match.
+
+---
+
 ## License
 
 MIT License — see [LICENSE](LICENSE).
