@@ -19,7 +19,9 @@ import {
   landingPageSeoFields,
   landingPageTopContentFields,
   newsLandingPageFields,
+  pocPageTypeFields,
 } from '@/lib/optimizely/graphql/blockFragments'
+import { fetchSettingsMenu } from '@/lib/optimizely/fetchSettingsMenu'
 
 interface FetchPreviewContentParams {
   key: string
@@ -145,6 +147,7 @@ export async function fetchPreviewContentFromGraph({
           }
           ${articlePageFields}
           ${newsLandingPageFields}
+          ${pocPageTypeFields}
         }
       }
     }
@@ -659,5 +662,79 @@ export async function processTopContentAreaCarousels(
       return block
     })
   )
+}
+
+export type PreviewPageType =
+  | 'LandingPage'
+  | 'BlankExperience'
+  | 'NewsLandingPage'
+  | 'ArticlePage'
+  | 'poc_page_type'
+  | 'Other'
+
+/** Map CMS _metadata.types to the preview renderer key */
+export function resolvePreviewPageType(types: string[] | undefined): PreviewPageType {
+  if (!types?.length) return 'Other'
+  if (types.includes('LandingPage')) return 'LandingPage'
+  if (types.includes('BlankExperience')) return 'BlankExperience'
+  if (types.includes('NewsLandingPage')) return 'NewsLandingPage'
+  if (types.includes('ArticlePage')) return 'ArticlePage'
+  if (types.includes('poc_page_type')) return 'poc_page_type'
+  return 'Other'
+}
+
+export type StructuredPreviewData =
+  | { pageType: 'LandingPage'; pageData: any }
+  | { pageType: 'BlankExperience'; data: any }
+  | { pageType: 'NewsLandingPage'; pageData: any }
+  | { pageType: 'ArticlePage'; pageData: any }
+  | { pageType: 'poc_page_type'; pageData: any }
+  | { pageType: 'Other'; pageData: any }
+
+/**
+ * Process landing page blocks and structure preview payload by page type.
+ */
+export async function structurePreviewPageData(
+  contentData: any,
+  previewToken: string | null = null
+): Promise<StructuredPreviewData> {
+  const pageType = resolvePreviewPageType(contentData?._metadata?.types)
+
+  if (pageType === 'LandingPage') {
+    if (contentData.TopContentArea) {
+      contentData.TopContentArea = await processTopContentAreaCarousels(
+        contentData.TopContentArea,
+        previewToken
+      )
+    }
+    if (contentData.MainContentArea) {
+      try {
+        const menuItems = await fetchSettingsMenu(previewToken)
+        contentData.MainContentArea = contentData.MainContentArea.map((block: any) => {
+          if (block._metadata?.types?.includes('Menu')) {
+            return { ...block, MenuItem: menuItems }
+          }
+          return block
+        })
+      } catch (error) {
+        console.error('Preview: failed to fetch SettingsPage menu:', error)
+      }
+    }
+    return { pageType: 'LandingPage', pageData: contentData }
+  }
+
+  if (pageType === 'BlankExperience') {
+    return { pageType: 'BlankExperience', data: contentData }
+  }
+
+  if (
+    pageType === 'NewsLandingPage' ||
+    pageType === 'ArticlePage' ||
+    pageType === 'poc_page_type'
+  ) {
+    return { pageType, pageData: contentData }
+  }
+
+  return { pageType: 'Other', pageData: contentData }
 }
 

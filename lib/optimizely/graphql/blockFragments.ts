@@ -271,3 +271,22 @@ export const newsLandingPageFields = `
     Title
   }
 `
+
+/** POC page type fields (beginner /poc and /import child pages) */
+export const pocPageTypeFields = `
+  ... on poc_page_type {
+    Title
+    Heading {
+      _metadata {
+        key
+        displayName
+        types
+      }
+      ... on Heading {
+        Heading
+        HeadingSize
+        Alignment
+      }
+    }
+  }
+`

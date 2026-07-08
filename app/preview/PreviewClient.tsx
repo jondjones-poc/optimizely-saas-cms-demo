@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef } from 'react'
 import CMSContent from '@/components/CMSContent'
 import LandingPageDisplay from '@/components/LandingPageDisplay'
+import NewsLandingPage from '@/components/NewsLandingPage'
+import PocPagePreview from '@/components/PocPagePreview'
+import ArticlePagePreview from '@/components/ArticlePagePreview'
 import OptimizelyDataPopup from '@/components/OptimizelyDataPopup'
 import CustomHeaderClient from '@/components/CustomHeaderClient'
 import CustomFooterClient from '@/components/CustomFooterClient'
@@ -640,7 +643,17 @@ export default function PreviewClient({
           isPreview={isPreview} 
           contextMode={contextMode}
         />
-      ) : (
+      ) : pageType === 'NewsLandingPage' ? (
+        <NewsLandingPage data={pageData} />
+      ) : pageType === 'ArticlePage' ? (
+        <ArticlePagePreview data={pageData} />
+      ) : pageType === 'poc_page_type' ? (
+        <PocPagePreview
+          data={pageData}
+          isPreview={isPreview}
+          contextMode={contextMode}
+        />
+      ) : pageType === 'BlankExperience' ? (
         <div style={{ position: 'relative', isolation: 'isolate', zIndex: 0 }}>
           <CMSContent 
             data={{
@@ -658,6 +671,19 @@ export default function PreviewClient({
             contextMode={contextMode}
             cmsDemo={cmsDemo}
           />
+        </div>
+      ) : (
+        <div className="mx-auto max-w-2xl px-6 py-16 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {pageData?._metadata?.displayName || 'Preview'}
+          </h1>
+          <p className="mt-4 text-gray-600">
+            No preview renderer for page type{' '}
+            <code className="rounded bg-gray-100 px-1">{pageType}</code>.
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            Supported types: BlankExperience, LandingPage, NewsLandingPage, ArticlePage, poc_page_type
+          </p>
         </div>
       )}
       

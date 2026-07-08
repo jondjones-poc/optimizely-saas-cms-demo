@@ -14,7 +14,7 @@
 
 import { headers } from 'next/headers'
 import PreviewClient from './PreviewClient'
-import { fetchPreviewContentFromGraph, processFeatureGridCardsServerSide, processTopContentAreaCarousels } from '@/lib/optimizely/fetchPreviewContent'
+import { fetchPreviewContentFromGraph, processFeatureGridCardsServerSide, structurePreviewPageData } from '@/lib/optimizely/fetchPreviewContent'
 import { getBrandingConfig } from '@/lib/branding'
 
 interface PreviewPageProps {
@@ -143,39 +143,7 @@ async function fetchPreviewContent(
         }
         
         // Determine page type and structure data accordingly
-        const pageTypes = contentData._metadata?.types || []
-        const isLandingPage = pageTypes.includes('LandingPage')
-        const isBlankExperience = pageTypes.includes('BlankExperience')
-        
-        console.log('📄 Server-side page type detected:', {
-          pageTypes,
-          isLandingPage,
-          isBlankExperience,
-          hasComposition: !!contentData.composition
-        })
-        
-        if (isLandingPage) {
-          if (contentData.TopContentArea) {
-            contentData.TopContentArea = await processTopContentAreaCarousels(
-              contentData.TopContentArea,
-              previewToken || null
-            )
-          }
-          return {
-            pageType: 'LandingPage',
-            pageData: contentData
-          }
-        } else if (isBlankExperience) {
-          return {
-            pageType: 'BlankExperience',
-            data: contentData
-          }
-        } else {
-          return {
-            pageType: 'Other',
-            pageData: contentData
-          }
-        }
+        return structurePreviewPageData(contentData, previewToken || null)
       }
       
       console.warn('⚠️ Server-side: contentData is null or undefined')
