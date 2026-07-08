@@ -54,7 +54,7 @@ export async function fetchPocCmsPage(): Promise<PocCmsResult> {
           }
           ... on poc_page_type {
             Title
-            Heading {
+            HeadingBlocks: Heading {
               _metadata {
                 key
                 displayName
@@ -98,7 +98,7 @@ export async function fetchPocCmsPage(): Promise<PocCmsResult> {
     }
 
     const title = item.Title || item._metadata?.displayName || 'Untitled'
-    const blocks = Array.isArray(item.Heading) ? item.Heading : []
+    const blocks = Array.isArray(item.HeadingBlocks) ? item.HeadingBlocks : []
 
     return {
       ok: true,

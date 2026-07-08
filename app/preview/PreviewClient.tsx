@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import CMSContent from '@/components/CMSContent'
 import LandingPageDisplay from '@/components/LandingPageDisplay'
-import NewsLandingPage from '@/components/NewsLandingPage'
+import NewsLandingPagePreview from '@/components/NewsLandingPagePreview'
 import PocPagePreview from '@/components/PocPagePreview'
 import ArticlePagePreview from '@/components/ArticlePagePreview'
 import OptimizelyDataPopup from '@/components/OptimizelyDataPopup'
@@ -644,7 +644,11 @@ export default function PreviewClient({
           contextMode={contextMode}
         />
       ) : pageType === 'NewsLandingPage' ? (
-        <NewsLandingPage data={pageData} />
+        <NewsLandingPagePreview
+          data={pageData}
+          isPreview={isPreview}
+          contextMode={contextMode}
+        />
       ) : pageType === 'ArticlePage' ? (
         <ArticlePagePreview data={pageData} />
       ) : pageType === 'poc_page_type' ? (

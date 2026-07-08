@@ -272,11 +272,12 @@ export const newsLandingPageFields = `
   }
 `
 
-/** POC page type fields (beginner /poc and /import child pages) */
+/** POC page type fields (beginner /poc and /import child pages).
+ *  Heading content area is aliased to avoid GraphQL conflict with ArticlePage.Heading (String). */
 export const pocPageTypeFields = `
   ... on poc_page_type {
     Title
-    Heading {
+    HeadingBlocks: Heading {
       _metadata {
         key
         displayName
