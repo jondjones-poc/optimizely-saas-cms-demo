@@ -1,0 +1,115 @@
+/**
+
+ * BEGINNER POC — read this file first.
+
+ *
+
+ *   Box 1 — CMS Title (poc_page_type at /poc/)
+
+ *   Box 2 — Heading content area via BlockRenderer
+
+ *   Box 3 — StockTicker
+
+ */
+
+
+
+import BlockRenderer from './components/BlockRenderer'
+
+import StockTicker from './components/StockTicker'
+
+import { fetchPocCmsPage } from './lib/fetchPocCmsPage'
+
+
+
+export default async function PocPage() {
+
+  const cms = await fetchPocCmsPage()
+
+
+
+  return (
+
+    <main className="space-y-6">
+
+      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-gray-800">
+
+        {cms.ok ? (
+
+          <>
+
+            <p className="text-3xl font-bold text-gray-900">{cms.title}</p>
+
+            <ul className="mt-3 space-y-1 text-sm text-gray-600">
+
+              <li>
+
+                CMS page: <code className="rounded bg-gray-100 px-1">{cms.displayName}</code>
+
+              </li>
+
+              <li>
+
+                URL in CMS: <code className="rounded bg-gray-100 px-1">{cms.pageUrl}</code>
+
+              </li>
+
+              <li>
+
+                Property: <code className="rounded bg-gray-100 px-1">Title</code>
+
+              </li>
+
+              <li>
+
+                Status: <code className="rounded bg-gray-100 px-1">{cms.status}</code>
+
+              </li>
+
+            </ul>
+
+          </>
+
+        ) : (
+
+          <div className="text-red-700">
+
+            <p>Could not load CMS page: {cms.error}</p>
+
+            {cms.hint && <p className="mt-2 text-sm text-gray-600">{cms.hint}</p>}
+
+          </div>
+
+        )}
+
+      </section>
+
+
+
+      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-gray-800">
+        {cms.ok ? (
+          cms.blocks.length > 0 ? (
+            <div className="space-y-3">
+              {cms.blocks.map((block, index) => (
+                <BlockRenderer key={block._metadata?.key ?? index} block={block} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">No Heading blocks in the CMS content area yet.</p>
+          )
+        ) : (
+          <p className="text-sm text-gray-500">Content area unavailable.</p>
+        )}
+      </section>
+
+
+
+      <StockTicker />
+
+    </main>
+
+  )
+
+}
+
+

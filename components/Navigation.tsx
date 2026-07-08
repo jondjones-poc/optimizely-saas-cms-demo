@@ -5,7 +5,9 @@ import { Menu, X, Database, X as XIcon, CheckCircle, XCircle, Code, Layers } fro
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useBranding } from '@/contexts/BrandingContext'
-import { fetchHomepageData } from '@/services/homepage'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { filterCmsPagesForNav, type NavMenuItem } from '@/lib/optimizely/filterNavPages'
 
 interface NavigationProps {
   optimizelyData?: any
@@ -18,8 +20,26 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
   const [scrolled, setScrolled] = useState(false)
   const [showCmsData, setShowCmsData] = useState(false)
   const [activeTab, setActiveTab] = useState<'pretty' | 'raw' | 'blocks'>('pretty')
+  const [cmsPages, setCmsPages] = useState<NavMenuItem[]>([])
   const { theme } = useTheme()
   const { branding } = useBranding()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    const fetchPages = async () => {
+      try {
+        const response = await fetch('/api/optimizely/pages')
+        const result = await response.json()
+        if (result.success && result.data) {
+          setCmsPages(filterCmsPagesForNav(result.data, { currentPath: pathname }))
+        }
+      } catch {
+        // Nav still works with static app links if CMS fetch fails
+      }
+    }
+
+    fetchPages()
+  }, [pathname])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,16 +97,12 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
     return null
   }
 
-  const menuItems = [
-    { name: 'Home', href: '/' },
-    { name: 'GraphQL Viewer', href: '/graphql-viewer' },
-    { name: 'Buy', href: '#buy' },
-    { name: 'Sell', href: '#sell' },
-    { name: 'Resources', href: '#resources' },
-    { name: 'About', href: '#about' },
-    { name: 'Concept', href: '#concept' },
-    { name: 'Contact', href: '#contact' },
+  const appMenuItems: NavMenuItem[] = [
+    { key: 'home', name: 'Home', href: '/' },
+    { key: 'graphql', name: 'GraphQL Viewer', href: '/graphql-viewer' },
   ]
+
+  const menuItems = [...appMenuItems, ...cmsPages]
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -111,19 +127,23 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               {menuItems.map((item) => (
-                <a
-                  key={item.name}
+                <Link
+                  key={item.key}
                   href={item.href}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    scrolled 
-                      ? theme === 'dark'
-                        ? 'text-dark-text hover:text-dark-textSecondary'
-                        : 'text-phamily-darkGray hover:text-phamily-blue'
-                      : 'text-white hover:text-phamily-lightBlue'
+                    pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
+                      ? scrolled
+                        ? 'text-phamily-blue'
+                        : 'text-phamily-lightBlue'
+                      : scrolled
+                        ? theme === 'dark'
+                          ? 'text-dark-text hover:text-dark-textSecondary'
+                          : 'text-phamily-darkGray hover:text-phamily-blue'
+                        : 'text-white hover:text-phamily-lightBlue'
                   }`}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
               
               {/* CMS Data Button */}
@@ -175,8 +195,8 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
             theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
           }`}>
             {menuItems.map((item) => (
-              <a
-                key={item.name}
+              <Link
+                key={item.key}
                 href={item.href}
                 className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                   theme === 'dark'
@@ -186,7 +206,7 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
                 onClick={() => setIsOpen(false)}
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
             
             {/* Mobile CMS Data Button */}

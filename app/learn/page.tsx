@@ -192,6 +192,13 @@ export default function LearnPage() {
     <main className="min-h-screen bg-gray-50 text-gray-900">
       <div className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-3xl font-bold">Demo Site Overview</h1>
+        <p className="mt-3 text-gray-600">
+          New to Next.js or headless CMS? Start with the{' '}
+          <Link href="/poc" className="font-medium text-blue-600 hover:underline">
+            beginner POC at /poc
+          </Link>{' '}
+          — one simple page, no API routes.
+        </p>
 
         <section className="mt-10">
           <h2 className="text-xl font-semibold">How content flows</h2>

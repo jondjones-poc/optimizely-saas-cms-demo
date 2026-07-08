@@ -1,6 +1,6 @@
 # SaaSCMS — Optimizely + Next.js POC
 
-> **New to this repo?** Start with **[POC_START_HERE.md](POC_START_HERE.md)** or the **[Demo Site Overview](/learn)**.
+> **New to this repo?** Start with the **[beginner POC at `/poc`](/poc)** if the full site feels complex, then **[POC_START_HERE.md](POC_START_HERE.md)** or the **[Demo Site Overview](/learn)**.
 
 A proof-of-concept website that loads its homepage from **Optimizely SaaS CMS** and renders it with **Next.js** and **React**. Content editors work in Optimizely; developers map CMS block types to React components in this repo.
 
