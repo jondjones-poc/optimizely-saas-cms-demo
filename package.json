@@ -11,6 +11,7 @@
     "test:watch": "jest --watch",
     "setup": "node scripts/setup-env.mjs",
     "debug:homepage": "node scripts/debug-homepage.mjs",
+    "debug:cms-create": "node scripts/debug-cms-create.mjs",
     "postbuild": "echo 'Build completed successfully'"
   },
   "dependencies": {
