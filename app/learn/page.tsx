@@ -189,8 +189,7 @@ export default function LearnPage() {
   const homepageUrl = getOptimizelyHomepageUrl()
 
   return (
-    <main className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="mx-auto max-w-3xl px-6 py-12">
+    <div>
         <h1 className="text-3xl font-bold">Demo Site Overview</h1>
         <p className="mt-3 text-gray-600">
           New to Next.js or headless CMS? Start with the{' '}
@@ -526,7 +525,6 @@ Live preview (/preview?key=…)
             ← Back to homepage
           </Link>
         </p>
-      </div>
-    </main>
+    </div>
   )
 }

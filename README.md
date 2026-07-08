@@ -49,7 +49,12 @@ Fill in `.env.local` from Optimizely CMS admin (full details in **[Environment v
 
 This app calls `https://cg.optimizely.com/content/v2?auth=<Single Key>` to load content.
 
-**Do not add these to `.env.local`** (not read by this app): Graph **App key**, **Graph secret**, Manage Content **API key**, **Client secret**.
+**For [Content Import](/import)** (`/import`), also set `OPTIMIZELY_CMS_CLIENT_ID`, `OPTIMIZELY_CMS_CLIENT_SECRET`, and `OPTIMIZELY_POC_PARENT_CONTENT_KEY` — see [Environment variables](#environment-variables).
+
+**Do not confuse these credentials:**
+- **Graph Single Key** (`NEXT_PUBLIC_SDK_KEY`) — read published content from Optimizely Graph.
+- **Manage Content API** (`OPTIMIZELY_CMS_CLIENT_ID` / `OPTIMIZELY_CMS_CLIENT_SECRET`) — create pages via `/import` only. Server-only; never use `NEXT_PUBLIC_`.
+- This app does **not** use Graph **App key** or **Graph secret**.
 
 ### Step 3: Run the site
 
@@ -79,11 +84,13 @@ Restart `npm run dev` after any change to `.env.local`.
 
 Run `npm run setup` anytime to recreate or validate `.env.local` interactively (includes an optional Graph connection test).
 
-### Required
+### Required (site + Graph)
+
+These four variables are required for the homepage, CMS pages, preview, and menu:
 
 | Variable | Where to get it | Why it is needed | Used in |
 |----------|-----------------|------------------|---------|
-| `NEXT_PUBLIC_SDK_KEY` | Optimizely CMS admin → **Settings** → **Optimizely Graph** → **Render Content** → **Single Key** | Authenticates GraphQL requests to Optimizely Graph. The `NEXT_PUBLIC_` prefix exposes it to the browser for client-side Graph calls (Menu, Carousel). | All `/api/optimizely/*` routes, `lib/optimizely/fetchPreviewContent.ts`, `components/blocks/Menu.tsx`, `components/blocks/Carousel.tsx` |
+| `NEXT_PUBLIC_SDK_KEY` | Optimizely CMS admin → **Settings** → **Optimizely Graph** → **Render Content** → **Single Key** | Authenticates GraphQL requests to Optimizely Graph. The `NEXT_PUBLIC_` prefix exposes it to the browser for some client-side Graph calls. | All `/api/optimizely/*` routes, `lib/optimizely/fetchPreviewContent.ts`, `lib/optimizely/fetchSettingsMenu.ts` |
 | `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` | Your CMS login URL, e.g. `https://app-joma01saas0yi0ct001.cms.optimizely.com` (no trailing slash) | Base URL for CMS admin deep links in the dev floating menu and live preview script. | `components/RightFloatingMenuComponent.tsx`, `app/preview/PreviewClient.tsx`, `lib/optimizely/env.ts` |
 | `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` | Content tree → **Main Website** → integer in `contentdata:///` link (e.g. `7`) | CMS admin deep link in the dev floating menu. | `components/RightFloatingMenuComponent.tsx`, `lib/optimizely/env.ts` |
 | `OPTIMIZELY_HOMEPAGE_URL` | Content tree → **Main Website** → **URL** field (e.g. `/en/`) | GraphQL query path for the homepage `BlankExperience`. | `app/api/optimizely/homepage/route.ts`, `lib/optimizely/env.ts` |
@@ -97,11 +104,27 @@ Optional: set `NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID` (UUID from CMS URL) inste
 3. Go to **Optimizely Graph**
 4. Copy the **Single Key** value
 
+### Required for Content Import (`/import`)
+
+These are **server-only** (no `NEXT_PUBLIC_` prefix). Needed only if you use [http://localhost:3000/import](http://localhost:3000/import) to create POC pages via the CMS Management API:
+
+| Variable | Where to get it | Why it is needed | Used in |
+|----------|-----------------|------------------|---------|
+| `OPTIMIZELY_CMS_CLIENT_ID` | **Settings** → **API Keys** → your Manage Content key → **Client ID** | OAuth client credentials for the CMS Management API. | `app/import/lib/cmsManagementApi.ts` |
+| `OPTIMIZELY_CMS_CLIENT_SECRET` | Same API key → **Client secret** | OAuth client credentials (never expose to the browser). | `app/import/lib/cmsManagementApi.ts` |
+| `OPTIMIZELY_POC_PARENT_CONTENT_KEY` | Content tree → **/poc** page → content **key** (GUID without hyphens) | Parent page under which new POC pages are created. | `app/import/lib/cmsManagementApi.ts` |
+
+The API key needs **Create** (and ideally **Publish**) permission on the `/poc` parent. See [app/import/README.md](app/import/README.md).
+
 ### Optional
 
 | Variable | Where to get it | Why it is needed | Used in |
 |----------|-----------------|------------------|---------|
-| `NEXT_PUBLIC_BASE_URL` | Your site URL — `http://localhost:3000` locally, or your production URL when deployed | When the server fetches its own API to merge menu data into a page, it needs the full base URL. Defaults to `http://localhost:3000` if omitted. | `app/api/optimizely/page/route.ts` |
+| `OPTIMIZELY_POC_PAGE_TYPE_KEY` | Your page content type API name | Page type to create from `/import`. Defaults to `poc_page_type`. | `app/import/lib/env.ts` |
+| `OPTIMIZELY_CMS_LOCALE` | Locale for new CMS versions | Defaults to `en`. | `app/import/lib/env.ts` |
+| `OPTIMIZELY_SETTINGS_PAGE_KEY` | Content tree → **Settings** page → content key | Pin a specific Settings page for site menu items. If omitted, the app uses the first `SettingsPage` in Graph. | `lib/optimizely/fetchSettingsMenu.ts` |
+| `NEXT_PUBLIC_BASE_URL` | Your site URL — `http://localhost:3000` locally, or production URL when deployed | Full base URL for server-side self-fetch in some deployments. Defaults to `http://localhost:3000`. | Legacy / deployment-specific |
+| `NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID` | UUID in your CMS URL (`app-<id>.cms.optimizely.com`) | Alternative to `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` — builds CMS URL automatically. | `lib/optimizely/env.ts` |
 
 ### Recommended `.env.local` for this POC
 
@@ -116,10 +139,20 @@ NEXT_PUBLIC_OPTIMIZELY_CMS_URL=https://app-your-instance-id.cms.optimizely.com
 NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID=7
 OPTIMIZELY_HOMEPAGE_URL=/
 
+# Content Import (/import) — server-only Manage Content API
+OPTIMIZELY_CMS_CLIENT_ID=your-client-id
+OPTIMIZELY_CMS_CLIENT_SECRET=your-client-secret
+OPTIMIZELY_POC_PARENT_CONTENT_KEY=your-poc-parent-content-key
+OPTIMIZELY_POC_PAGE_TYPE_KEY=poc_page_type
+OPTIMIZELY_CMS_LOCALE=en
+
+# Optional — pin Settings page for menu (auto-detected if omitted)
+# OPTIMIZELY_SETTINGS_PAGE_KEY=your-settings-page-key
+
 # Optional — build CMS URL from instance ID instead of full URL above
 # NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID=your-instance-id
 
-# Optional — only needed if server-side self-fetch fails in production
+# Optional — deployment base URL
 # NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ```
 
@@ -127,7 +160,7 @@ OPTIMIZELY_HOMEPAGE_URL=/
 
 | What | Where | Notes |
 |------|-------|-------|
-| Graph gateway `cg.optimizely.com` | All API routes, `Menu.tsx`, `Carousel.tsx` | Could use `OPTIMIZELY_GRAPH_GATEWAY` |
+| Graph gateway `cg.optimizely.com` | All API routes | Could use `OPTIMIZELY_GRAPH_GATEWAY` |
 
 ---
 
@@ -515,6 +548,8 @@ Content must be published and available in **Optimizely Graph** before the site 
 | `NEXT_PUBLIC_OPTIMIZELY_CMS_URL` | Your CMS login URL |
 | `NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID` | Content tree → **Main Website** → ID in `contentdata:///` link |
 | `OPTIMIZELY_HOMEPAGE_URL` | Content tree → **Main Website** → **URL** field (must match exactly, e.g. `/` or `/en/`) |
+
+If you use **Content Import** (`/import`), also set `OPTIMIZELY_CMS_CLIENT_ID`, `OPTIMIZELY_CMS_CLIENT_SECRET`, and `OPTIMIZELY_POC_PARENT_CONTENT_KEY` — see [Environment variables](#environment-variables).
 
 Run:
 

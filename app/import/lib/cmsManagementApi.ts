@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { getOptimizelyCmsUrl } from '@/lib/optimizely/env'
+import { getOptimizelyCmsUrl, getOptimizelySdkKey } from '@/lib/optimizely/env'
 import {
   getOptimizelyCmsClientId,
   getOptimizelyCmsClientSecret,
@@ -26,8 +26,50 @@ export type CmsCreatePageResult =
       displayName: string
       published: boolean
       cmsEditUrl: string
+      siteUrl: string | null
     }
   | { ok: false; error: string; hint?: string }
+
+async function fetchPageUrlFromGraph(contentKey: string): Promise<string | null> {
+  const sdkKey = getOptimizelySdkKey()
+  if (!sdkKey) {
+    return null
+  }
+
+  const query = `
+    query GetPageUrl {
+      _Content(
+        where: {
+          _metadata: {
+            key: { eq: "${contentKey}" }
+          }
+        }
+        limit: 1
+      ) {
+        items {
+          _metadata {
+            url { default }
+          }
+        }
+      }
+    }
+  `
+
+  try {
+    const response = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+      cache: 'no-store',
+    })
+
+    const data = await response.json()
+    const url = data.data?._Content?.items?.[0]?._metadata?.url?.default
+    return typeof url === 'string' && url.length > 0 ? url : null
+  } catch {
+    return null
+  }
+}
 
 async function getAccessToken(): Promise<string> {
   const clientId = getOptimizelyCmsClientId()
@@ -176,12 +218,15 @@ export async function createPocChildPage(displayName: string): Promise<CmsCreate
       ? `${cmsBase}/ui/cms#context=epi.cms.contentdata:///${contentKey}`
       : ''
 
+    const siteUrl = published ? await fetchPageUrlFromGraph(contentKey) : null
+
     return {
       ok: true,
       contentKey,
       displayName: trimmedName,
       published,
       cmsEditUrl,
+      siteUrl,
     }
   } catch (error) {
     return {

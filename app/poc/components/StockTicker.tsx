@@ -43,19 +43,19 @@ export default async function StockTicker() {
   const stock = await fetchStockPrice()
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-gray-800">
+    <>
       {stock.ok ? (
         <>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-3xl font-bold text-optimizely-forest">
             ${stock.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-optimizely-muted">
             {stock.symbol} — fetched from {stock.source}
           </p>
         </>
       ) : (
         <p className="text-red-700">Could not load stock price: {stock.error}</p>
       )}
-    </section>
+    </>
   )
 }

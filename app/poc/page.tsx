@@ -1,93 +1,49 @@
 /**
-
  * BEGINNER POC — read this file first.
-
  *
-
  *   Box 1 — CMS Title (poc_page_type at /poc/)
-
  *   Box 2 — Heading content area via BlockRenderer
-
  *   Box 3 — StockTicker
-
  */
-
-
 
 import Link from 'next/link'
 import BlockRenderer from './components/BlockRenderer'
-
+import PocBoxLabel from './components/PocBoxLabel'
 import StockTicker from './components/StockTicker'
-
 import { fetchPocCmsPage } from './lib/fetchPocCmsPage'
 
-
-
 export default async function PocPage() {
-
   const cms = await fetchPocCmsPage()
 
-
-
   return (
-
-    <main className="space-y-6">
-
-      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-gray-800">
-
+    <div className="space-y-6">
+      <section className="rounded-lg border border-optimizely-sage bg-white p-6 shadow-sm text-gray-800">
+        <PocBoxLabel category="CMS property" name="Title" />
         {cms.ok ? (
-
           <>
-
-            <p className="text-3xl font-bold text-gray-900">{cms.title}</p>
-
-            <ul className="mt-3 space-y-1 text-sm text-gray-600">
-
+            <p className="text-3xl font-bold text-optimizely-forest">{cms.title}</p>
+            <ul className="mt-3 space-y-1 text-sm text-optimizely-muted">
               <li>
-
-                CMS page: <code className="rounded bg-gray-100 px-1">{cms.displayName}</code>
-
+                CMS page: <code className="rounded bg-optimizely-sage px-1">{cms.displayName}</code>
               </li>
-
               <li>
-
-                URL in CMS: <code className="rounded bg-gray-100 px-1">{cms.pageUrl}</code>
-
+                URL in CMS: <code className="rounded bg-optimizely-sage px-1">{cms.pageUrl}</code>
               </li>
-
               <li>
-
-                Property: <code className="rounded bg-gray-100 px-1">Title</code>
-
+                Status: <code className="rounded bg-optimizely-sage px-1">{cms.status}</code>
               </li>
-
-              <li>
-
-                Status: <code className="rounded bg-gray-100 px-1">{cms.status}</code>
-
-              </li>
-
             </ul>
-
           </>
-
         ) : (
-
           <div className="text-red-700">
-
             <p>Could not load CMS page: {cms.error}</p>
-
-            {cms.hint && <p className="mt-2 text-sm text-gray-600">{cms.hint}</p>}
-
+            {cms.hint && <p className="mt-2 text-sm text-optimizely-muted">{cms.hint}</p>}
           </div>
-
         )}
-
       </section>
 
-
-
-      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-gray-800">
+      <section className="rounded-lg border border-optimizely-sage bg-white p-6 shadow-sm text-gray-800">
+        <PocBoxLabel category="CMS content area" name="Heading" />
         {cms.ok ? (
           cms.blocks.length > 0 ? (
             <div className="space-y-3">
@@ -96,20 +52,23 @@ export default async function PocPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">No Heading blocks in the CMS content area yet.</p>
+            <p className="text-sm text-optimizely-muted">
+              No Heading blocks in the CMS content area yet.
+            </p>
           )
         ) : (
-          <p className="text-sm text-gray-500">Content area unavailable.</p>
+          <p className="text-sm text-optimizely-muted">Content area unavailable.</p>
         )}
       </section>
 
+      <section className="rounded-lg border border-optimizely-sage bg-white p-6 shadow-sm text-gray-800">
+        <PocBoxLabel category="Next.js" name="Live API" />
+        <StockTicker />
+      </section>
 
-
-      <StockTicker />
-
-      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-gray-800">
-        <h2 className="text-lg font-semibold text-gray-900">Learn how to build a page</h2>
-        <p className="mt-2 text-sm text-gray-600">
+      <section className="rounded-lg border border-optimizely-sage bg-white p-6 shadow-sm text-gray-800">
+        <h2 className="text-lg font-semibold text-optimizely-forest">Learn how to build a page</h2>
+        <p className="mt-2 text-sm text-optimizely-muted">
           See how CMS content flows through Next.js — pages, blocks, and live preview.
         </p>
         <Link
@@ -119,7 +78,6 @@ export default async function PocPage() {
           Demo Site Overview →
         </Link>
       </section>
-    </main>
-
+    </div>
   )
 }
