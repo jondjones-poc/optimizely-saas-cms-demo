@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Menu, X, Database, X as XIcon, CheckCircle, XCircle, Code, Layers } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useBranding } from '@/contexts/BrandingContext'
 import Link from 'next/link'
@@ -15,11 +14,9 @@ interface NavigationProps {
   error?: string | null
 }
 
-const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
+const Navigation = ({ optimizelyData: _optimizelyData, isLoading: _isLoading, error: _error }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [showCmsData, setShowCmsData] = useState(false)
-  const [activeTab, setActiveTab] = useState<'pretty' | 'raw' | 'blocks'>('pretty')
   const [cmsPages, setCmsPages] = useState<NavMenuItem[]>([])
   const { theme } = useTheme()
   const { branding } = useBranding()
@@ -49,76 +46,67 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Extract blocks from the data
-  const extractBlocks = () => {
-    if (!optimizelyData?.data?.data?.BlankExperience?.items?.[0]?.composition) return []
-    
-    const composition = optimizelyData.data.data.BlankExperience.items[0].composition
-    const blocks: string[] = []
-
-    if (composition.grids) {
-      composition.grids.forEach((grid: any) => {
-        if (grid.displayName) {
-          blocks.push(grid.displayName)
-        }
-        if (grid.rows) {
-          grid.rows.forEach((row: any) => {
-            if (row.displayName) {
-              blocks.push(row.displayName)
-            }
-            if (row.columns) {
-              row.columns.forEach((column: any) => {
-                if (column.displayName) {
-                  blocks.push(column.displayName)
-                }
-                if (column.elements) {
-                  column.elements.forEach((element: any) => {
-                    if (element.component && element.component._metadata) {
-                      const types = element.component._metadata.types || []
-                      const blockType = types[0] || 'Unknown'
-                      blocks.push(`${blockType} (${element.displayName})`)
-                    }
-                  })
-                }
-              })
-            }
-          })
-        }
-      })
-    }
-
-    return Array.from(new Set(blocks)) // Remove duplicates
-  }
-
-  const blocks = extractBlocks()
-
   // Don't render navigation if custom branding is active
   if (branding.hasCustomBranding) {
     return null
   }
 
-  const appMenuItems: NavMenuItem[] = [
-    { key: 'home', name: 'Home', href: '/' },
+  const leadingAppLinks: NavMenuItem[] = [{ key: 'home', name: 'Home', href: '/' }]
+
+  const trailingAppLinks: NavMenuItem[] = [
+    { key: 'import', name: 'Content Import', href: '/import' },
     { key: 'graphql', name: 'GraphQL Viewer', href: '/graphql-viewer' },
   ]
 
-  const menuItems = [...appMenuItems, ...cmsPages]
+  const menuItems = [...leadingAppLinks, ...cmsPages, ...trailingAppLinks]
+
+  // White nav links only on homepage hero (dark image behind). All other pages use forest green.
+  const usesHeroNav = pathname === '/' && !scrolled
+  const usesSolidNav = scrolled || !usesHeroNav
+
+  const navBarClass = usesSolidNav
+    ? theme === 'dark'
+      ? 'bg-dark-primary shadow-lg'
+      : 'bg-white shadow-lg'
+    : 'bg-transparent'
+
+  const logoClass =
+    theme === 'dark'
+      ? 'text-dark-text'
+      : usesSolidNav
+        ? 'text-optimizely-forest'
+        : 'text-white'
+
+  const navLinkClass = (isActive: boolean) => {
+    if (theme === 'dark') {
+      return isActive
+        ? 'text-dark-text font-semibold'
+        : 'text-dark-text hover:text-dark-textSecondary'
+    }
+    if (usesSolidNav) {
+      return isActive
+        ? 'text-optimizely-forest font-semibold border-b-2 border-optimizely-lime'
+        : 'text-optimizely-forest hover:text-optimizely-muted'
+    }
+    return isActive
+      ? 'text-optimizely-lime font-semibold'
+      : 'text-white hover:text-optimizely-lime'
+  }
+
+  const navButtonClass =
+    theme === 'dark'
+      ? 'text-dark-text hover:text-dark-textSecondary'
+      : usesSolidNav
+        ? 'text-optimizely-forest hover:text-optimizely-muted'
+        : 'text-white hover:text-optimizely-lime'
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled 
-        ? theme === 'dark' 
-          ? 'bg-dark-primary shadow-lg' 
-          : 'bg-white shadow-lg'
-        : 'bg-transparent'
-    }`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBarClass}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className={`text-2xl font-bold ${
-              theme === 'dark' ? 'text-dark-text' : 'text-phamily-blue'
-            }`}>
+            <h1 className={`text-2xl font-bold ${logoClass}`}>
               SaaSCMS
             </h1>
           </div>
@@ -126,47 +114,21 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
           {/* Desktop Menu */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
-              {menuItems.map((item) => (
+              {menuItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== '/' && pathname.startsWith(item.href))
+
+                return (
                 <Link
                   key={item.key}
                   href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                    pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
-                      ? scrolled
-                        ? 'text-phamily-blue'
-                        : 'text-phamily-lightBlue'
-                      : scrolled
-                        ? theme === 'dark'
-                          ? 'text-dark-text hover:text-dark-textSecondary'
-                          : 'text-phamily-darkGray hover:text-phamily-blue'
-                        : 'text-white hover:text-phamily-lightBlue'
-                  }`}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${navLinkClass(isActive)}`}
                 >
                   {item.name}
                 </Link>
-              ))}
-              
-              {/* CMS Data Button */}
-              <button
-                onClick={() => setShowCmsData(true)}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${
-                  scrolled 
-                    ? theme === 'dark'
-                      ? 'text-dark-text hover:text-dark-textSecondary'
-                      : 'text-phamily-darkGray hover:text-phamily-blue'
-                    : 'text-white hover:text-phamily-lightBlue'
-                }`}
-                title="View Optimizely CMS Data"
-              >
-                <Database size={16} />
-                CMS Data
-                {isLoading && (
-                  <span className="flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-phamily-orange opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-phamily-orange"></span>
-                  </span>
-                )}
-              </button>
+                )
+              })}
             </div>
           </div>
 
@@ -174,13 +136,7 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`inline-flex items-center justify-center p-2 rounded-md transition-colors duration-200 ${
-                scrolled 
-                  ? theme === 'dark'
-                    ? 'text-dark-text hover:text-dark-textSecondary'
-                    : 'text-phamily-darkGray hover:text-phamily-blue'
-                  : 'text-white hover:text-phamily-lightBlue'
-              }`}
+              className={`inline-flex items-center justify-center p-2 rounded-md transition-colors duration-200 ${navButtonClass}`}
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -192,400 +148,35 @@ const Navigation = ({ optimizelyData, isLoading, error }: NavigationProps) => {
       {isOpen && (
         <div className="md:hidden">
           <div className={`px-2 pt-2 pb-3 space-y-1 sm:px-3 shadow-lg ${
-            theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
+            theme === 'dark' ? 'bg-dark-primary' : 'bg-optimizely-sage'
           }`}>
-            {menuItems.map((item) => (
+            {menuItems.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== '/' && pathname.startsWith(item.href))
+
+              return (
               <Link
                 key={item.key}
                 href={item.href}
                 className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                   theme === 'dark'
-                    ? 'text-dark-text hover:text-dark-textSecondary hover:bg-dark-secondary'
-                    : 'text-phamily-darkGray hover:text-phamily-blue hover:bg-phamily-lightGray'
+                    ? isActive
+                      ? 'text-dark-text font-semibold bg-dark-secondary'
+                      : 'text-dark-text hover:text-dark-textSecondary hover:bg-dark-secondary'
+                    : isActive
+                      ? 'text-optimizely-forest font-semibold bg-white'
+                      : 'text-optimizely-forest hover:text-optimizely-muted hover:bg-white/60'
                 }`}
                 onClick={() => setIsOpen(false)}
               >
                 {item.name}
               </Link>
-            ))}
-            
-            {/* Mobile CMS Data Button */}
-            <button
-              onClick={() => {
-                setShowCmsData(true)
-                setIsOpen(false)
-              }}
-              className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 flex items-center gap-2 ${
-                theme === 'dark'
-                  ? 'text-dark-text hover:text-dark-textSecondary hover:bg-dark-secondary'
-                  : 'text-phamily-darkGray hover:text-phamily-blue hover:bg-phamily-lightGray'
-              }`}
-            >
-              <Database size={16} />
-              CMS Data
-              {isLoading && (
-                <span className="flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-phamily-orange opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-phamily-orange"></span>
-                </span>
-              )}
-            </button>
+              )
+            })}
           </div>
         </div>
       )}
-
-      {/* CMS Data Modal */}
-      <AnimatePresence>
-        {showCmsData && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCmsData(false)}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-            />
-
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-[90vw] max-w-4xl max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden ${
-                theme === 'dark' ? 'bg-dark-primary border border-dark-border' : 'bg-white'
-              }`}
-            >
-              {/* Header */}
-              <div className={`px-6 py-4 border-b flex items-center justify-between ${
-                theme === 'dark' ? 'border-dark-border' : 'border-gray-200'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <Database className={theme === 'dark' ? 'text-dark-text' : 'text-phamily-blue'} size={24} />
-                  <div>
-                    <h3 className={`text-xl font-bold ${
-                      theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                    }`}>
-                      Optimizely CMS Data
-                    </h3>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowCmsData(false)}
-                  className={`p-2 rounded-full transition-colors ${
-                    theme === 'dark'
-                      ? 'hover:bg-dark-secondary text-dark-text'
-                      : 'hover:bg-phamily-lightGray text-phamily-darkGray'
-                  }`}
-                >
-                  <XIcon size={20} />
-                </button>
-              </div>
-
-              {/* Status */}
-              <div className={`px-6 py-3 border-b ${
-                theme === 'dark' ? 'border-dark-border' : 'border-gray-200'
-              }`}>
-                {isLoading ? (
-                  <div className="flex items-center gap-2 text-phamily-blue">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-phamily-blue"></div>
-                    <span className="text-sm font-medium">Loading data...</span>
-                  </div>
-                ) : error ? (
-                  <div className="flex items-center gap-2 text-red-500">
-                    <XCircle size={16} />
-                    <span className="text-sm font-medium">Error: {error}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-green-500">
-                    <CheckCircle size={16} />
-                    <span className="text-sm font-medium">Data loaded successfully</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Tabs */}
-              <div className={`px-6 py-2 border-b flex gap-4 ${
-                theme === 'dark' ? 'border-dark-border' : 'border-gray-200'
-              }`}>
-                <button
-                  onClick={() => setActiveTab('pretty')}
-                  className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors ${
-                    activeTab === 'pretty'
-                      ? theme === 'dark'
-                        ? 'bg-dark-secondary text-dark-text'
-                        : 'bg-phamily-lightGray text-phamily-blue'
-                      : theme === 'dark'
-                        ? 'text-dark-textSecondary hover:text-dark-text'
-                        : 'text-phamily-darkGray/60 hover:text-phamily-darkGray'
-                  }`}
-                >
-                  Formatted
-                </button>
-                <button
-                  onClick={() => setActiveTab('raw')}
-                  className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors flex items-center gap-2 ${
-                    activeTab === 'raw'
-                      ? theme === 'dark'
-                        ? 'bg-dark-secondary text-dark-text'
-                        : 'bg-phamily-lightGray text-phamily-blue'
-                      : theme === 'dark'
-                        ? 'text-dark-textSecondary hover:text-dark-text'
-                        : 'text-phamily-darkGray/60 hover:text-phamily-darkGray'
-                  }`}
-                >
-                  <Code size={16} />
-                  Raw JSON
-                </button>
-                <button
-                  onClick={() => setActiveTab('blocks')}
-                  className={`px-4 py-2 rounded-t-lg font-medium text-sm transition-colors flex items-center gap-2 ${
-                    activeTab === 'blocks'
-                      ? theme === 'dark'
-                        ? 'bg-dark-secondary text-dark-text'
-                        : 'bg-phamily-lightGray text-phamily-blue'
-                      : theme === 'dark'
-                        ? 'text-dark-textSecondary hover:text-dark-text'
-                        : 'text-phamily-darkGray/60 hover:text-phamily-darkGray'
-                  }`}
-                >
-                  <Layers size={16} />
-                  CMS Blocks ({blocks.length})
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className={`p-6 overflow-y-auto max-h-[50vh] ${
-                theme === 'dark' ? 'bg-dark-secondary' : 'bg-gray-50'
-              }`}>
-                {isLoading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-phamily-blue mx-auto"></div>
-                  </div>
-                ) : error ? (
-                  <div className={`p-4 rounded-lg ${
-                    theme === 'dark' ? 'bg-red-900/20 text-red-400' : 'bg-red-50 text-red-600'
-                  }`}>
-                    <p className="font-medium mb-2">Failed to load data</p>
-                    <p className="text-sm">{error}</p>
-                  </div>
-                ) : activeTab === 'pretty' && optimizelyData ? (
-                  <div className="space-y-4">
-                    {/* Pretty formatted view */}
-                    <div className={`p-4 rounded-lg ${
-                      theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
-                    }`}>
-                      <h4 className={`font-semibold mb-3 ${
-                        theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                      }`}>
-                        Content Summary
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
-                            Total Items:
-                          </span>
-                          <span className={`font-medium ${
-                            theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                          }`}>
-                            {optimizelyData?.data?.data?.BlankExperience?.total || 0}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {optimizelyData?.data?.data?.BlankExperience?.items?.map((item: any, index: number) => (
-                      <div key={index} className={`p-4 rounded-lg ${
-                        theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
-                      }`}>
-                        <h4 className={`font-semibold mb-3 ${
-                          theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                        }`}>
-                          {item._metadata?.displayName || 'Page Content'}
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
-                              Key:
-                            </span>
-                            <span className={`ml-2 font-mono ${
-                              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                            }`}>
-                              {item._metadata?.key}
-                            </span>
-                          </div>
-                          <div>
-                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
-                              Type:
-                            </span>
-                            <span className={`ml-2 ${
-                              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                            }`}>
-                              {item._metadata?.types?.[0] || 'Unknown'}
-                            </span>
-                          </div>
-                          <div>
-                            <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
-                              Status:
-                            </span>
-                            <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                              item._metadata?.status === 'Published'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                                : 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
-                            }`}>
-                              {item._metadata?.status}
-                            </span>
-                          </div>
-                          {item._metadata?.url?.default && (
-                            <div>
-                              <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'}>
-                                URL:
-                              </span>
-                              <span className={`ml-2 font-mono ${
-                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                              }`}>
-                                {item._metadata.url.default}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Composition Data */}
-                    {optimizelyData?.data?.data?.BlankExperience?.items?.[0]?.composition && (
-                      <div className={`p-4 rounded-lg ${
-                        theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
-                      }`}>
-                        <h4 className={`font-semibold mb-3 ${
-                          theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                        }`}>
-                          Page Composition
-                        </h4>
-                        <div className="space-y-4">
-                          {optimizelyData.data.data.BlankExperience.items[0].composition.grids?.map((grid: any, gridIndex: number) => (
-                            <div key={gridIndex} className={`p-3 rounded border ${
-                              theme === 'dark' ? 'bg-dark-secondary border-dark-border' : 'bg-gray-50 border-gray-200'
-                            }`}>
-                              <h5 className={`font-medium mb-2 ${
-                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                              }`}>
-                                {grid.displayName}
-                              </h5>
-                              {grid.rows?.map((row: any, rowIndex: number) => (
-                                <div key={rowIndex} className="ml-4">
-                                  {row.columns?.map((column: any, colIndex: number) => (
-                                    <div key={colIndex} className="ml-4">
-                                      {column.elements?.map((element: any, elemIndex: number) => (
-                                        <div key={elemIndex} className={`p-2 rounded mb-2 ${
-                                          theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
-                                        }`}>
-                                          <div className="flex justify-between items-start">
-                                            <div>
-                                              <span className={`font-medium ${
-                                                theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                                              }`}>
-                                                {element.displayName}
-                                              </span>
-                                              {element.component?._metadata?.types?.[0] && (
-                                                <span className={`ml-2 text-xs px-2 py-1 rounded ${
-                                                  theme === 'dark' ? 'bg-dark-border text-dark-textSecondary' : 'bg-gray-200 text-gray-600'
-                                                }`}>
-                                                  {element.component._metadata.types[0]}
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                          
-                                          {/* Component Data */}
-                                          {element.component && (
-                                            <div className="mt-2 space-y-1">
-                                              {Object.entries(element.component).map(([key, value]) => {
-                                                if (key === '_metadata') return null
-                                                return (
-                                                  <div key={key} className="flex justify-between text-xs">
-                                                    <span className={theme === 'dark' ? 'text-dark-textSecondary' : 'text-gray-600'}>
-                                                      {key}:
-                                                    </span>
-                                                    <span className={`font-mono ${
-                                                      theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                                                    }`}>
-                                                      {String(value)}
-                                                    </span>
-                                                  </div>
-                                                )
-                                              })}
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : activeTab === 'raw' && optimizelyData ? (
-                  <pre className={`p-4 rounded-lg overflow-x-auto text-xs font-mono ${
-                    theme === 'dark'
-                      ? 'bg-dark-primary text-dark-text'
-                      : 'bg-white text-phamily-darkGray'
-                  }`}>
-                    {JSON.stringify(optimizelyData, null, 2)}
-                  </pre>
-                ) : activeTab === 'blocks' && optimizelyData ? (
-                  <div className="space-y-4">
-                    <div className={`p-4 rounded-lg ${
-                      theme === 'dark' ? 'bg-dark-primary' : 'bg-white'
-                    }`}>
-                      <h4 className={`font-semibold mb-3 ${
-                        theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                      }`}>
-                        CMS Blocks Used on This Page
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {blocks.map((block, index) => (
-                          <div
-                            key={index}
-                            className={`p-4 rounded-lg border ${
-                              theme === 'dark' 
-                                ? 'bg-dark-secondary border-dark-border' 
-                                : 'bg-phamily-lightGray border-gray-200'
-                            }`}
-                          >
-                            <p className={`text-sm font-medium ${
-                              theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
-                            }`}>
-                              {block}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                      {blocks.length === 0 && (
-                        <p className={`text-center py-4 ${
-                          theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'
-                        }`}>
-                          No blocks found
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`text-center py-8 ${
-                    theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/60'
-                  }`}>
-                    No data available
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </nav>
   )
 }

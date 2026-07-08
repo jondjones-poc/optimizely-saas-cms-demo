@@ -466,3 +466,198 @@ export async function processFeatureGridCardsServerSide(
   }
 }
 
+/**
+ * Fetch CarouselSlide content server-side and inline it into Carousel Cards
+ */
+async function fetchCarouselSlideServerSide(
+  cardKey: string,
+  graphUrl: string | undefined,
+  previewToken: string | null
+): Promise<any> {
+  const sdkKey = getOptimizelySdkKey()
+  if (!sdkKey) {
+    throw new Error('SDK Key not configured')
+  }
+
+  let authorization: string | null = null
+  if (previewToken) {
+    const token = previewToken.replace(/^Bearer\s+/i, '').trim()
+    if (token && token.length > 0) {
+      authorization = `Bearer ${token}`
+    }
+  }
+
+  let queryKey = cardKey
+  if (graphUrl && graphUrl.startsWith('graph://')) {
+    const parts = graphUrl.split('/')
+    queryKey = parts[parts.length - 1] || cardKey
+  }
+
+  const query = `
+    query GetCarouselSlide {
+      _Content(
+        where: {
+          _metadata: {
+            key: {
+              eq: "${queryKey}"
+            }
+          }
+        }
+        limit: 100
+      ) {
+        items {
+          _metadata {
+            key
+            displayName
+            types
+            version
+            status
+          }
+          ... on CarouselSlide {
+            Title
+            CTAText
+            BackgroundImage {
+              Image {
+                url {
+                  base
+                  default
+                  graph
+                  hierarchical
+                }
+              }
+            }
+            Link {
+              base
+              default
+              graph
+              hierarchical
+            }
+          }
+        }
+      }
+    }
+  `
+
+  let graphApiUrl: string
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+  }
+
+  if (authorization) {
+    headers['Authorization'] = authorization
+    graphApiUrl = `https://cg.optimizely.com/content/v2?t=${Date.now()}`
+  } else {
+    graphApiUrl = `https://cg.optimizely.com/content/v2?auth=${sdkKey}`
+  }
+
+  const response = await fetch(graphApiUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ query }),
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const result = await response.json()
+
+  if (result.errors) {
+    throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`)
+  }
+
+  const allVersions = result.data?._Content?.items || []
+
+  let slide = allVersions.find(
+    (item: any) =>
+      item._metadata?.status === 'Current' || item._metadata?.status === 'Draft'
+  )
+
+  if (!slide && allVersions.length > 0) {
+    const sorted = [...allVersions].sort((a: any, b: any) => {
+      const verA = parseInt(a._metadata?.version || '0', 10)
+      const verB = parseInt(b._metadata?.version || '0', 10)
+      return verB - verA
+    })
+    slide = sorted[0]
+  }
+
+  return slide || null
+}
+
+/**
+ * Process Carousel data to inline CarouselSlide content server-side
+ */
+export async function processCarouselCardsServerSide(
+  carousel: any,
+  previewToken: string | null
+): Promise<any> {
+  if (!carousel?.Cards?.length) {
+    return carousel
+  }
+
+  const hasInlinedContent = carousel.Cards.some(
+    (card: any) => card.Title !== undefined || card.BackgroundImage !== undefined
+  )
+  if (hasInlinedContent) {
+    return carousel
+  }
+
+  const processedCards = await Promise.all(
+    carousel.Cards.map(async (card: any) => {
+      try {
+        const slideData = await fetchCarouselSlideServerSide(
+          card.key,
+          card.url?.graph,
+          previewToken
+        )
+
+        if (slideData) {
+          return {
+            ...card,
+            Title: slideData.Title,
+            CTAText: slideData.CTAText,
+            BackgroundImage: slideData.BackgroundImage,
+            Link: slideData.Link,
+            _metadata: slideData._metadata,
+          }
+        }
+        return card
+      } catch (error) {
+        console.error(`Error fetching CarouselSlide ${card.key}:`, error)
+        return card
+      }
+    })
+  )
+
+  return {
+    ...carousel,
+    Cards: processedCards,
+  }
+}
+
+/**
+ * Inline CarouselSlide content for all Carousel blocks in a TopContentArea array
+ */
+export async function processTopContentAreaCarousels(
+  topContentArea: any[] | undefined,
+  previewToken: string | null = null
+): Promise<any[] | undefined> {
+  if (!topContentArea?.length) {
+    return topContentArea
+  }
+
+  return Promise.all(
+    topContentArea.map(async (block) => {
+      if (block._metadata?.types?.includes('Carousel')) {
+        return processCarouselCardsServerSide(block, previewToken)
+      }
+      return block
+    })
+  )
+}
+

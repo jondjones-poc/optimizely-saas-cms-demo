@@ -33,205 +33,26 @@ interface MenuProps {
 }
 
 const Menu = ({ MenuItem, _metadata, _gridDisplayName, isPreview = false, contextMode = null }: MenuProps) => {
-  // Comprehensive logging of all props
-  console.log('=== MENU COMPONENT PROPS DEBUG ===')
-  console.log('All props received:', { MenuItem, _metadata, _gridDisplayName, isPreview, contextMode })
-  console.log('MenuItem type:', typeof MenuItem)
-  console.log('MenuItem is array:', Array.isArray(MenuItem))
-  console.log('MenuItem length:', MenuItem?.length)
-  console.log('MenuItem content:', JSON.stringify(MenuItem, null, 2))
-  console.log('_metadata:', JSON.stringify(_metadata, null, 2))
-  console.log('_gridDisplayName:', _gridDisplayName)
-  console.log('isPreview:', isPreview)
-  console.log('contextMode:', contextMode)
-  console.log('=== END MENU PROPS DEBUG ===')
-
   const [isOpen, setIsOpen] = useState<Record<string, boolean>>({})
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch menu data from SettingsPage if not provided directly
+  // Fetch menu from SettingsPage when not provided on the block
   useEffect(() => {
     const fetchMenuData = async () => {
-      console.log('Menu component - MenuItem prop:', MenuItem)
-      
       if (MenuItem && MenuItem.length > 0) {
-        console.log('Menu component - Using direct MenuItem data:', MenuItem)
-        // If items exist but lack Link fields, try to fetch enriched data from Graph (client-side) for debugging
-        const firstHasLink = !!MenuItem[0]?.Link?.url?.default
-        if (!firstHasLink) {
-          try {
-            console.log('Menu component - Direct items missing Link fields, fetching enriched items from Graph for debug...')
-            const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY
-            if (!sdkKey) {
-              console.warn('Menu component - NEXT_PUBLIC_SDK_KEY not set, cannot fetch enriched menu data')
-              setMenuItems(MenuItem)
-              setIsLoading(false)
-              return
-            }
-            const gql = `
-              query GetSettingsMenu {
-                _Content(
-                  where: { _metadata: { key: { eq: "ea3d09592691453c92d0f21b353a83e3" } } }
-                  limit: 1
-                ) {
-                  items {
-                    ... on SettingsPage {
-                      Menu {
-                        items {
-                          ... on MenuItem {
-                            _metadata { key displayName types }
-                            Link {
-                              target
-                              text
-                              title
-                              url { base default }
-                            }
-                            SubMenuItems {
-                              _children {
-                                MenuItem {
-                                  item {
-                                    _metadata { key displayName types }
-                                    Link { target text title url { base default } }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            `
-            // In preview mode, use preview token instead of SDK key
-            let headers: HeadersInit = { 'Content-Type': 'application/json' }
-            let apiUrl = `https://cg.optimizely.com/content/v2`
-            
-            // Check if we're in preview mode (check URL for preview_token)
-            const urlParams = new URLSearchParams(window.location.search)
-            const previewToken = urlParams.get('preview_token')
-            
-            if (previewToken) {
-              // Use preview token for draft content
-              headers['Authorization'] = `Bearer ${previewToken}`
-              apiUrl = `${apiUrl}?t=${Date.now()}` // Add cache-busting
-            } else {
-              // Use SDK key for published content
-              apiUrl = `${apiUrl}?auth=${sdkKey}`
-            }
-            
-            const resp = await fetch(apiUrl, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({ query: gql }),
-            })
-            const data = await resp.json()
-            console.log('Menu component - Enriched Graph response:', data)
-            const items = data?.data?._Content?.items?.[0]?.Menu?.items || []
-            if (Array.isArray(items) && items.length > 0) {
-              // Map enriched items to our MenuItem shape
-              const mapped = items.map((it: any) => ({
-                _metadata: it._metadata,
-                Link: it.Link,
-                SubMenuItems: it.SubMenuItems,
-              }))
-              console.log('Menu component - Using enriched menu items:', mapped)
-              setMenuItems(mapped)
-              setIsLoading(false)
-              return
-            }
-          } catch (e) {
-            console.warn('Menu component - Failed to fetch enriched menu data, falling back to provided items', e)
-          }
-        }
         setMenuItems(MenuItem)
         setIsLoading(false)
         return
       }
 
-      console.log('Menu component - Fetching menu data from API...')
       try {
         const response = await fetch('/api/optimizely/menu')
         const result = await response.json()
-        
-        console.log('Menu component - API response:', result)
-        
-        if (result.success && result.data && Array.isArray(result.data)) {
-          // If API data lacks Link, try enriched fetch (debug only)
-          const firstHasLink = !!result.data[0]?.Link?.url?.default
-          if (!firstHasLink) {
-            try {
-              console.log('Menu component - API items missing Link, fetching enriched items from Graph for debug...')
-              const sdkKey = process.env.NEXT_PUBLIC_SDK_KEY
-              if (sdkKey) {
-                const gql = `
-                  query GetSettingsMenu {
-                    _Content(
-                      where: { _metadata: { key: { eq: "ea3d09592691453c92d0f21b353a83e3" } } }
-                      limit: 1
-                    ) {
-                      items {
-                        ... on SettingsPage {
-                          Menu {
-                            items {
-                              ... on MenuItem {
-                                _metadata { key displayName types }
-                                Link { target text title url { base default } }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                `
-                // In preview mode, use preview token instead of SDK key
-                let headers: HeadersInit = { 'Content-Type': 'application/json' }
-                let apiUrl = `https://cg.optimizely.com/content/v2`
-                
-                // Check if we're in preview mode (check URL for preview_token)
-                const urlParams = new URLSearchParams(window.location.search)
-                const previewToken = urlParams.get('preview_token')
-                
-                if (previewToken) {
-                  // Use preview token for draft content
-                  headers['Authorization'] = `Bearer ${previewToken}`
-                  apiUrl = `${apiUrl}?t=${Date.now()}` // Add cache-busting
-                } else {
-                  // Use SDK key for published content
-                  apiUrl = `${apiUrl}?auth=${sdkKey}`
-                }
-                
-                const resp = await fetch(apiUrl, {
-                  method: 'POST',
-                  headers,
-                  body: JSON.stringify({ query: gql }),
-                })
-                const data = await resp.json()
-                console.log('Menu component - Enriched Graph response (API fallback):', data)
-                const items = data?.data?._Content?.items?.[0]?.Menu?.items || []
-                if (Array.isArray(items) && items.length > 0) {
-                  const mapped = items.map((it: any) => ({
-                    _metadata: it._metadata,
-                    Link: it.Link,
-                  }))
-                  setMenuItems(mapped)
-                  return
-                }
-              } else {
-                console.warn('Menu component - NEXT_PUBLIC_SDK_KEY not set, cannot fetch enriched menu data')
-              }
-            } catch (e) {
-              console.warn('Menu component - Enriched fetch failed, using API items', e)
-            }
-          }
-          console.log('Menu component - Setting menu items:', result.data)
+
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
           setMenuItems(result.data)
-        } else {
-          console.log('Menu component - No menu items found in response')
         }
       } catch (error) {
         console.error('Menu component - Error fetching menu data:', error)

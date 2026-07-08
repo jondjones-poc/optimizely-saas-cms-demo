@@ -14,6 +14,7 @@
 
 
 
+import Link from 'next/link'
 import BlockRenderer from './components/BlockRenderer'
 
 import StockTicker from './components/StockTicker'
@@ -106,10 +107,19 @@ export default async function PocPage() {
 
       <StockTicker />
 
+      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm text-gray-800">
+        <h2 className="text-lg font-semibold text-gray-900">Learn how to build a page</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          See how CMS content flows through Next.js — pages, blocks, and live preview.
+        </p>
+        <Link
+          href="/learn"
+          className="mt-3 inline-block text-sm font-medium text-optimizely-forest hover:underline"
+        >
+          Demo Site Overview →
+        </Link>
+      </section>
     </main>
 
   )
-
 }
-
-

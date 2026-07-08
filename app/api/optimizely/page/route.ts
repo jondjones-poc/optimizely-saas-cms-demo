@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getOptimizelySdkKey } from '@/lib/optimizely/env'
+import { fetchSettingsMenu } from '@/lib/optimizely/fetchSettingsMenu'
+import { processTopContentAreaCarousels } from '@/lib/optimizely/fetchPreviewContent'
 import {
   articlePageFields,
   landingPageMainContentFields,
@@ -9,34 +11,6 @@ import {
 } from '@/lib/optimizely/graphql/blockFragments'
 
 export const dynamic = 'force-dynamic'
-
-// Function to fetch Menu data from SettingsPage using the existing Menu API
-async function fetchMenuDataFromSettingsPage(sdkKey: string) {
-  try {
-    // Use the existing Menu API endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/optimizely/menu`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store'
-    })
-
-    const data = await response.json()
-    
-    if (!data.success) {
-      console.error('Menu API error:', data.error)
-      return null
-    }
-
-    console.log('Page API - Fetched Menu data from Menu API:', data.data)
-    
-    return {
-      MenuItem: data.data || []
-    }
-  } catch (error) {
-    console.error('Error fetching Menu data from Menu API:', error)
-    return null
-  }
-}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -146,21 +120,28 @@ export async function GET(request: Request) {
 
     const items = data.data?._Content?.items || []
     const pageData = items[0]
+
+    if (pageData?.TopContentArea) {
+      pageData.TopContentArea = await processTopContentAreaCarousels(
+        pageData.TopContentArea
+      )
+    }
     
     // Fetch Menu data from SettingsPage and merge into Menu blocks
     if (pageData?.MainContentArea) {
-      const menuData = await fetchMenuDataFromSettingsPage(sdkKey)
-      if (menuData) {
+      try {
+        const menuItems = await fetchSettingsMenu()
         pageData.MainContentArea = pageData.MainContentArea.map((block: any) => {
-          if (block._metadata?.types?.[0] === 'Menu') {
-            console.log('Page API - Merging Menu data into Menu block:', menuData)
+          if (block._metadata?.types?.includes('Menu')) {
             return {
               ...block,
-              MenuItem: menuData.MenuItem || []
+              MenuItem: menuItems,
             }
           }
           return block
         })
+      } catch (error) {
+        console.error('Error fetching SettingsPage menu:', error)
       }
     }
     

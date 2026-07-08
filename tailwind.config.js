@@ -45,6 +45,13 @@ module.exports = {
           800: '#95350a',
           900: '#772d0b',
         },
+        // Optimizely brand palette (2026)
+        optimizely: {
+          forest: '#052116',
+          lime: '#B5FF3D',
+          sage: '#F0F4E8',
+          muted: '#5B6A5A',
+        },
         // Colors extracted from the Phamily Pharma website
         phamily: {
           blue: '#1e40af',

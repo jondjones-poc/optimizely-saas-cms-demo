@@ -14,7 +14,7 @@
 
 import { headers } from 'next/headers'
 import PreviewClient from './PreviewClient'
-import { fetchPreviewContentFromGraph, processFeatureGridCardsServerSide } from '@/lib/optimizely/fetchPreviewContent'
+import { fetchPreviewContentFromGraph, processFeatureGridCardsServerSide, processTopContentAreaCarousels } from '@/lib/optimizely/fetchPreviewContent'
 import { getBrandingConfig } from '@/lib/branding'
 
 interface PreviewPageProps {
@@ -155,6 +155,12 @@ async function fetchPreviewContent(
         })
         
         if (isLandingPage) {
+          if (contentData.TopContentArea) {
+            contentData.TopContentArea = await processTopContentAreaCarousels(
+              contentData.TopContentArea,
+              previewToken || null
+            )
+          }
           return {
             pageType: 'LandingPage',
             pageData: contentData

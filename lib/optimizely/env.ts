@@ -51,6 +51,14 @@ export function getOptimizelyHomepageUrl(): string {
   return process.env.OPTIMIZELY_HOMEPAGE_URL || '/en/'
 }
 
+/**
+ * Optional SettingsPage content key for site menu lookup.
+ * If unset, the app finds the first SettingsPage in Graph.
+ */
+export function getOptimizelySettingsPageKey(): string {
+  return process.env.OPTIMIZELY_SETTINGS_PAGE_KEY || ''
+}
+
 /** CMS edit UI base, e.g. .../ui/cms */
 export function getOptimizelyCmsUiBase(): string {
   const base = getOptimizelyCmsUrl()

@@ -59,10 +59,10 @@ export default function LandingPageDisplay({ data, isPreview = false, contextMod
   }, [displayMode, onDisplayModeChange])
   
   return (
-      <div className="min-h-screen bg-gray-50">
-      {/* Toggle for Display Mode - Hide in preview mode */}
+      <div className="min-h-screen bg-gray-50 pt-16">
+      {/* Display mode tabs — below fixed main nav */}
       {!isPreview && (
-        <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="sticky top-16 z-40 bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-center">
               <div className="inline-flex items-center gap-4">
@@ -1165,32 +1165,35 @@ function renderHTMLMain(data: any, isPreview: boolean = false, contextMode: stri
 function HTMLCarousel({ component, theme }: { component: any, theme: string }) {
   const [currentSlide, setCurrentSlide] = useState(0)
   
-  // Check if component has Cards data from CMS
   const cards = component?.Cards || []
   
-  // If no cards, don't render carousel
-  if (!cards || cards.length === 0) {
-    return null
-  }
-  
-  // Use actual CMS Cards data
-  const slides = cards.map((card: any, index: number) => ({
-    id: index + 1,
-    title: card.title || card.displayName || '',
-    subtitle: card.subtitle || '',
-    description: card.description || '',
-    image: card.image?.url?.default || card.url?.default || '',
-    cta: card.cta || 'Learn More',
-    url: card.url?.default || '#'
-  }))
+  const slides = cards
+    .map((card: any, index: number) => {
+      const image = card.BackgroundImage?.Image?.url?.default
+      if (!image) return null
+      return {
+        id: index + 1,
+        title: card.Title || card._metadata?.displayName || '',
+        image,
+        cta: card.CTAText || 'Learn More',
+        url: card.Link?.default || '#',
+      }
+    })
+    .filter((slide): slide is NonNullable<typeof slide> => slide !== null)
 
   useEffect(() => {
+    if (slides.length <= 1) return
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
     }, 5000)
 
     return () => clearInterval(interval)
   }, [slides.length])
+
+  if (!cards.length || slides.length === 0) {
+    return null
+  }
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length)
@@ -1237,28 +1240,21 @@ function HTMLCarousel({ component, theme }: { component: any, theme: string }) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.6 }}
                   >
-                    <p className={`text-sm font-medium mb-2 ${
-                      theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-blue'
-                    }`}>
-                      {slides[currentSlide].subtitle}
-                    </p>
-                    <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${
+                    <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${
                       theme === 'dark' ? 'text-dark-text' : 'text-phamily-darkGray'
                     }`}>
                       {slides[currentSlide].title}
                     </h2>
-                    <p className={`text-lg mb-6 leading-relaxed ${
-                      theme === 'dark' ? 'text-dark-textSecondary' : 'text-phamily-darkGray/80'
-                    }`}>
-                      {slides[currentSlide].description}
-                    </p>
-                    <button className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 btn-hover ${
-                      theme === 'dark'
-                        ? 'bg-dark-text text-dark-primary hover:bg-dark-textSecondary'
-                        : 'bg-phamily-blue text-white hover:bg-phamily-lightBlue'
-                    }`}>
+                    <a
+                      href={slides[currentSlide].url}
+                      className={`inline-block px-6 py-3 rounded-full font-semibold transition-all duration-300 btn-hover ${
+                        theme === 'dark'
+                          ? 'bg-dark-text text-dark-primary hover:bg-dark-textSecondary'
+                          : 'bg-phamily-blue text-white hover:bg-phamily-lightBlue'
+                      }`}
+                    >
                       {slides[currentSlide].cta}
-                    </button>
+                    </a>
                   </motion.div>
                 </div>
               </div>

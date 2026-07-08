@@ -148,18 +148,16 @@ export default function DynamicPage() {
 
   // Determine page type and render appropriate component
   const pageType = pageData._metadata.types?.[0]
-  const hidePageShell = pageType === 'LandingPage' && landingDisplayMode === 'components'
+  const hideLandingPageExtras = pageType === 'LandingPage' && landingDisplayMode === 'components'
 
   return (
     <main className="min-h-screen">
-      {!hidePageShell && <CustomHeader />}
-      {!hidePageShell && (
-        <Navigation 
-          optimizelyData={null} 
-          isLoading={false} 
-          error={null}
-        />
-      )}
+      {!hideLandingPageExtras && <CustomHeader />}
+      <Navigation 
+        optimizelyData={null} 
+        isLoading={false} 
+        error={null}
+      />
       
       {/* Render based on page type */}
       {pageType === 'ArticlePage' ? (
@@ -175,14 +173,14 @@ export default function DynamicPage() {
         <GenericPage data={pageData} />
       )}
       
-      {!hidePageShell && (
+      {!hideLandingPageExtras && (
         <CustomFooter 
           optimizelyData={pageData} 
           isLoading={false} 
           error={null} 
         />
       )}
-      {!hidePageShell && <RightFloatingMenuComponent pageData={pageData} />}
+      {!hideLandingPageExtras && <RightFloatingMenuComponent pageData={pageData} />}
       {/* Only show SEOButton for non-LandingPage types, LandingPage has its own */}
       {pageType !== 'LandingPage' && (
         <SEOButton {...transformPageData(pageData)} />
