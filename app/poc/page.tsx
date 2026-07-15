@@ -10,6 +10,7 @@ import Link from 'next/link'
 import BlockRenderer from './components/BlockRenderer'
 import PocBoxLabel from './components/PocBoxLabel'
 import StockTicker from './components/StockTicker'
+import Calculator from './components/Calculator'
 import { fetchPocCmsPage } from './lib/fetchPocCmsPage'
 
 export default async function PocPage() {
@@ -18,6 +19,9 @@ export default async function PocPage() {
   return (
     <div className="space-y-6">
       <section className="rounded-lg border border-optimizely-sage bg-white p-6 shadow-sm text-gray-800">
+        
+        <Calculator />
+        
         <PocBoxLabel category="CMS property" name="Title" />
         {cms.ok ? (
           <>

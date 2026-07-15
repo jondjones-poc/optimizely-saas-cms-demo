@@ -1,7 +1,7 @@
 import { getOptimizelySdkKey } from '@/lib/optimizely/env'
 
-/** CMS URL for the beginner POC page — must match the page URL in Optimizely */
-export const POC_PAGE_URL = '/poc/'
+/** CMS URL for the beginner POC page — must match the page URL in Optimizely exactly */
+export const POC_PAGE_URL = '/poc'
 
 export type PocBlock = {
   _metadata?: {
@@ -93,7 +93,7 @@ export async function fetchPocCmsPage(): Promise<PocCmsResult> {
       return {
         ok: false,
         error: `No page found at ${POC_PAGE_URL}`,
-        hint: 'Create and publish a POC page in CMS with URL /poc/',
+        hint: 'Create and publish a POC page in CMS with URL /poc (exact match, including trailing slash)',
       }
     }
 
