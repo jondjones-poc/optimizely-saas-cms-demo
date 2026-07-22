@@ -325,6 +325,12 @@ const Hero = (props: HeroProps) => {
         />
       </div>
 
+      {/* Dark overlay - improves contrast so white text stays readable over any image */}
+      <div
+        className="absolute inset-0 z-[1] bg-black/50 pointer-events-none"
+        aria-hidden="true"
+      />
+
       {/* Component wrapper - only contains editable content, NOT the background */}
       {/* NOTE: data-epi-block-id is now on the outer container to ensure overlay bounds are correct */}
       <div 

@@ -54,9 +54,31 @@ This app calls `https://cg.optimizely.com/content/v2?auth=<Single Key>` to load 
 **Do not confuse these credentials:**
 - **Graph Single Key** (`NEXT_PUBLIC_SDK_KEY`) — read published content from Optimizely Graph.
 - **Manage Content API** (`OPTIMIZELY_CMS_CLIENT_ID` / `OPTIMIZELY_CMS_CLIENT_SECRET`) — create pages via `/import` only. Server-only; never use `NEXT_PUBLIC_`.
-- This app does **not** use Graph **App key** or **Graph secret**.
+- This app does **not** use Graph **App key** or **Graph secret** (those are under Optimizely Graph → Manage Graph and will fail OAuth on `/import`).
 
-### Step 3: Run the site
+### Step 3: Register localhost in CMS (required for local preview)
+
+So Optimizely can open your local Next.js site for **live preview** and resolve local URLs, add `localhost:3000` as a hostname on your application:
+
+1. In CMS admin open **Applications** → select your site (e.g. **Website**).
+2. Open **Hostnames**.
+3. Click **Add Hostname...**.
+4. Set:
+   - **Hostname:** `localhost:3000`
+   - **Type:** `Primary` (or keep an existing primary and add this as another host)
+   - **Locale:** `All` (or your default locale)
+   - **Protocol:** `HTTP`
+5. Save.
+
+You should see a row like:
+
+| Hostname | Type | Locale | Protocol |
+|----------|------|--------|----------|
+| `localhost:3000` | Primary | All | HTTP |
+
+Full details: **[Configure localhost hostname in CMS](#configure-localhost-hostname-in-cms)**.
+
+### Step 4: Run the site
 
 ```bash
 npm run dev
@@ -66,9 +88,64 @@ Open [http://localhost:3000](http://localhost:3000).
 
 You should see the homepage with content from Optimizely. If you see "Loading CMS content..." forever or an error, see [Troubleshooting](#troubleshooting).
 
-### Step 4: Verify the API (optional)
+### Step 5: Verify the API (optional)
 
 Visit [http://localhost:3000/api/optimizely/homepage](http://localhost:3000/api/optimizely/homepage) in your browser. You should see JSON with `"success": true` and homepage data. If `"success": false`, check your SDK key and that Main Website is published at the URL in `OPTIMIZELY_HOMEPAGE_URL` (e.g. `/en/`).
+
+---
+
+## Configure localhost hostname in CMS
+
+Optimizely SaaS CMS needs to know which host your front-end runs on. Without a local hostname, **live preview** and some CMS URL resolution will not point at your Next.js app on your machine.
+
+### Why this matters
+
+| Without localhost hostname | With `localhost:3000` registered |
+|----------------------------|----------------------------------|
+| Preview may open a production URL or fail | CMS can load `http://localhost:3000/preview?...` in an iframe |
+| Local testing of draft/edit overlays is harder | Editors can preview and inline-edit against your running `npm run dev` site |
+
+Published homepage content still loads via **Optimizely Graph** + your Single Key even if the hostname is missing — hostname config is mainly for **CMS ↔ local site** integration (preview, host-aware links).
+
+### Steps
+
+1. Log in to your CMS instance (e.g. `https://app-<instance-id>.cms.optimizely.com`).
+2. In the left navigation open **Applications**.
+3. Select your application (often named **Website**).
+4. Click **Hostnames**.
+5. Click **Add Hostname...**.
+6. Enter:
+   - **Hostname:** `localhost:3000` (include the port; do not add `http://`)
+   - **Type:** `Primary` if this is your main local host, or add it alongside an existing primary
+   - **Locale:** `All` (or pin a specific locale such as `en`)
+   - **Protocol:** `HTTP` (Next.js `npm run dev` serves HTTP by default)
+7. Save.
+
+Expected result in the Hostnames table:
+
+| Hostname | Type | Locale | Protocol |
+|----------|------|--------|----------|
+| `localhost:3000` | Primary | All | HTTP |
+
+### Then configure Live Preview
+
+Still under **Applications → Website**:
+
+1. Open **Live Preview**.
+2. Point the preview URL at your local app:
+   ```
+   http://localhost:3000/preview?key={contentKey}&ver={version}&loc={locale}&ctx=edit&preview_token={previewToken}
+   ```
+3. Start the site with `npm run dev`, then open a page in CMS and use **Preview**.
+
+See also [Live preview](#live-preview-edit-content-in-optimizely-see-it-on-your-site).
+
+### Tips
+
+- Use **HTTP** for local `npm run dev`. Use **HTTPS** only if you terminate TLS locally and match that in the hostname + preview URL.
+- Keep a separate production hostname on the same application for deployed environments (e.g. Netlify/Vercel).
+- After changing hostnames or preview URL, retry preview from the CMS (preview tokens expire after a few minutes).
+- `OPTIMIZELY_HOMEPAGE_URL` must still match the page **URL** in the content tree exactly (e.g. `/` vs `/en/` vs `/poc`) — that is separate from the hostname setting.
 
 ---
 
@@ -257,13 +334,14 @@ Optimizely communicationinjector.js   ← Draws edit overlays; talks to parent C
 
 ### Configure preview in Optimizely
 
-1. In Optimizely CMS go to **Settings → Applications** (or your app / frontend host config).
-2. Set the **preview URL** to point at this app, for example:
+1. Register **`localhost:3000`** under **Applications → Website → Hostnames** (see [Configure localhost hostname in CMS](#configure-localhost-hostname-in-cms)). Protocol should be **HTTP**.
+2. Open **Applications → Website → Live Preview** (or your app’s preview settings).
+3. Set the **preview URL** to point at this app, for example:
    ```
-   https://localhost:3000/preview?key={contentKey}&ver={version}&loc={locale}&ctx=edit&preview_token={previewToken}
+   http://localhost:3000/preview?key={contentKey}&ver={version}&loc={locale}&ctx=edit&preview_token={previewToken}
    ```
    Use the placeholders Optimizely provides for your instance (names may vary slightly).
-3. Run your site (`npm run dev`) and open preview **from inside the CMS** — do not visit `/preview` directly without params.
+4. Run your site (`npm run dev`) and open preview **from inside the CMS** — do not visit `/preview` directly without params.
 
 ### URL parameters
 
@@ -498,6 +576,8 @@ Set the same environment variables on your host (Netlify, Vercel, etc.).
 |---------|----------------|
 | "SDK Key not configured" | `.env.local` exists with `NEXT_PUBLIC_SDK_KEY`. Restart `npm run dev` after creating/editing `.env.local`. |
 | "No CMS content found" | `OPTIMIZELY_HOMEPAGE_URL` matches Main Website → URL in CMS (often `/en/`). Open `/api/optimizely/homepage` — `BlankExperience.items` should not be empty. |
+| Preview does not open localhost | **Applications → Website → Hostnames** includes `localhost:3000` with **HTTP**. Live Preview URL uses `http://localhost:3000/preview?...`. Dev server is running. |
+| "CMS token request failed: The client credentials are invalid" | `/import` needs **Settings → API Keys → Manage Content** Client ID/secret — not Graph **Manage Graph** App key/secret. |
 | Block missing on page | Type added to `blockFragments.ts` **and** `case` in `BlockRenderer.tsx`. Block added to page composition in CMS. |
 | GraphQL errors in API response | Field name typo in query, or content type name wrong. Check the API JSON response for `details`. |
 | Old content after CMS publish | Hard refresh (Cmd+Shift+R). API uses `cache: 'no-store'` but browser may cache. |

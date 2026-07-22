@@ -30,6 +30,55 @@ interface FetchPreviewContentParams {
   previewToken?: string | null
 }
 
+/**
+ * Cache of which optional content types exist in the current Graph schema.
+ * Different CMS environments do not always define every custom type (e.g.
+ * `poc_page_type`). An unknown type in ANY `... on Type` fragment makes the
+ * whole GraphQL query fail with a 400, so we introspect once and only include
+ * fragments for types that actually exist.
+ */
+let schemaTypeCache: Record<string, boolean> | null = null
+
+async function getExistingSchemaTypes(
+  sdkKey: string,
+  typeNames: string[]
+): Promise<Set<string>> {
+  if (schemaTypeCache) {
+    return new Set(typeNames.filter((t) => schemaTypeCache![t]))
+  }
+
+  const introspection = `{ ${typeNames
+    .map((t, i) => `t${i}: __type(name: "${t}") { name }`)
+    .join(' ')} }`
+
+  try {
+    const res = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: introspection }),
+      cache: 'no-store',
+    })
+    const data = await res.json()
+
+    const cache: Record<string, boolean> = {}
+    typeNames.forEach((t, i) => {
+      cache[t] = !!data?.data?.[`t${i}`]?.name
+    })
+    schemaTypeCache = cache
+
+    const missing = typeNames.filter((t) => !cache[t])
+    if (missing.length > 0) {
+      console.log('ℹ️ Preview query: skipping page-type fragments not in this Graph schema:', missing)
+    }
+
+    return new Set(typeNames.filter((t) => cache[t]))
+  } catch (error) {
+    // Best effort: if introspection fails, include everything (preserves prior behavior).
+    console.warn('⚠️ Schema type introspection failed; including all page-type fragments.', error)
+    return new Set(typeNames)
+  }
+}
+
 export async function fetchPreviewContentFromGraph({
   key,
   ver,
@@ -69,27 +118,9 @@ export async function fetchPreviewContentFromGraph({
     variables = { key, version: ver }
   }
 
-  const query = `
-    query GetContentByKey(${queryVariables}) {
-      _Content(
-        where: {
-          ${whereClause}
-        }
-        limit: 1
-      ) {
-        total
-        items {
-          _metadata {
-            key
-            version
-            types
-            displayName
-            url {
-              default
-            }
-            published
-            status
-          }
+  // Build page-type fragments, including only types present in THIS Graph
+  // environment's schema (see getExistingSchemaTypes for why).
+  const blankExperienceFragment = `
           ... on BlankExperience {
             composition {
               grids: nodes {
@@ -125,7 +156,9 @@ export async function fetchPreviewContentFromGraph({
                 }
               }
             }
-          }
+          }`
+
+  const landingPageFragment = `
           ... on LandingPage {
             TopContentArea {
               _metadata {
@@ -144,10 +177,44 @@ export async function fetchPreviewContentFromGraph({
               ${landingPageMainContentFields}
             }
             ${landingPageSeoFields}
+          }`
+
+  const optionalFragments: Record<string, string> = {
+    BlankExperience: blankExperienceFragment,
+    LandingPage: landingPageFragment,
+    ArticlePage: articlePageFields,
+    NewsLandingPage: newsLandingPageFields,
+    poc_page_type: pocPageTypeFields,
+  }
+
+  const existingTypes = await getExistingSchemaTypes(sdkKey, Object.keys(optionalFragments))
+  const pageTypeFragments = Object.entries(optionalFragments)
+    .filter(([type]) => existingTypes.has(type))
+    .map(([, fragment]) => fragment)
+    .join('\n')
+
+  const query = `
+    query GetContentByKey(${queryVariables}) {
+      _Content(
+        where: {
+          ${whereClause}
+        }
+        limit: 1
+      ) {
+        total
+        items {
+          _metadata {
+            key
+            version
+            types
+            displayName
+            url {
+              default
+            }
+            published
+            status
           }
-          ${articlePageFields}
-          ${newsLandingPageFields}
-          ${pocPageTypeFields}
+          ${pageTypeFragments}
         }
       }
     }
