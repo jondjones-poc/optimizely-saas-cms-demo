@@ -31,51 +31,30 @@ interface FetchPreviewContentParams {
 }
 
 /**
- * Cache of which optional content types exist in the current Graph schema.
- * Different CMS environments do not always define every custom type (e.g.
- * `poc_page_type`). An unknown type in ANY `... on Type` fragment makes the
- * whole GraphQL query fail with a 400, so we introspect once and only include
- * fragments for types that actually exist.
+ * Optional custom types are not in every CMS environment. An unknown type in
+ * ANY `... on Type` fragment makes the whole preview query fail with a 400.
+ * Core page types are always included. Only `poc_page_type` is omitted when
+ * Graph introspection says it does not exist.
  */
-let schemaTypeCache: Record<string, boolean> | null = null
+let pocPageTypeExistsCache: boolean | null = null
 
-async function getExistingSchemaTypes(
-  sdkKey: string,
-  typeNames: string[]
-): Promise<Set<string>> {
-  if (schemaTypeCache) {
-    return new Set(typeNames.filter((t) => schemaTypeCache![t]))
-  }
-
-  const introspection = `{ ${typeNames
-    .map((t, i) => `t${i}: __type(name: "${t}") { name }`)
-    .join(' ')} }`
-
+async function graphTypeExists(sdkKey: string, typeName: string): Promise<boolean> {
+  const query = `{ __type(name: "${typeName}") { name } }`
   try {
     const res = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: introspection }),
+      body: JSON.stringify({ query }),
       cache: 'no-store',
     })
     const data = await res.json()
-
-    const cache: Record<string, boolean> = {}
-    typeNames.forEach((t, i) => {
-      cache[t] = !!data?.data?.[`t${i}`]?.name
-    })
-    schemaTypeCache = cache
-
-    const missing = typeNames.filter((t) => !cache[t])
-    if (missing.length > 0) {
-      console.log('ℹ️ Preview query: skipping page-type fragments not in this Graph schema:', missing)
+    if (data.errors) {
+      return false
     }
-
-    return new Set(typeNames.filter((t) => cache[t]))
+    return !!data?.data?.__type?.name
   } catch (error) {
-    // Best effort: if introspection fails, include everything (preserves prior behavior).
-    console.warn('⚠️ Schema type introspection failed; including all page-type fragments.', error)
-    return new Set(typeNames)
+    console.warn(`⚠️ Could not introspect Graph type ${typeName}:`, error)
+    return false
   }
 }
 
@@ -184,13 +163,22 @@ export async function fetchPreviewContentFromGraph({
     LandingPage: landingPageFragment,
     ArticlePage: articlePageFields,
     NewsLandingPage: newsLandingPageFields,
-    poc_page_type: pocPageTypeFields,
   }
 
-  const existingTypes = await getExistingSchemaTypes(sdkKey, Object.keys(optionalFragments))
-  const pageTypeFragments = Object.entries(optionalFragments)
-    .filter(([type]) => existingTypes.has(type))
-    .map(([, fragment]) => fragment)
+  if (pocPageTypeExistsCache === null) {
+    pocPageTypeExistsCache = await graphTypeExists(sdkKey, 'poc_page_type')
+    if (!pocPageTypeExistsCache) {
+      console.log('ℹ️ Preview query: skipping poc_page_type fragment (not in this Graph schema)')
+    }
+  }
+  const pageTypeFragments = [
+    optionalFragments.BlankExperience,
+    optionalFragments.LandingPage,
+    optionalFragments.ArticlePage,
+    optionalFragments.NewsLandingPage,
+    pocPageTypeExistsCache ? pocPageTypeFields : '',
+  ]
+    .filter(Boolean)
     .join('\n')
 
   const query = `
