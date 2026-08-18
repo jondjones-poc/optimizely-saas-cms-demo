@@ -109,6 +109,16 @@ export default function CMSContent({
                 data.data.data.BlankExperience.items && (
                   <p>Items length: {data.data.data.BlankExperience.items.length}</p>
                 )}
+              {data?.debug?.queriedUrl !== undefined && (
+                <>
+                  <p>Queried URL (OPTIMIZELY_HOMEPAGE_URL): {data.debug.queriedUrl}</p>
+                  <p>Pages at /: {data.debug.pagesAtSlash ?? 'unknown'}</p>
+                  <p>Pages at /en/: {data.debug.pagesAtEn ?? 'unknown'}</p>
+                  <p>
+                    Set OPTIMIZELY_HOMEPAGE_URL to the path that has pages (must match CMS exactly).
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
