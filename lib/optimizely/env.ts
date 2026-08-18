@@ -46,9 +46,9 @@ export function getOptimizelyCmsRootNodeId(): string {
   return process.env.NEXT_PUBLIC_OPTIMIZELY_CMS_ROOT_NODE_ID || '7'
 }
 
-/** Main Website URL path for Graph homepage query, e.g. /en/ */
+/** Main Website URL path for Graph homepage query, e.g. `/` or `/en/` */
 export function getOptimizelyHomepageUrl(): string {
-  return process.env.OPTIMIZELY_HOMEPAGE_URL || '/en/'
+  return process.env.OPTIMIZELY_HOMEPAGE_URL || '/'
 }
 
 /**

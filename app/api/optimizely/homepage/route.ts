@@ -34,23 +34,25 @@ export async function GET() {
   }
 
   const homepageUrl = getOptimizelyHomepageUrl()
+  // Default to locale-all (`/`). If that returns nothing, try English (`/en/`).
+  const candidateUrls = [...new Set(['/', homepageUrl, '/en/', '/en'])]
 
   /**
    * GraphQL query — asks Optimizely for:
-   *   - One BlankExperience page where URL matches OPTIMIZELY_HOMEPAGE_URL
+   *   - One BlankExperience page where URL matches the candidate path
    *   - Its composition tree: grids → rows → columns → component blocks
    *   - Each block type's fields (Heading text, Hero image, etc.)
    *
    * The type name after "... on" MUST match the Optimizely content type API name.
    */
-  const query = `
+  const buildQuery = (url: string) => `
     query GetHomepage {
       BlankExperience(
         where: {
           _metadata: {
             url: {
               default: {
-                eq: "${homepageUrl}"
+                eq: "${url}"
               }
             }
           }
@@ -109,51 +111,68 @@ export async function GET() {
     }
   `
 
+  const noStoreHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+  }
+
   try {
-    const response = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-      cache: 'no-store',
-    })
+    let lastData: unknown = null
 
-    const data = await response.json()
-
-    if (!response.ok) {
-      console.error('Optimizely API error:', data)
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    if (data.errors) {
-      console.error('GraphQL errors:', data.errors)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'GraphQL errors',
-          details: data.errors,
+    for (const url of candidateUrls) {
+      const response = await fetch(`https://cg.optimizely.com/content/v2?auth=${sdkKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        { status: 400 }
-      )
+        body: JSON.stringify({ query: buildQuery(url) }),
+        cache: 'no-store',
+      })
+
+      const data = await response.json()
+      lastData = data
+
+      if (!response.ok) {
+        console.error('Optimizely API error:', data)
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      if (data.errors) {
+        console.error('GraphQL errors:', data.errors)
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'GraphQL errors',
+            details: data.errors,
+          },
+          { status: 400, headers: noStoreHeaders }
+        )
+      }
+
+      const items = data?.data?.BlankExperience?.items
+      if (Array.isArray(items) && items.length > 0) {
+        return NextResponse.json(
+          {
+            success: true,
+            // Response shape: { success, data: { data: { BlankExperience: ... } } }
+            // The inner .data is the GraphQL envelope. CMSContent reads data.data.data.BlankExperience.
+            // See docs/DATA_SHAPES.md
+            data,
+            timestamp: new Date().toISOString(),
+          },
+          { headers: noStoreHeaders }
+        )
+      }
     }
 
     return NextResponse.json(
       {
         success: true,
-        // Response shape: { success, data: { data: { BlankExperience: ... } } }
-        // The inner .data is the GraphQL envelope. CMSContent reads data.data.data.BlankExperience.
-        // See docs/DATA_SHAPES.md
-        data,
+        data: lastData,
         timestamp: new Date().toISOString(),
       },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
-      }
+      { headers: noStoreHeaders }
     )
   } catch (error) {
     console.error('Error fetching Optimizely data:', error)
