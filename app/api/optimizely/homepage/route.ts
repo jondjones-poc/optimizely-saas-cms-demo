@@ -35,7 +35,9 @@ export async function GET() {
 
   const homepageUrl = getOptimizelyHomepageUrl()
   // Default to locale-all (`/`). If that returns nothing, try English (`/en/`).
-  const candidateUrls = [...new Set(['/', homepageUrl, '/en/', '/en'])]
+  const candidateUrls = ['/', homepageUrl, '/en/', '/en'].filter(
+    (url, index, all) => all.indexOf(url) === index
+  )
 
   /**
    * GraphQL query — asks Optimizely for:
