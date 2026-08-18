@@ -191,6 +191,7 @@ export default function CMSContent({
                   <div
                     key={row.key}
                     className="flex-1 flex flex-row flex-nowrap justify-start w-full"
+                    {...(contextMode === 'edit' && row.key && { 'data-epi-block-id': row.key })}
                     data-epi-role="row"
                     data-epi-display-name={row.displayName || 'Row'}
                     style={{
@@ -211,6 +212,7 @@ export default function CMSContent({
                         <div
                           key={column.key}
                           className="flex-1 flex flex-col flex-nowrap justify-start"
+                          {...(contextMode === 'edit' && column.key && { 'data-epi-block-id': column.key })}
                           data-epi-role="column"
                           data-epi-display-name={column.displayName || 'Column'}
                           style={{
@@ -236,20 +238,6 @@ export default function CMSContent({
                                   rowKey: row.key,
                                   columnKey: column.key,
                                 },
-                              }
-
-                              const isHero = componentWithElementKey._metadata?.types?.[0] === 'Hero'
-
-                              if (isHero) {
-                                return (
-                                  <BlockRenderer
-                                    key={element.key || componentWithElementKey._metadata?.key}
-                                    component={componentWithElementKey}
-                                    isPreview={isPreview}
-                                    contextMode={contextMode}
-                                    cmsDemo={cmsDemo}
-                                  />
-                                )
                               }
 
                               return (

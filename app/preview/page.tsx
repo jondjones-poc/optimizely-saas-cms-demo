@@ -13,9 +13,11 @@
  */
 
 import { headers } from 'next/headers'
+import Script from 'next/script'
 import PreviewClient from './PreviewClient'
 import { fetchPreviewContentFromGraph, processFeatureGridCardsServerSide, structurePreviewPageData } from '@/lib/optimizely/fetchPreviewContent'
 import { getBrandingConfig } from '@/lib/branding'
+import { getOptimizelyPreviewScriptUrl } from '@/lib/optimizely/env'
 
 interface PreviewPageProps {
   searchParams: Promise<{
@@ -205,6 +207,7 @@ export default async function PreviewPage({ searchParams }: PreviewPageProps) {
   const loc = params.loc || null
   const ctx = params.ctx || 'edit'
   const previewToken = params.preview_token || null
+  const previewScriptUrl = getOptimizelyPreviewScriptUrl()
 
   // Log all parameters for debugging
   console.log('📋 Server-side searchParams received:', {
@@ -257,15 +260,21 @@ export default async function PreviewPage({ searchParams }: PreviewPageProps) {
   }
 
   return (
-    <PreviewClient
-      initialData={initialData}
-      ctx={ctx}
-      previewToken={previewToken}
-      contentKey={key}
-      ver={ver}
-      loc={loc}
-      cmsDemo={cmsDemo}
-      branding={branding}
-    />
+    <>
+      {previewScriptUrl ? (
+        <Script src={previewScriptUrl} strategy="afterInteractive" />
+      ) : null}
+      <PreviewClient
+        initialData={initialData}
+        ctx={ctx}
+        previewToken={previewToken}
+        contentKey={key}
+        ver={ver}
+        loc={loc}
+        cmsDemo={cmsDemo}
+        branding={branding}
+        previewScriptUrl={previewScriptUrl}
+      />
+    </>
   )
 }

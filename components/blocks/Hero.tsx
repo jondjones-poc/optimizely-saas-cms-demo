@@ -307,7 +307,6 @@ const Hero = (props: HeroProps) => {
     <div 
       className="relative" 
       style={{ height: '600px', minHeight: '600px', position: 'relative', overflow: 'hidden' }}
-      {...(contextMode === 'edit' && _metadata?.key && { 'data-epi-block-id': _metadata.key })}
     >
       {/* Background Image - OUTSIDE the component wrapper, but still needs relative parent */}
       <div 

@@ -22,6 +22,7 @@ interface PreviewClientProps {
   loc: string | null
   cmsDemo?: string | null  // cms_demo header value from server
   branding: BrandingConfig  // Branding config from server
+  previewScriptUrl?: string
 }
 
 export default function PreviewClient({ 
@@ -32,7 +33,8 @@ export default function PreviewClient({
   ver, 
   loc,
   cmsDemo,
-  branding
+  branding,
+  previewScriptUrl = '',
 }: PreviewClientProps) {
   const [optimizelyData, setOptimizelyData] = useState<any>(initialData)
   const [isLoading, setIsLoading] = useState(false)
@@ -110,7 +112,7 @@ export default function PreviewClient({
     // Replace [UUID] with your instance ID
     scriptLoadAttempted.current = true
     console.log('📥 Loading Optimizely communication script...')
-    const scriptUrl = getOptimizelyPreviewScriptUrl()
+    const scriptUrl = previewScriptUrl || getOptimizelyPreviewScriptUrl()
     if (!scriptUrl) {
       console.warn(
         'Optimizely preview script URL not configured. Set NEXT_PUBLIC_OPTIMIZELY_CMS_URL or NEXT_PUBLIC_OPTIMIZELY_CMS_INSTANCE_ID in .env.local'
@@ -149,7 +151,7 @@ export default function PreviewClient({
     }
     
     document.head.appendChild(script)
-  }, [])
+  }, [previewScriptUrl])
 
   // Suppress Optimizely CMS warnings (they're not our concern)
   useEffect(() => {
